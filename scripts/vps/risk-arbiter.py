@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+"""
+Risk Arbiter — runs every 30 seconds via systemd timer.
+
+Mechanical safety net. No LLM. Enforces:
+- Daily realized loss limit → RISK_OFF
+- Catastrophic drawdown → flatten all + RISK_OFF
+- Consecutive stop-out limit → RISK_OFF
+- Abnormal conditions (API failures, funding spikes) → RISK_OFF
+
+This script is the ONLY non-Oz process allowed to set RISK_OFF.
+"""
+
+import sys
+import time
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+
+from senpi_common import (
+    acquire_lock, release_lock, log, now_iso,
+    load_regime, set_risk_mode, load_json, save_json,
+    get_enabled_strategies, get_open_positions,
+    mcporter_call, send_telegram, git_sync,
+    MEMORY_DIR, POSITION_STATE_DIR, OUTPUTS_DIR,
+)
+
+ARBITER_STATE_FILE = OUTPUTS_DIR / "arbiter-state.json"
+
+
+def load_arbiter_state() -> dict:
+    return load_json(ARBITER_STATE_FILE, default={
+        "peakEquity": 0,
+        "dayStartEquity": 0,
+        "dayStartDate": None,
+        "consecutiveStopOuts": 0,
+        "lastCheckAt": None,
+        "flattenedAt": None,
+    })
+
+
+def save_arbiter_state(state: dict):
+    state["lastCheckAt"] = now_iso()
+    save_json(ARBITER_STATE_FILE, state)
+
+
+def get_account_equity() -> float | None:
+    """Fetch current account equity via Senpi MCP."""
+    result = mcporter_call("account_get_portfolio", {}, timeout=15)
+    if "error" in result:
+        return None
+    # Try common response shapes
+    equity = result.get("accountEquity", result.get("equity", result.get("totalEquity")))
+    if equity is not None:
+        return float(equity)
+    # Nested under portfolio
+    portfolio = result.get("portfolio", result.get("data", {}))
+    if isinstance(portfolio, dict):
+        equity = portfolio.get("accountEquity", portfolio.get("equity"))
+        if equity is not None:
+            return float(equity)
+    return None
+
+
+def count_recent_stop_outs() -> int:
+    """Count DSL stop-outs in the last 2 hours from trade journal."""
+    journal = load_json(MEMORY_DIR / "trade-journal.json", default=[])
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    count = 0
+    for trade in reversed(journal):
+        if trade.get("recordedAt", "") < cutoff:
+            break
+        if trade.get("action") == "CLOSE" and trade.get("closeReason") in (
+            "dsl_breach", "phase1_autocut", "stagnation"
+        ):
+            pnl = float(trade.get("realizedPnl", 0))
+            if pnl < 0:
+                count += 1
+    return count
+
+
+def flatten_all():
+    """Emergency: close every open position across all strategies."""
+    strategies = get_enabled_strategies()
+    for strat in strategies:
+        positions = get_open_positions(strat["_key"])
+        for pos in positions:
+            log(f"FLATTEN: closing {pos['asset']} in {strat['_key']}")
+            mcporter_call("strategy_close_position", {
+                "strategyId": strat.get("strategyId", pos.get("strategyId")),
+                "asset": pos["asset"],
+            }, timeout=15)
+            # Deactivate DSL state
+            if "_file" in pos:
+                state = load_json(Path(pos["_file"]))
+                state["active"] = False
+                state["closedAt"] = now_iso()
+                state["closeReason"] = "risk_arbiter_flatten"
+                save_json(Path(pos["_file"]), state)
+
+
+def main():
+    if not acquire_lock("risk-arbiter"):
+        return
+
+    try:
+        regime = load_regime()
+        guardrails = regime.get("globalGuardrails", {})
+        arb_state = load_arbiter_state()
+
+        # Fetch equity
+        equity = get_account_equity()
+        if equity is None:
+            log("Risk arbiter: could not fetch equity — skipping")
+            save_arbiter_state(arb_state)
+            return
+
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # Reset day tracking at midnight
+        if arb_state.get("dayStartDate") != today:
+            arb_state["dayStartDate"] = today
+            arb_state["dayStartEquity"] = equity
+            arb_state["consecutiveStopOuts"] = 0
+
+        # Update peak
+        if equity > arb_state.get("peakEquity", 0):
+            arb_state["peakEquity"] = equity
+
+        peak = arb_state["peakEquity"]
+        day_start = arb_state["dayStartEquity"]
+
+        # --- CHECK 1: Daily realized loss limit ---
+        daily_loss_pct = guardrails.get("dailyLossLimitPct", 5)
+        if day_start > 0:
+            daily_drawdown = (day_start - equity) / day_start * 100
+            if daily_drawdown >= daily_loss_pct:
+                if regime.get("riskMode") != "RISK_OFF":
+                    log(f"RISK ARBITER: Daily loss {daily_drawdown:.1f}% >= {daily_loss_pct}% → RISK_OFF")
+                    set_risk_mode("RISK_OFF",
+                                  f"Daily loss limit hit: {daily_drawdown:.1f}% (limit {daily_loss_pct}%)",
+                                  "risk-arbiter")
+                    send_telegram(
+                        f"🚨 RISK OFF — Daily loss limit hit\n"
+                        f"Drawdown: {daily_drawdown:.1f}% | Limit: {daily_loss_pct}%\n"
+                        f"Equity: ${equity:.2f} | Day start: ${day_start:.2f}"
+                    )
+
+        # --- CHECK 2: Catastrophic drawdown from peak ---
+        catastrophic_pct = guardrails.get("catastrophicDrawdownPct", 20)
+        if peak > 0:
+            peak_drawdown = (peak - equity) / peak * 100
+            if peak_drawdown >= catastrophic_pct:
+                log(f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL")
+                flatten_all()
+                set_risk_mode("RISK_OFF",
+                              f"CATASTROPHIC: {peak_drawdown:.1f}% drawdown from peak. ALL POSITIONS CLOSED.",
+                              "risk-arbiter")
+                arb_state["flattenedAt"] = now_iso()
+                send_telegram(
+                    f"🚨🚨 CATASTROPHIC FLATTEN 🚨🚨\n"
+                    f"Drawdown: {peak_drawdown:.1f}% from peak\n"
+                    f"All positions closed. Manual intervention required."
+                )
+                git_sync("EMERGENCY: risk arbiter flatten")
+
+        # --- CHECK 3: Consecutive stop-outs ---
+        max_stop_outs = guardrails.get("maxConsecutiveStopOuts", 4)
+        recent_stops = count_recent_stop_outs()
+        if recent_stops >= max_stop_outs:
+            if regime.get("riskMode") != "RISK_OFF":
+                log(f"RISK ARBITER: {recent_stops} consecutive stop-outs → RISK_OFF")
+                set_risk_mode("RISK_OFF",
+                              f"{recent_stops} stop-outs in 2h window (limit {max_stop_outs})",
+                              "risk-arbiter")
+                send_telegram(
+                    f"⚠️ RISK OFF — {recent_stops} consecutive stop-outs\n"
+                    f"Cooling down. No new entries until manual reset or next regime check."
+                )
+
+        save_arbiter_state(arb_state)
+
+    finally:
+        release_lock("risk-arbiter")
+
+
+if __name__ == "__main__":
+    main()

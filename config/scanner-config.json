@@ -1,0 +1,39 @@
+{
+  "minVolume24h": 500000,
+  "minScoreToTrade": 175,
+  "minScoreFullSize": 250,
+  "sizeTiers": {
+    "250+": 1.0,
+    "200-250": 0.75,
+    "175-200": 0.50,
+    "below175": 0
+  },
+  "hourlyTrendGate": true,
+  "btcMacroModifiers": {
+    "strong_down_long_penalty": -30,
+    "strong_down_short_boost": 15,
+    "down_long_penalty": -15,
+    "down_short_boost": 8,
+    "up_long_boost": 8,
+    "up_short_penalty": -15,
+    "strong_up_long_boost": 15,
+    "strong_up_short_penalty": -30
+  },
+  "emAutoEntry": {
+    "enabled": true,
+    "signalTypes": ["FIRST_JUMP", "CONTRIB_EXPLOSION"],
+    "minReasons": 2,
+    "maxEntryRank": 25,
+    "minTraderCount": 10,
+    "minVelocity": 0,
+    "requireNonErratic": false
+  },
+  "hardDisqualifiers": {
+    "counterTrendHourly": true,
+    "extremeRSI": true,
+    "counterTrend4hStrong": true,
+    "volumeDying": true,
+    "heavyUnfavorableFunding": true,
+    "btcMacroHeadwind": true
+  }
+}

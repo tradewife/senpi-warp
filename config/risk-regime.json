@@ -1,0 +1,52 @@
+{
+  "riskMode": "BASELINE",
+  "updatedAt": null,
+  "updatedBy": null,
+  "reason": "Initial state — awaiting first regime classification",
+
+  "regimes": {
+    "RISK_ON": {
+      "maxSlots": 3,
+      "maxLeverageCrypto": 15,
+      "maxLeverageXYZ": 5,
+      "allocPctPerSlot": 35,
+      "newEntriesAllowed": true,
+      "autoEntryEnabled": true,
+      "dslPreset": "tight",
+      "cooldownAfterProfitSec": 0,
+      "cooldownAfterLossSec": 0
+    },
+    "BASELINE": {
+      "maxSlots": 2,
+      "maxLeverageCrypto": 10,
+      "maxLeverageXYZ": 5,
+      "allocPctPerSlot": 30,
+      "newEntriesAllowed": true,
+      "autoEntryEnabled": true,
+      "dslPreset": "tight",
+      "cooldownAfterProfitSec": 0,
+      "cooldownAfterLossSec": 60
+    },
+    "RISK_OFF": {
+      "maxSlots": 0,
+      "maxLeverageCrypto": 0,
+      "maxLeverageXYZ": 0,
+      "allocPctPerSlot": 0,
+      "newEntriesAllowed": false,
+      "autoEntryEnabled": false,
+      "dslPreset": "tight",
+      "cooldownAfterProfitSec": 0,
+      "cooldownAfterLossSec": 0
+    }
+  },
+
+  "globalGuardrails": {
+    "dailyLossLimitPct": 5,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "perTradeRiskPct": 1.0,
+    "minLeverage": 7,
+    "maxPositionsTotal": 4
+  }
+}
