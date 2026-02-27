@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>🐺 Senpi Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <style>
+    :root {
+      --risk-on: #22c55e;
+      --baseline: #eab308;
+      --risk-off: #ef4444;
+      --bg-card: #1e293b;
+      --border-card: #334155;
+    }
+    * { box-sizing: border-box; }
+    body { padding: 0; margin: 0; font-size: 14px; background: #0f172a; color: #e2e8f0; }
+    .container { max-width: 640px; margin: 0 auto; padding: 8px; }
+
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-card); margin-bottom: 8px; }
+    .header h1 { margin: 0; font-size: 1.2rem; }
+    .header .ts { font-size: 0.7rem; color: #94a3b8; }
+
+    /* Cards */
+    .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+    .card h3 { margin: 0 0 6px 0; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .val { font-size: 1.4rem; font-weight: 700; }
+    .card .sub { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+
+    /* Regime badge */
+    .regime-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+    .regime-RISK_ON { background: var(--risk-on); color: #000; }
+    .regime-BASELINE { background: var(--baseline); color: #000; }
+    .regime-RISK_OFF { background: var(--risk-off); color: #fff; }
+    .regime-UNKNOWN { background: #6b7280; color: #fff; }
+
+    /* Quick stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stats-row .card { text-align: center; }
+
+    /* Regime controls */
+    .regime-controls { display: flex; gap: 6px; margin-top: 8px; }
+    .regime-controls button { flex: 1; padding: 6px 8px; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+    .btn-risk-on { background: var(--risk-on); color: #000; }
+    .btn-baseline { background: var(--baseline); color: #000; }
+    .btn-risk-off { background: var(--risk-off); color: #fff; }
+
+    /* Positions list */
+    .pos-item { padding: 8px 0; border-bottom: 1px solid var(--border-card); }
+    .pos-item:last-child { border-bottom: none; }
+    .pos-header { display: flex; justify-content: space-between; font-weight: 600; }
+    .pos-detail { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+    .dir-LONG { color: var(--risk-on); }
+    .dir-SHORT { color: var(--risk-off); }
+
+    /* Trades list */
+    .trade-item { padding: 6px 0; border-bottom: 1px solid var(--border-card); font-size: 0.8rem; }
+    .trade-item:last-child { border-bottom: none; }
+    .pnl-pos { color: var(--risk-on); }
+    .pnl-neg { color: var(--risk-off); }
+
+    /* Tab nav */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border-card); margin-bottom: 8px; }
+    .tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #94a3b8; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab.active { color: #e2e8f0; border-bottom-color: #3b82f6; }
+
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Chat */
+    .chat-container { display: flex; flex-direction: column; height: calc(100vh - 56px); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .chat-msg { margin-bottom: 10px; }
+    .chat-msg .sender { font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px; }
+    .chat-msg .bubble { padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+    .chat-msg.user .bubble { background: #1d4ed8; margin-left: 40px; border-bottom-right-radius: 4px; }
+    .chat-msg.bot .bubble { background: var(--bg-card); border: 1px solid var(--border-card); margin-right: 40px; border-bottom-left-radius: 4px; }
+    .chat-input-row { display: flex; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border-card); }
+    .chat-input-row input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-card); color: #e2e8f0; font-size: 0.9rem; }
+    .chat-input-row button { padding: 10px 16px; border-radius: 8px; background: #3b82f6; color: #fff; border: none; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+    /* Loading spinner */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #94a3b8; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty { color: #64748b; font-style: italic; font-size: 0.85rem; text-align: center; padding: 16px 0; }
+
+    /* Refresh indicator */
+    .refresh-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--risk-on); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🐺 Senpi</h1>
+      <div style="text-align:right">
+        <span class="refresh-dot"></span>
+        <span class="ts" id="last-update">{{ state.timestamp }}</span>
+      </div>
+    </div>
+
+    <!-- Tab navigation -->
+    <div class="tabs">
+      <div class="tab active" data-panel="dashboard" onclick="switchTab(this)">Dashboard</div>
+      <div class="tab" data-panel="positions" onclick="switchTab(this)">Positions</div>
+      <div class="tab" data-panel="trades" onclick="switchTab(this)">Trades</div>
+      <div class="tab" data-panel="chat" onclick="switchTab(this)">Chat</div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- DASHBOARD PANEL -->
+    <!-- ============================================================= -->
+    <div class="panel active" id="panel-dashboard">
+      <!-- Regime -->
+      <div class="card">
+        <h3>Risk Regime</h3>
+        <span class="regime-badge regime-{{ state.regime.mode }}" id="regime-badge">{{ state.regime.mode }}</span>
+        <div class="sub">{{ state.regime.updatedAt }} · {{ state.regime.updatedBy }} · {{ state.regime.reason }}</div>
+        <div class="regime-controls">
+          <button class="btn-risk-on" onclick="setRegime('RISK_ON')">RISK ON</button>
+          <button class="btn-baseline" onclick="setRegime('BASELINE')">BASELINE</button>
+          <button class="btn-risk-off" onclick="setRegime('RISK_OFF')">RISK OFF</button>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="stats-row">
+        <div class="card">
+          <h3>Daily P&L</h3>
+          <div class="val {% if state.daily.pnl >= 0 %}pnl-pos{% else %}pnl-neg{% endif %}" id="daily-pnl">
+            ${{ "%.2f"|format(state.daily.pnl) }}
+          </div>
+          <div class="sub">{{ state.daily.trades }} trades</div>
+        </div>
+        <div class="card">
+          <h3>Win Rate</h3>
+          <div class="val" id="win-rate">{{ state.daily.winRate }}%</div>
+          <div class="sub">{{ state.daily.wins }}/{{ state.daily.trades }}</div>
+        </div>
+        <div class="card">
+          <h3>Positions</h3>
+          <div class="val" id="pos-count">{{ state.positionCount }}</div>
+          <div class="sub">{{ state.pendingSignals }} pending</div>
+        </div>
+      </div>
+
+      <!-- Equity -->
+      <div class="card">
+        <h3>Equity</h3>
+        <div style="display:flex; justify-content:space-between;">
+          <div>
+            <div class="sub">Current (est.)</div>
+            <div class="val" style="font-size:1.1rem">${{ "%.2f"|format(state.equity.current) }}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="sub">Peak</div>
+            <div style="font-weight:600">${{ "%.2f"|format(state.equity.peak) }}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="sub">Day Start</div>
+            <div style="font-weight:600">${{ "%.2f"|format(state.equity.dayStart) }}</div>
+          </div>
+        </div>
+        <div class="sub">Last check: {{ state.equity.lastCheck }}</div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- POSITIONS PANEL -->
+    <!-- ============================================================= -->
+    <div class="panel" id="panel-positions">
+      <div id="positions-list">
+        {% if state.positions %}
+          {% for p in state.positions %}
+          <div class="card pos-item">
+            <div class="pos-header">
+              <span class="dir-{{ p.direction }}">{{ p.direction }} {{ p.asset }}</span>
+              <span>{{ p._strategy }}</span>
+            </div>
+            <div class="pos-detail">
+              Entry: ${{ "%.4f"|format(p.entryPrice or 0) }} · Lev: {{ p.leverage or 0 }}x · Tier {{ (p.currentTierIndex or 0) + 1 }}
+            </div>
+            <div class="pos-detail">
+              HW: ${{ "%.4f"|format(p.highWaterPrice or 0) }} · Breaches: {{ p.currentBreachCount or 0 }} · {{ p._age }}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">No open positions</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- TRADES PANEL -->
+    <!-- ============================================================= -->
+    <div class="panel" id="panel-trades">
+      <div id="trades-list">
+        {% if state.recentTrades %}
+          {% for t in state.recentTrades %}
+          <div class="trade-item">
+            <div style="display:flex; justify-content:space-between;">
+              <span>
+                <strong>{{ t.action }}</strong>
+                <span class="dir-{{ t.direction }}">{{ t.direction }}</span>
+                {{ t.asset }}
+              </span>
+              {% if t.action == "CLOSE" %}
+                <span class="{% if (t.realizedPnl or 0)|float >= 0 %}pnl-pos{% else %}pnl-neg{% endif %}">
+                  ${{ "%.2f"|format((t.realizedPnl or 0)|float) }}
+                </span>
+              {% endif %}
+            </div>
+            <div class="sub">{{ t._age }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">No trades recorded</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- CHAT PANEL -->
+    <!-- ============================================================= -->
+    <div class="panel" id="panel-chat">
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg bot">
+            <div class="sender">🐺 Senpi</div>
+            <div class="bubble">Ready. Type <strong>/help</strong> for commands or ask me anything.</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="/status or ask a question..." autocomplete="off"
+                 onkeydown="if(event.key==='Enter')sendChat()">
+          <button onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- JavaScript -->
+  <!-- ============================================================= -->
+  <script>
+    const TOKEN = "{{ token }}";
+    const authParam = TOKEN ? `?token=${TOKEN}` : "";
+
+    // Tab switching
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+      if (el.dataset.panel === 'chat') {
+        document.getElementById('chat-input').focus();
+        scrollChat();
+      }
+    }
+
+    // Auto-refresh dashboard every 15s (only dashboard tab data)
+    setInterval(async () => {
+      try {
+        const resp = await fetch(`/api/state${authParam}`);
+        if (!resp.ok) return;
+        const s = await resp.json();
+        document.getElementById('last-update').textContent = s.timestamp;
+        document.getElementById('regime-badge').textContent = s.regime.mode;
+        document.getElementById('regime-badge').className = `regime-badge regime-${s.regime.mode}`;
+        document.getElementById('daily-pnl').textContent = `$${s.daily.pnl >= 0 ? '+' : ''}${s.daily.pnl.toFixed(2)}`;
+        document.getElementById('daily-pnl').className = `val ${s.daily.pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+        document.getElementById('win-rate').textContent = `${s.daily.winRate}%`;
+        document.getElementById('pos-count').textContent = s.positionCount;
+      } catch (e) { /* silent */ }
+    }, 15000);
+
+    // Regime buttons
+    async function setRegime(mode) {
+      if (!confirm(`Set regime to ${mode}?`)) return;
+      try {
+        const resp = await fetch(`/api/regime/${mode}${authParam}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.ok) {
+          document.getElementById('regime-badge').textContent = mode;
+          document.getElementById('regime-badge').className = `regime-badge regime-${mode}`;
+        }
+      } catch (e) { alert('Failed: ' + e); }
+    }
+
+    // Chat
+    function scrollChat() {
+      const el = document.getElementById('chat-messages');
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function addChatMsg(sender, text, isUser) {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = `chat-msg ${isUser ? 'user' : 'bot'}`;
+      div.innerHTML = `<div class="sender">${sender}</div><div class="bubble">${formatMarkdown(text)}</div>`;
+      msgs.appendChild(div);
+      scrollChat();
+    }
+
+    function addSpinner() {
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'chat-msg bot';
+      div.id = 'chat-spinner';
+      div.innerHTML = `<div class="sender">🐺 Senpi</div><div class="bubble"><span class="spinner"></span> Thinking...</div>`;
+      msgs.appendChild(div);
+      scrollChat();
+    }
+
+    function removeSpinner() {
+      const el = document.getElementById('chat-spinner');
+      if (el) el.remove();
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+      addChatMsg('You', escapeHtml(msg), true);
+      addSpinner();
+
+      try {
+        const resp = await fetch(`/api/chat${authParam}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        removeSpinner();
+        const data = await resp.json();
+        addChatMsg('🐺 Senpi', data.reply || 'No response.', false);
+      } catch (e) {
+        removeSpinner();
+        addChatMsg('🐺 Senpi', '❌ Error: ' + e.message, false);
+      }
+    }
+
+    // Minimal markdown → HTML
+    function formatMarkdown(text) {
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`(.+?)`/g, '<code style="background:#334155;padding:1px 4px;border-radius:3px">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>
