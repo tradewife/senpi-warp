@@ -15,13 +15,13 @@ restartPolicyType = "always"
 restartPolicyMaxRetries = 10
 
 # Environment variables to set in Railway dashboard (both services):
-#   SENPI_API_KEY        = your Senpi API key
-#   GITHUB_TOKEN         = GitHub fine-grained token (Contents: read/write)
+#   SENPI_API_KEY        = <your Senpi API key>
+#   GITHUB_TOKEN         = <GitHub fine-grained token, Contents read/write>
 #   GITHUB_REPO          = tradewife/senpi-warp
 #   SENPI_STATE_DIR      = /app
 #   SENPI_SKILLS_DIR     = /opt/senpi/senpi-skills
-#   TELEGRAM_BOT_TOKEN   = (optional)
-#   TELEGRAM_CHAT_ID     = (optional)
+#   TELEGRAM_BOT_TOKEN   = <optional>
+#   TELEGRAM_CHAT_ID     = <optional>
 #
 # Dashboard service only:
 #   WARP_API_KEY         = Warp API key for /flatten command
