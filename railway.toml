@@ -28,3 +28,7 @@ restartPolicyMaxRetries = 10
 #   OZ_ENVIRONMENT_ID    = Oz environment ID from setup-oz-agents.sh
 #   DASH_TOKEN           = secret token for dashboard auth
 #   DASH_PORT            = 8420 (Railway sets $PORT automatically)
+#
+# Telegram bot (runs inside dashboard service):
+#   TELEGRAM_BOT_TOKEN   = Telegram bot token (from @BotFather)
+#   TELEGRAM_CHAT_ID     = Your chat ID (only responds to this chat)

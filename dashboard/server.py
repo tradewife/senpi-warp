@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
@@ -23,6 +24,11 @@ import httpx
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+
+try:
+    from dashboard.telegram_bot import create_bot_application, start_polling, stop_polling
+except ImportError:
+    from telegram_bot import create_bot_application, start_polling, stop_polling
 
 # ---------------------------------------------------------------------------
 # Config
@@ -38,7 +44,26 @@ POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"
 OUTPUTS_DIR = STATE_DIR / "outputs"
 
-app = FastAPI(title="Senpi Dashboard", docs_url=None, redoc_url=None)
+_tg_app = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start Telegram bot on startup, stop on shutdown."""
+    global _tg_app
+    _tg_app = create_bot_application()
+    if _tg_app:
+        await start_polling(_tg_app)
+        print("[dashboard] Telegram bot started (polling)")
+    else:
+        print("[dashboard] Telegram bot disabled (TELEGRAM_BOT_TOKEN not set)")
+    yield
+    if _tg_app:
+        await stop_polling(_tg_app)
+        print("[dashboard] Telegram bot stopped")
+
+
+app = FastAPI(title="Senpi Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 # Connected WebSocket clients for live chat
