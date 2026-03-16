@@ -10,7 +10,7 @@ Runs all VPS cron jobs via APScheduler. On startup:
 Environment variables (set in Railway dashboard):
   SENPI_API_KEY        — Senpi MCP authentication token
   GITHUB_TOKEN         — GitHub personal access token (repo read/write)
-  GITHUB_REPO          — e.g. tradewife/senpi-warp
+  GITHUB_REPO          — e.g. tradewife/senpi-waifu
   TELEGRAM_BOT_TOKEN   — optional, for trade alerts
   TELEGRAM_CHAT_ID     — optional
   SENPI_STATE_DIR      — defaults to /app
@@ -32,7 +32,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/app"))
 SKILLS_DIR = Path(os.environ.get("SENPI_SKILLS_DIR", "/opt/senpi/senpi-skills"))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-warp")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-waifu")
 SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "")
 
 # Propagate key env vars to child processes

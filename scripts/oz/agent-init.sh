@@ -6,7 +6,7 @@
 # configures mcporter with the live SENPI_API_KEY and sets up git push credentials.
 #
 # Usage (first line of every Oz agent prompt):
-#   bash senpi-warp/scripts/oz/agent-init.sh
+#   bash senpi-waifu/scripts/oz/agent-init.sh
 
 set -euo pipefail
 
@@ -24,7 +24,7 @@ fi
 
 # --- git push credentials (GitHub token via credential store) ---
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-    REPO="${GITHUB_REPO:-tradewife/senpi-warp}"
+    REPO="${GITHUB_REPO:-tradewife/senpi-waifu}"
     git config --global user.email "oz-agent@warp.dev"
     git config --global user.name "Oz Agent"
     git config --global credential.helper store
@@ -35,4 +35,4 @@ else
     echo "[init] WARNING: GITHUB_TOKEN not set — git push will fail"
 fi
 
-echo "[init] Done. senpi-warp ready."
+echo "[init] Done. senpi-waifu ready."

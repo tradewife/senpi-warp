@@ -14,10 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths — resolved relative to SENPI_STATE_DIR env var or /opt/senpi/senpi-state
+# Paths — resolved relative to SENPI_STATE_DIR env var or /opt/senpi/senpi-waifu
 # ---------------------------------------------------------------------------
 
-STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/opt/senpi/senpi-state"))
+STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/opt/senpi/senpi-waifu"))
 CONFIG_DIR = STATE_DIR / "config"
 POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"

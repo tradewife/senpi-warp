@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Job 5: Health Check + git sync — every 10 minutes
 set -euo pipefail
-export SENPI_STATE_DIR="${SENPI_STATE_DIR:-/opt/senpi/senpi-state}"
+export SENPI_STATE_DIR="${SENPI_STATE_DIR:-/opt/senpi/senpi-waifu}"
 SKILLS="${SENPI_SKILLS_DIR:-/opt/senpi/senpi-skills}"
 
 # Pull any config changes from Oz agents

@@ -11,11 +11,11 @@ set -euo pipefail
 #   export GITHUB_TOKEN="..."   # GitHub fine-grained token (Contents read/write)
 #   export TELEGRAM_BOT_TOKEN="..."
 #   export TELEGRAM_CHAT_ID="..."
-#   export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-warp"
+#   export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-waifu"
 #   bash scripts/oz/setup-oz-agents.sh
 # ---------------------------------------------------------------------------
 
-STATE_REPO="${SENPI_STATE_REPO:-github.com/tradewife/senpi-warp}"
+STATE_REPO="${SENPI_STATE_REPO:-github.com/tradewife/senpi-waifu}"
 SKILLS_REPO="github.com/Senpi-ai/senpi-skills"
 
 echo "=== Oz Cloud Agent Setup (ORCA Hybrid) ==="
@@ -68,7 +68,7 @@ fi
 
 if [ -n "${GITHUB_REPO:-}" ]; then
     oz secret create GITHUB_REPO --team \
-        --value "${GITHUB_REPO:-tradewife/senpi-warp}" \
+        --value "${GITHUB_REPO:-tradewife/senpi-waifu}" \
         --description "GitHub repo (owner/name) for state repo" 2>/dev/null || echo "  (GITHUB_REPO already exists)"
 fi
 
@@ -89,7 +89,7 @@ echo "[3/4] Creating scheduled cloud agents..."
 
 # Preamble injected at the start of every agent prompt.
 # Configures mcporter + git credentials using secrets available at run-time.
-INIT='Run `bash senpi-warp/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:\n\n'
+INIT='Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:\n\n'
 
 # Agent A: Trade Evaluator — every 15 minutes (ORCA + KOMODO aware)
 echo "  Creating: Trade Evaluator (*/15 * * * *)"
@@ -97,7 +97,7 @@ oz schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
     --name "senpi-trade-evaluator" \
     --prompt "${INIT}You are the Senpi Trade Evaluator (ORCA Hybrid Edition). Your job:
 
-1. Run agent-init.sh (already done above), then git pull in the senpi-warp repo.
+1. Run agent-init.sh (already done above), then git pull in the senpi-waifu repo.
 2. Read `state/pending-entries.json` for queued signals from ORCA and KOMODO scanners.
 3. For each pending signal:
    - Check signal source: "orca" signals are STALKER/STRIKER dual-mode. "komodo" signals are momentum event consensus.
@@ -124,7 +124,7 @@ oz schedule create --cron "0 * * * *" --environment "$ENV_ID" \
     --name "senpi-regime-classifier" \
     --prompt "${INIT}You are the Senpi Regime Classifier. Your job:
 
-1. git pull in senpi-warp repo.
+1. git pull in senpi-waifu repo.
 2. Fetch BTC and ETH 4h + 1h candles via mcporter.
 3. Analyze: MA slope, ATR ratio, funding rates, OI changes.
 4. Classify macro regime:
@@ -144,7 +144,7 @@ oz schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
     --name "senpi-portfolio-review" \
     --prompt "${INIT}You are the Senpi Portfolio Reviewer. Your job:
 
-1. git pull in senpi-warp repo.
+1. git pull in senpi-waifu repo.
 2. Read all DSL state files across all strategies in state/.
 3. Read memory/trade-journal.json for recent trades.
 4. Compute: daily realized PnL, unrealized PnL, drawdown from peak, directional exposure.
@@ -163,7 +163,7 @@ oz schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
     --name "senpi-howl" \
     --prompt "${INIT}You are HOWL — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
 
-1. git pull in senpi-warp repo.
+1. git pull in senpi-waifu repo.
 2. Read senpi-skills/wolf-howl/SKILL.md for the complete analysis procedure.
 3. Gather: memory/trade-journal.json (last 24h), all DSL state files, state/orca-scan-history.json, state/komodo-events.json, config/*.json.
 4. Compute ALL metrics: win rate, profit factor, fee drag ratio, holding period buckets, LONG vs SHORT, scanner source comparison (ORCA STALKER vs STRIKER vs KOMODO).
@@ -184,7 +184,7 @@ oz schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
     --name "senpi-whale-index" \
     --prompt "${INIT}You are the Whale Index Manager. Run daily rebalance per senpi-skills/whale-index/SKILL.md.
 
-1. git pull in senpi-warp repo.
+1. git pull in senpi-waifu repo.
 2. Scan top 50 Discovery traders via mcporter: discovery_top_traders(limit=50, timeframe="30d").
 3. Score: PnL rank (35%), win rate (25%), consistency (20%), hold time (10%), drawdown (10%).
 4. Check existing mirror strategies for watch status (2-day watch before swaps).
@@ -200,7 +200,7 @@ oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
     --name "senpi-arena-learner" \
     --prompt "${INIT}You are the Arena Strategy Learner. You study the Senpi Predators arena and extract actionable intelligence.
 
-1. git pull in senpi-warp repo.
+1. git pull in senpi-waifu repo.
 2. Read outputs/arena-state.json (written by the VPS arena-monitor every 15min).
 3. Analyze the current leaderboard:
    - Which predators are profitable? What strategies do they use? (Check senpi-skills/ for their SKILL.md)

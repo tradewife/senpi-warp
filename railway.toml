@@ -1,4 +1,4 @@
-# railway.toml — Senpi Warp Railway deployment config
+# railway.toml — Senpi Waifu Railway deployment config
 # Two services share the same Docker image, different start commands.
 # Create both via Railway dashboard: New Service → GitHub repo
 #   Service 1 "senpi-worker":    start command = python3 worker.py
@@ -17,7 +17,7 @@ restartPolicyMaxRetries = 10
 # Environment variables to set in Railway dashboard (both services):
 #   SENPI_API_KEY        = <your Senpi API key>
 #   GITHUB_TOKEN         = <GitHub fine-grained token, Contents read/write>
-#   GITHUB_REPO          = tradewife/senpi-warp
+#   GITHUB_REPO          = tradewife/senpi-waifu
 #   SENPI_STATE_DIR      = /app
 #   SENPI_SKILLS_DIR     = /opt/senpi/senpi-skills
 #   TELEGRAM_BOT_TOKEN   = <optional>

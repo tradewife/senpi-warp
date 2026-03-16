@@ -3,7 +3,7 @@
   "global": {
     "telegramChatId": null,
     "workspace": "/opt/senpi",
-    "stateDir": "/opt/senpi/senpi-state/state",
+    "stateDir": "/opt/senpi/senpi-waifu/state",
     "maxLeverageFile": "/opt/senpi/senpi-skills/wolf-strategy/scripts/max-leverage.json"
   },
   "_comment": "Run scripts/oz/add-strategy.sh to add a strategy. Each strategy gets an independent wallet, budget, and slot config."

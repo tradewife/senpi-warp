@@ -8,11 +8,11 @@ set -euo pipefail
 #
 # Prerequisites:
 #   - .env file at /opt/senpi/.env with secrets (see template below)
-#   - SSH key with push access to your senpi-state repo
+#   - SSH key with push access to your senpi-waifu repo
 # ---------------------------------------------------------------------------
 
 SENPI_DIR="/opt/senpi"
-STATE_REPO="${SENPI_STATE_REPO:-git@github.com:YOUR_USER/senpi-state.git}"
+STATE_REPO="${SENPI_STATE_REPO:-git@github.com:YOUR_USER/senpi-waifu.git}"
 SKILLS_REPO="https://github.com/Senpi-ai/senpi-skills.git"
 
 echo "=== Senpi VPS Provisioning (ORCA Hybrid) ==="
@@ -32,10 +32,10 @@ mkdir -p "$SENPI_DIR"
 
 # --- 4. Clone repos ---
 echo "[4/8] Cloning repositories..."
-if [ ! -d "$SENPI_DIR/senpi-state/.git" ]; then
-    git clone "$STATE_REPO" "$SENPI_DIR/senpi-state"
+if [ ! -d "$SENPI_DIR/senpi-waifu/.git" ]; then
+    git clone "$STATE_REPO" "$SENPI_DIR/senpi-waifu"
 else
-    git -C "$SENPI_DIR/senpi-state" pull --rebase
+    git -C "$SENPI_DIR/senpi-waifu" pull --rebase
 fi
 
 if [ ! -d "$SENPI_DIR/senpi-skills/.git" ]; then
@@ -61,8 +61,8 @@ fi
 
 # --- 6. Git config for auto-commits ---
 echo "[6/8] Configuring git for auto-commits..."
-git -C "$SENPI_DIR/senpi-state" config user.email "senpi-bot@vps"
-git -C "$SENPI_DIR/senpi-state" config user.name "Senpi VPS Bot"
+git -C "$SENPI_DIR/senpi-waifu" config user.email "senpi-bot@vps"
+git -C "$SENPI_DIR/senpi-waifu" config user.name "Senpi VPS Bot"
 
 # --- 7. Verify mcporter connection ---
 echo "[7/8] Verifying MCP connection..."
@@ -78,7 +78,7 @@ echo "[8/8] Installing cron jobs (ORCA hybrid architecture)..."
 CRON_CONTENT=$(cat <<'CRONTAB'
 # Senpi Trading Agent — VPS Cron Jobs (ORCA Hybrid Edition)
 # Architecture: ORCA scanner + KOMODO momentum + DSL HW + Risk Arbiter + Arena Monitor
-SENPI_STATE_DIR=/opt/senpi/senpi-state
+SENPI_STATE_DIR=/opt/senpi/senpi-waifu
 SENPI_SKILLS_DIR=/opt/senpi/senpi-skills
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
@@ -86,29 +86,29 @@ BASH_ENV=/opt/senpi/.env
 
 # Job 1: ORCA Dual-Mode Scanner (every ~60 seconds via cron, lock prevents overlap)
 # STALKER mode (accumulation) + STRIKER mode (explosion) with hardcoded gates
-* * * * * python3 /opt/senpi/senpi-state/scripts/vps/orca-scanner-cron.py >> /var/log/senpi/orca.log 2>&1
+* * * * * python3 /opt/senpi/senpi-waifu/scripts/vps/orca-scanner-cron.py >> /var/log/senpi/orca.log 2>&1
 
 # Job 2: DSL Combined Runner (every 3 minutes) — now using High Water Mode
-*/3 * * * * bash /opt/senpi/senpi-state/scripts/vps/dsl-combined-cron.sh >> /var/log/senpi/dsl.log 2>&1
+*/3 * * * * bash /opt/senpi/senpi-waifu/scripts/vps/dsl-combined-cron.sh >> /var/log/senpi/dsl.log 2>&1
 
 # Job 3: SM Flip Detector (every 5 minutes)
-*/5 * * * * bash /opt/senpi/senpi-state/scripts/vps/sm-flip-cron.sh >> /var/log/senpi/smflip.log 2>&1
+*/5 * * * * bash /opt/senpi/senpi-waifu/scripts/vps/sm-flip-cron.sh >> /var/log/senpi/smflip.log 2>&1
 
 # Job 4: Watchdog (every 5 minutes, offset by 2min)
-2-57/5 * * * * bash /opt/senpi/senpi-state/scripts/vps/watchdog-cron.sh >> /var/log/senpi/watchdog.log 2>&1
+2-57/5 * * * * bash /opt/senpi/senpi-waifu/scripts/vps/watchdog-cron.sh >> /var/log/senpi/watchdog.log 2>&1
 
 # Job 5: Health Check + git sync (every 10 minutes)
-*/10 * * * * bash /opt/senpi/senpi-state/scripts/vps/health-check-cron.sh >> /var/log/senpi/health.log 2>&1
+*/10 * * * * bash /opt/senpi/senpi-waifu/scripts/vps/health-check-cron.sh >> /var/log/senpi/health.log 2>&1
 
 # Job 6: KOMODO Momentum Event Scanner (every 5 minutes, offset by 1min)
-1-56/5 * * * * python3 /opt/senpi/senpi-state/scripts/vps/komodo-scanner-cron.py >> /var/log/senpi/komodo.log 2>&1
+1-56/5 * * * * python3 /opt/senpi/senpi-waifu/scripts/vps/komodo-scanner-cron.py >> /var/log/senpi/komodo.log 2>&1
 
 # Job 7: Arena Monitor — tracks Senpi Predators performance (every 15 minutes)
-*/15 * * * * python3 /opt/senpi/senpi-state/scripts/vps/arena-monitor.py >> /var/log/senpi/arena.log 2>&1
+*/15 * * * * python3 /opt/senpi/senpi-waifu/scripts/vps/arena-monitor.py >> /var/log/senpi/arena.log 2>&1
 
 # Risk Arbiter (every 30 seconds) — mechanical safety, no LLM
-* * * * * python3 /opt/senpi/senpi-state/scripts/vps/risk-arbiter.py >> /var/log/senpi/arbiter.log 2>&1
-* * * * * sleep 30 && python3 /opt/senpi/senpi-state/scripts/vps/risk-arbiter.py >> /var/log/senpi/arbiter.log 2>&1
+* * * * * python3 /opt/senpi/senpi-waifu/scripts/vps/risk-arbiter.py >> /var/log/senpi/arbiter.log 2>&1
+* * * * * sleep 30 && python3 /opt/senpi/senpi-waifu/scripts/vps/risk-arbiter.py >> /var/log/senpi/arbiter.log 2>&1
 
 # Senpi Skills repo auto-update (every 6 hours)
 0 */6 * * * git -C /opt/senpi/senpi-skills pull --rebase --quiet 2>/dev/null || true

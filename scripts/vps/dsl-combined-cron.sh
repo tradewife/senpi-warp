@@ -4,7 +4,7 @@
 # which iterates all active DSL state files across all strategies.
 set -euo pipefail
 
-export SENPI_STATE_DIR="${SENPI_STATE_DIR:-/opt/senpi/senpi-state}"
+export SENPI_STATE_DIR="${SENPI_STATE_DIR:-/opt/senpi/senpi-waifu}"
 SKILLS="${SENPI_SKILLS_DIR:-/opt/senpi/senpi-skills}"
 SCRIPT="$SKILLS/wolf-strategy/scripts/dsl-combined.py"
 
