@@ -30,7 +30,16 @@ ENV_OUTPUT=$(oz environment create \
     --setup-command "pip install requests pandas && npm i -g mcporter" \
     --output-format json 2>/dev/null || echo '{}')
 
-ENV_ID=$(echo "$ENV_OUTPUT" | jq -r '.id // empty')
+ENV_ID=$(python3 - <<'PY'
+import json,sys
+raw = sys.stdin.read().strip()
+try:
+    data = json.loads(raw) if raw else {}
+except json.JSONDecodeError:
+    data = {}
+print(data.get("id",""))
+PY
+<<< "$ENV_OUTPUT")
 
 if [ -z "$ENV_ID" ]; then
     echo "Environment creation failed or already exists."
