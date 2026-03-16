@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
+[LEGACY — REPLACED BY orca-scanner-cron.py]
+
 Job 1: Emerging Movers Scanner — runs every 60 seconds.
 
 Calls Senpi's leaderboard_get_markets, detects acceleration signals,
 and auto-enters on FIRST_JUMP/CONTRIB_EXPLOSION when criteria are met.
 
-This is the speed edge: <2s from signal to position, no LLM needed.
+DEPRECATED: This script uses DSL-Tight mode (fixed % tiers) instead of
+High Water Mode. Use orca-scanner-cron.py (STALKER + STRIKER dual-mode
+with hardcoded safety gates) instead.
 """
 
 import sys

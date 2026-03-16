@@ -84,10 +84,9 @@ SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
 BASH_ENV=/opt/senpi/.env
 
-# Job 1: ORCA Dual-Mode Scanner (every 90 seconds via two cron entries)
+# Job 1: ORCA Dual-Mode Scanner (every ~60 seconds via cron, lock prevents overlap)
 # STALKER mode (accumulation) + STRIKER mode (explosion) with hardcoded gates
 * * * * * python3 /opt/senpi/senpi-state/scripts/vps/orca-scanner-cron.py >> /var/log/senpi/orca.log 2>&1
-* * * * * sleep 30 && python3 /opt/senpi/senpi-state/scripts/vps/orca-scanner-cron.py >> /var/log/senpi/orca.log 2>&1
 
 # Job 2: DSL Combined Runner (every 3 minutes) — now using High Water Mode
 */3 * * * * bash /opt/senpi/senpi-state/scripts/vps/dsl-combined-cron.sh >> /var/log/senpi/dsl.log 2>&1

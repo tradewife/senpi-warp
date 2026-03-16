@@ -39,6 +39,8 @@ KOMODO_COOLDOWNS_FILE = POSITION_STATE_DIR / "komodo-cooldowns.json"
 KOMODO_ENTRIES_FILE = POSITION_STATE_DIR / "komodo-entries.json"
 
 # --- Constants ---
+MIN_LEVERAGE = 7
+MAX_LEVERAGE = 10
 MAX_POSITIONS = 3
 BASE_MAX_ENTRIES_PER_DAY = 3
 PROFITABLE_DAY_MAX_ENTRIES = 6
@@ -423,7 +425,7 @@ def create_dsl_state(*, asset, direction, leverage, entry_price, size,
             "weakPeakCutMin": 15,
             "deadWeightCutMin": 0,
         },
-        # Phase 2 High Water Mode
+        # Phase 2 High Water Mode (aligned with KOMODO spec + extended tiers)
         "phase2TriggerRoe": 8,
         "lockMode": "pct_of_high_water",
         "tiers": [
@@ -432,6 +434,8 @@ def create_dsl_state(*, asset, direction, leverage, entry_price, size,
             {"triggerPct": 25, "lockHwPct": 65, "consecutiveBreachesRequired": 2},
             {"triggerPct": 40, "lockHwPct": 80, "consecutiveBreachesRequired": 1},
             {"triggerPct": 60, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 80, "lockHwPct": 88, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 1},
         ],
         # Tracking
         "highWaterPrice": entry_price,
@@ -493,17 +497,19 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
         log(f"KOMODO: No free slots for {asset}")
         return
 
-    # Position sizing
+    # Position sizing — hardcoded 7-10x leverage band (same as ORCA)
     budget = target_strategy.get("budget", 1000)
     alloc_pct = regime_params.get("allocPctPerSlot", 30) / 100
     leverage = min(
-        target_strategy.get("defaultLeverage", 8),
+        max(target_strategy.get("defaultLeverage", 8), MIN_LEVERAGE),
+        MAX_LEVERAGE,
         regime_params.get("maxLeverageCrypto", 10),
     )
     margin = budget * alloc_pct
 
+    # KOMODO: ALO (maker) orders for fee savings — patient ambush, not speed-critical
     log(f"🦎 KOMODO AUTO-ENTRY: {direction} {asset} | "
-        f"margin=${margin:.0f} lev={leverage}x | "
+        f"margin=${margin:.0f} lev={leverage}x order=ALO | "
         f"score={score} traders={breakdown['traderCount']}")
 
     entry_result = mcporter_call("strategy_create_position", {
@@ -512,6 +518,7 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
         "direction": direction,
         "marginUsd": margin,
         "leverage": leverage,
+        "orderType": "ALO",
     })
 
     if "error" in entry_result:
@@ -547,7 +554,9 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
         "leverage": leverage,
         "strategyKey": target_strategy["_key"],
         "entrySource": "auto-komodo",
-        "score": score,
+        "entryMode": "KOMODO",
+        "entryScore": score,
+        "orderType": "ALO",
         "scoreBreakdown": breakdown,
         "traderCount": breakdown["traderCount"],
     })

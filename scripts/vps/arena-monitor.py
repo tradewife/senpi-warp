@@ -8,6 +8,7 @@ during strategic decisions.
 """
 
 import json
+import os
 import sys
 import urllib.request
 from pathlib import Path
@@ -21,7 +22,10 @@ from senpi_common import (
 )
 
 ARENA_STATE_FILE = OUTPUTS_DIR / "arena-state.json"
-ARENA_API_URL = "https://ypofdvbavcdgseguddey.supabase.co/functions/v1/mcp-server"
+ARENA_API_URL = os.environ.get(
+    "ARENA_API_URL",
+    "https://ypofdvbavcdgseguddey.supabase.co/functions/v1/mcp-server",
+)
 
 
 def rpc_call(tool_name: str, arguments: dict) -> dict | None:

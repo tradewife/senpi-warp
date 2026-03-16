@@ -469,17 +469,24 @@ def try_auto_entry(signal: dict):
     )
     margin = budget * alloc_pct
 
+    # STALKER: ALO (maker) for fee savings. STRIKER: MARKET for speed.
+    order_type = "ALO" if signal["mode"] == "STALKER" else "MARKET"
+
     log(f"🐋 ORCA {signal['mode']}: {signal['direction']} {signal['asset']} | "
-        f"score={signal['score']} margin=${margin:.0f} lev={leverage}x | "
+        f"score={signal['score']} margin=${margin:.0f} lev={leverage}x order={order_type} | "
         f"reasons={signal['reasons']}")
 
-    entry_result = mcporter_call("strategy_create_position", {
+    entry_params = {
         "strategyId": target_strategy.get("strategyId"),
         "asset": signal["asset"],
         "direction": signal["direction"],
         "marginUsd": margin,
         "leverage": leverage,
-    })
+    }
+    if order_type == "ALO":
+        entry_params["orderType"] = "ALO"
+
+    entry_result = mcporter_call("strategy_create_position", entry_params)
 
     if "error" in entry_result:
         log(f"ORCA entry FAILED for {signal['asset']}: {entry_result['error']}")
@@ -520,12 +527,15 @@ def try_auto_entry(signal: dict):
             "hardTimeoutSec": hard_timeout,
             "weakPeakCutSec": weak_peak,
         },
-        "phase2TriggerRoe": 7,
+        "phase2TriggerRoe": 5,
         "tiers": [
-            {"triggerPct": 7,  "lockHwPct": 40, "consecutiveBreachesRequired": 3},
-            {"triggerPct": 12, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 15, "lockHwPct": 75, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 20, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 5,   "lockHwPct": 20, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 10,  "lockHwPct": 40, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 20,  "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 30,  "lockHwPct": 70, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 50,  "lockHwPct": 80, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 75,  "lockHwPct": 85, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 1},
         ],
         "stagnationTp": dict(STAGNATION_TP),
         "currentTierIndex": -1,
@@ -550,6 +560,9 @@ def try_auto_entry(signal: dict):
         "leverage": leverage,
         "strategyKey": target_strategy["_key"],
         "entrySource": f"orca-{signal['mode'].lower()}",
+        "entryMode": signal["mode"],
+        "entryScore": signal["score"],
+        "orderType": order_type,
         "signal": signal,
     })
 
@@ -619,9 +632,16 @@ def main():
                 elif sig["mode"] == "STALKER" and sig["score"] >= 6:
                     try_auto_entry(sig)
 
-        # Queue all signals for Oz review
+        # Queue non-auto-entered signals for Oz review
+        auto_entered_assets = set()
+        if is_entries_allowed():
+            for sig in combined[:2]:
+                if (sig["mode"] == "STRIKER" and sig["score"] >= 9) or \
+                   (sig["mode"] == "STALKER" and sig["score"] >= 6):
+                    auto_entered_assets.add(sig["asset"])
         for sig in combined:
-            add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
+            if sig["asset"] not in auto_entered_assets:
+                add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
 
         git_sync("auto: ORCA scan")
 

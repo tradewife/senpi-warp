@@ -129,7 +129,7 @@ def get_dashboard_state() -> dict:
             "updatedBy": regime.get("updatedBy", ""),
         },
         "equity": {
-            "current": arbiter.get("peakEquity", 0),  # best approximation without live call
+            "current": arbiter.get("lastEquity", arbiter.get("dayStartEquity", 0)),
             "peak": arbiter.get("peakEquity", 0),
             "dayStart": arbiter.get("dayStartEquity", 0),
             "lastCheck": relative_time(arbiter.get("lastCheckAt", "")),

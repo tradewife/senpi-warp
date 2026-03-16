@@ -1,0 +1,30 @@
+# railway.toml — Senpi Warp Railway deployment config
+# Two services share the same Docker image, different start commands.
+# Create both via Railway dashboard: New Service → GitHub repo
+#   Service 1 "senpi-worker":    start command = python3 worker.py
+#   Service 2 "senpi-dashboard": start command = uvicorn dashboard.server:app --host 0.0.0.0 --port $PORT
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Default start command (worker). Override per-service in Railway dashboard.
+startCommand = "python3 worker.py"
+restartPolicyType = "always"
+restartPolicyMaxRetries = 10
+
+# Environment variables to set in Railway dashboard (both services):
+#   SENPI_API_KEY        = your Senpi API key
+#   GITHUB_TOKEN         = GitHub fine-grained token (Contents: read/write)
+#   GITHUB_REPO          = tradewife/senpi-warp
+#   SENPI_STATE_DIR      = /app
+#   SENPI_SKILLS_DIR     = /opt/senpi/senpi-skills
+#   TELEGRAM_BOT_TOKEN   = (optional)
+#   TELEGRAM_CHAT_ID     = (optional)
+#
+# Dashboard service only:
+#   WARP_API_KEY         = Warp API key for /flatten command
+#   OZ_ENVIRONMENT_ID    = Oz environment ID from setup-oz-agents.sh
+#   DASH_TOKEN           = secret token for dashboard auth
+#   DASH_PORT            = 8420 (Railway sets $PORT automatically)

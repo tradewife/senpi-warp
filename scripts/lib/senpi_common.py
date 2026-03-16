@@ -235,7 +235,10 @@ def release_lock(name: str):
 # ---------------------------------------------------------------------------
 
 def git_sync(message: str = "auto: state update"):
-    """Stage all changes in STATE_DIR and push."""
+    """Stage all changes in STATE_DIR and push. Uses a global lock to prevent concurrent pushes."""
+    if not acquire_lock("git-sync"):
+        log("git sync: another sync in progress — skipping")
+        return
     try:
         subprocess.run(["git", "add", "-A"], cwd=STATE_DIR, capture_output=True, timeout=10)
         # Only commit if there are changes
@@ -254,6 +257,8 @@ def git_sync(message: str = "auto: state update"):
             )
     except subprocess.TimeoutExpired:
         log("git sync timeout — will retry next cycle")
+    finally:
+        release_lock("git-sync")
 
 
 def git_pull():

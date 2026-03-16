@@ -7,6 +7,9 @@ SKILLS="${SENPI_SKILLS_DIR:-/opt/senpi/senpi-skills}"
 # Pull any config changes from Oz agents
 git -C "$SENPI_STATE_DIR" pull --rebase --quiet 2>/dev/null || true
 
+# Reconcile closed positions into trade journal
+python3 "$SENPI_STATE_DIR/scripts/vps/reconcile-closes.py" 2>/dev/null || true
+
 # Run health check if available
 SCRIPT="$SKILLS/wolf-strategy/scripts/job-health-check.py"
 [ -f "$SCRIPT" ] && python3 "$SCRIPT"

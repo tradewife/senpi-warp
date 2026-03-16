@@ -124,7 +124,8 @@ def main():
             arb_state["dayStartEquity"] = equity
             arb_state["consecutiveStopOuts"] = 0
 
-        # Update peak
+        # Track current equity and update peak
+        arb_state["lastEquity"] = equity
         if equity > arb_state.get("peakEquity", 0):
             arb_state["peakEquity"] = equity
 

@@ -1,4 +1,4 @@
-# senpi-state
+# senpi-warp
 
 Shared state repository for the Senpi ORCA hybrid trading agent. Bridges a $5/mo VPS (high-frequency mechanical execution) with Warp Oz cloud agents (strategic LLM decisions). Synced to the latest [senpi-skills](https://github.com/Senpi-ai/senpi-skills) and informed by the [Senpi Predators arena](https://strategies.senpi.ai/).
 
@@ -9,7 +9,7 @@ Shared state repository for the Senpi ORCA hybrid trading agent. Bridges a $5/mo
 │                     VPS ($5/mo)                             │
 │  Real cron jobs — no LLM, near-zero latency                 │
 │                                                             │
-│  90s   🐋 ORCA Scanner      → dual-mode (STALKER+STRIKER)  │
+│  60s   🐋 ORCA Scanner      → dual-mode (STALKER+STRIKER)  │
 │  5min  🦎 KOMODO Scanner    → momentum event consensus      │
 │  3min  🔒 DSL v5 HW         → High Water infinite trailing  │
 │  5min  🔄 SM Flip           → conviction collapse           │
@@ -42,7 +42,7 @@ Shared state repository for the Senpi ORCA hybrid trading agent. Bridges a $5/mo
 | Component | Before | After |
 |---|---|---|
 | Scanner | EM v3.1 (FIRST_JUMP only) | ORCA dual-mode (STALKER + STRIKER) + KOMODO momentum events |
-| DSL | DSL-Tight (fixed % tiers) | DSL v5.3.1 High Water Mode (85% of peak, infinite trailing) |
+| DSL | DSL-Tight (fixed % tiers) | DSL v5.3.1 High Water Mode (up to 90% of peak, 7-tier infinite trailing) |
 | Entry gates | Config-based | Hardcoded in scanner code (agent cannot override) |
 | XYZ equities | Allowed | Banned at scan level (net negative across all 22 agents) |
 | Leverage | 7-15x | 7-10x hard cap (Dire Wolf 25x lesson) |
@@ -79,7 +79,7 @@ The Oz Arena Strategy Learner (every 4 hours) reads this data and compares our p
 ## Directory Layout
 
 ```
-senpi-state/
+senpi-warp/
 ├── config/                    # Shared configuration (both layers read/write)
 │   ├── risk-regime.json       # Current regime: RISK_ON/BASELINE/RISK_OFF
 │   ├── scanner-config.json    # ORCA + KOMODO thresholds (hardcoded gates documented)
@@ -116,7 +116,8 @@ senpi-state/
     │   ├── dsl-combined-cron.sh     # 🔒 DSL High Water runner
     │   ├── sm-flip-cron.sh          # 🔄 SM flip detector
     │   ├── watchdog-cron.sh         # 👁 Watchdog
-    │   ├── health-check-cron.sh     # 🏥 Health check
+    │   ├── health-check-cron.sh     # 🏥 Health check + close reconciliation
+    │   ├── reconcile-closes.py      # 📒 Trade journal close reconciler
     │   └── emerging-movers-cron.py  # (legacy — replaced by ORCA)
     └── oz/
         └── setup-oz-agents.sh # Creates environment, secrets, schedules
@@ -127,8 +128,8 @@ senpi-state/
 ### 1. Create this repo on GitHub (private)
 
 ```bash
-gh repo create senpi-state --private
-git remote add origin git@github.com:YOUR_USER/senpi-state.git
+gh repo create senpi-warp --private
+git remote add origin git@github.com:YOUR_USER/senpi-warp.git
 git push -u origin main
 ```
 
@@ -138,8 +139,8 @@ Any $5/mo Ubuntu VPS (Hetzner, DigitalOcean, Linode, etc.):
 
 ```bash
 # On the VPS (as root):
-export SENPI_STATE_REPO="git@github.com:YOUR_USER/senpi-state.git"
-curl -sL https://raw.githubusercontent.com/YOUR_USER/senpi-state/main/scripts/vps/provision-vps.sh | bash
+export SENPI_STATE_REPO="git@github.com:YOUR_USER/senpi-warp.git"
+curl -sL https://raw.githubusercontent.com/YOUR_USER/senpi-warp/main/scripts/vps/provision-vps.sh | bash
 ```
 
 Then create `/opt/senpi/.env`:
@@ -172,7 +173,7 @@ curl -s -X POST http://127.0.0.1:8080/setup/api/senpi-token \
 
 ```bash
 export SENPI_API_KEY="..."
-export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-state"
+export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-warp"
 bash scripts/oz/setup-oz-agents.sh
 ```
 
@@ -234,9 +235,11 @@ Or edit `config/risk-regime.json` directly and push — the VPS reads it every c
 
 - **ORCA dual-mode scanner.** STALKER catches accumulation before explosions (ZEC pattern). STRIKER catches the explosion itself (FARTCOIN pattern). Both modes missed by single-mode scanners.
 - **KOMODO momentum events.** Real-time threshold crossings, not stale position data. Fixes the fundamental data source bug that killed Scorpion (-24.2%) and Mantis.
-- **DSL High Water Mode.** Stop at 85% of peak ROE trails infinitely. No ceiling. The geometry that lets FOX hold +200% winners.
-- **Hardcoded gates.** XYZ ban, leverage limits, stagnation TP — enforced in Python code, not agent instructions. Agents can't drift.
+- **DSL High Water Mode.** 7-tier trailing from 20% to 90% of peak ROE. No ceiling. The geometry that lets FOX hold +200% winners.
+- **Fee optimisation.** STALKER and KOMODO entries use ALO (maker) orders for ~60-80% fee reduction. STRIKER uses MARKET for speed. Fee drag is the #1 killer across all 22 agents.
+- **Hardcoded gates.** XYZ ban, 7-10x leverage, stagnation TP — enforced in Python code, not agent instructions. Agents can't drift.
 - **Arena-informed decisions.** Oz learns from 24 competing predator strategies in real-time. Data-driven self-improvement, not blind tuning.
 - **Risk Arbiter is not an LLM.** Mechanical safety should never depend on a language model or cloud credits.
-- **Git as state bus.** Simple, auditable, works offline. Both layers can read/write independently.
+- **Git as state bus.** Simple, auditable, works offline. Both layers can read/write independently. Global git lock prevents concurrent pushes.
 - **HOWL only auto-applies risk-reducing changes.** Risk increases require manual approval.
+- **Trade close reconciliation.** Health check reconciles DSL closes into the trade journal every 10 minutes, enabling accurate PnL tracking.
