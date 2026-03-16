@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # ---------------------------------------------------------------------------
-# Oz Cloud Agent Setup
+# Oz Cloud Agent Setup — ORCA Hybrid Edition
 #
 # Creates the Oz environment, secrets, and scheduled agent tasks.
-# Run this from your local machine (where oz CLI is installed).
+# Now includes Arena Strategy Learner for data-driven self-improvement.
 #
 # Usage:
 #   export SENPI_API_KEY="..."
@@ -16,12 +16,12 @@ set -euo pipefail
 STATE_REPO="${SENPI_STATE_REPO:-github.com/YOUR_USER/senpi-state}"
 SKILLS_REPO="github.com/Senpi-ai/senpi-skills"
 
-echo "=== Oz Cloud Agent Setup ==="
+echo "=== Oz Cloud Agent Setup (ORCA Hybrid) ==="
 
 # --- 1. Create environment ---
 echo "[1/4] Creating Oz environment..."
 ENV_OUTPUT=$(oz environment create \
-    --name "senpi-trader" \
+    --name "senpi-orca-hybrid" \
     --docker-image "warpdotdev/dev-base:latest" \
     --repo "$STATE_REPO" \
     --repo "$SKILLS_REPO" \
@@ -64,24 +64,31 @@ fi
 # --- 3. Create scheduled agents ---
 echo "[3/4] Creating scheduled cloud agents..."
 
-# Agent A: Trade Evaluator — every 15 minutes
+# Agent A: Trade Evaluator — every 15 minutes (ORCA + KOMODO aware)
 echo "  Creating: Trade Evaluator (*/15 * * * *)"
 oz schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
     --name "senpi-trade-evaluator" \
-    --prompt 'You are the Senpi Trade Evaluator. Your job:
+    --prompt 'You are the Senpi Trade Evaluator (ORCA Hybrid Edition). Your job:
 
 1. Pull latest state: `git pull` in the senpi-state repo.
-2. Read `state/pending-entries.json` for queued signals.
-3. For each non-auto-entered pending signal:
-   - Run the Opportunity Scanner v6 pipeline (scripts in senpi-skills/opportunity-scanner/).
-   - Apply 4-pillar scoring + hourly trend gate + hard disqualifiers from config/scanner-config.json.
-   - If score >= 175 with trend alignment: open position via mcporter, create DSL state file in state/{strategyKey}/, record in memory/trade-journal.json.
-   - If score < 175 or disqualified: skip and log reason.
-4. For auto-entered signals (autoEntered: true): review quality. If the signal looks bad (erratic, counter-trend, low score), close the position immediately.
-5. Clear processed entries from pending-entries.json.
-6. Commit and push all state changes.
+2. Read `state/pending-entries.json` for queued signals from ORCA and KOMODO scanners.
+3. For each pending signal:
+   - Check signal source: "orca" signals are STALKER/STRIKER dual-mode. "komodo" signals are momentum event consensus.
+   - For ORCA signals: Validate using Opportunity Scanner v6 (scripts in senpi-skills/opportunity-scanner/). Score >= 175 with hourly trend alignment passes. Apply hard disqualifiers from config/scanner-config.json.
+   - For KOMODO signals: Verify momentum event consensus is still valid. 2+ quality traders on same asset/direction within 60 min.
+   - For auto-entered signals (autoEntered: true): review quality. If erratic, counter-trend, or low score — close immediately.
+4. Apply these HARDCODED rules (from ORCA lessons):
+   - NEVER enter XYZ equities (net negative across all 22 agents)
+   - Leverage MUST be 7-10x (sub-7x cannot overcome fees, >10x blows up)
+   - Max 3 simultaneous positions
+   - 4H trend alignment is a HARD gate — never counter-trend
+   - 2-hour per-asset cooldown after any Phase 1 exit
+5. For valid entries: open via mcporter with DSL High Water Mode (lockMode: pct_of_high_water).
+6. Clear processed entries from pending-entries.json.
+7. Read outputs/arena-state.json for insights from winning predator strategies. Prefer selectivity over frequency.
+8. Commit and push all state changes.
 
-Use DSL-Tight profile for all entries. Read config/risk-regime.json for current regime and slot limits. Never counter-trend on hourly. Never enter assets at rank #1-10.' \
+Key lesson from 22 agents: FEWER TRADES + HIGHER CONVICTION = better performance. FOX is #1 at +13.93% with only 436 trades. Agents with 700+ trades are all negative.' \
     2>/dev/null || echo "  (schedule may already exist)"
 
 # Agent B: Regime Classifier — hourly
@@ -91,14 +98,15 @@ oz schedule create --cron "0 * * * *" --environment "$ENV_ID" \
     --prompt 'You are the Senpi Regime Classifier. Your job:
 
 1. Pull latest state from senpi-state repo.
-2. Fetch BTC and ETH 4h + 1h candles via mcporter (use market_get_candles or equivalent).
+2. Fetch BTC and ETH 4h + 1h candles via mcporter.
 3. Analyze: MA slope, ATR ratio, funding rates, OI changes.
 4. Classify macro regime:
-   - RISK_ON: Strong trend + controlled volatility. Allow max slots, upper leverage.
-   - BASELINE: Mixed signals. Standard slots and leverage.
+   - RISK_ON: Strong trend + controlled volatility. Allow max 3 slots, 7-10x leverage.
+   - BASELINE: Mixed signals. 2 slots max, 7-10x leverage.
    - RISK_OFF: Extreme chop, funding blowouts, or liquidation clusters. No new entries.
-5. Update config/risk-regime.json with: riskMode, updatedAt, updatedBy="oz-regime", reason.
-6. Commit and push.
+5. ORCA-aligned rules: maxLeverage never exceeds 10 regardless of regime. XYZ leverage always 0.
+6. Update config/risk-regime.json with: riskMode, updatedAt, updatedBy="oz-regime", reason.
+7. Commit and push.
 
 Be conservative with RISK_ON — only set it when trend evidence is clear across multiple timeframes.' \
     2>/dev/null || echo "  (schedule may already exist)"
@@ -112,32 +120,35 @@ oz schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
 1. Pull latest state.
 2. Read all DSL state files across all strategies in state/.
 3. Read memory/trade-journal.json for recent trades.
-4. Compute: daily realized PnL, unrealized PnL, drawdown from peak, directional exposure (LONG vs SHORT notional).
-5. Check guardrails from config/risk-regime.json: daily loss limit, directional cap (70%), max positions.
-6. Identify dead weight: positions with SM conviction 0, negative ROE, open > 30 minutes.
-7. If any guardrail is breached, update risk-regime.json appropriately.
-8. Write a structured JSON report to outputs/latest-report.json.
-9. Send a Telegram summary with portfolio status.
-10. Commit and push.' \
+4. Compute: daily realized PnL, unrealized PnL, drawdown from peak, directional exposure.
+5. Check guardrails from config/risk-regime.json: 10% daily loss limit, 70% directional cap, max 3 positions.
+6. Check DSL mode: all positions should be using High Water Mode (lockMode: pct_of_high_water). Flag any using legacy fixed tiers.
+7. Read outputs/arena-state.json — compare our performance vs top arena predators. Note our trade frequency vs theirs.
+8. Identify dead weight: positions with SM conviction 0, negative ROE, open > 30 minutes.
+9. Write structured JSON report to outputs/latest-report.json.
+10. Send Telegram summary.
+11. Commit and push.' \
     2>/dev/null || echo "  (schedule may already exist)"
 
 # Agent D: HOWL Nightly Review — daily at 23:55
 echo "  Creating: HOWL Nightly (55 23 * * *)"
 oz schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
     --name "senpi-howl" \
-    --prompt 'You are HOWL — Hunt, Optimize, Win, Learn. Run the full v2 nightly analysis.
+    --prompt 'You are HOWL — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
 
 1. Pull latest state.
 2. Read senpi-skills/wolf-howl/SKILL.md for the complete analysis procedure.
-3. Gather: memory/trade-journal.json (last 24h), all DSL state files, state/scan-history.json, config/*.json.
-4. Compute ALL v2 metrics: win rate, profit factor (gross AND net), fee drag ratio, holding period buckets (<30min, 30-90min, 90+min), LONG vs SHORT breakdown, monster trade dependency, rotation cost tracking.
-5. Identify patterns: what worked, what failed, regime mismatches, DSL effectiveness.
-6. Produce improvement suggestions at high/medium/low confidence.
-7. Auto-apply ONLY risk-reducing changes to config/ (e.g., tighten thresholds, reduce leverage). Risk-increasing changes require manual approval.
-8. Save full report to memory/howl-YYYY-MM-DD.md.
+3. Gather: memory/trade-journal.json (last 24h), all DSL state files, state/orca-scan-history.json, state/komodo-events.json, config/*.json.
+4. Compute ALL metrics: win rate, profit factor, fee drag ratio, holding period buckets, LONG vs SHORT, scanner source comparison (ORCA STALKER vs STRIKER vs KOMODO).
+5. Read outputs/arena-state.json — compare our performance against the top Senpi Predators. What are they doing differently?
+6. Identify patterns: STALKER entries vs STRIKER entries — which mode is winning? Should we adjust mode weights?
+7. Auto-apply ONLY risk-reducing changes (tighten thresholds, reduce leverage). Risk increases require manual approval.
+8. Save report to memory/howl-YYYY-MM-DD.md.
 9. Append distilled summary to memory/MEMORY.md.
 10. Send Telegram summary.
-11. Commit and push.' \
+11. Commit and push.
+
+Key data points to always report: trade count by scanner (ORCA/KOMODO), mode breakdown (STALKER/STRIKER), win rate by mode, avg holding time by mode, fee drag as % of PnL.' \
     2>/dev/null || echo "  (schedule may already exist)"
 
 # Agent E: Whale Index — daily at 01:00
@@ -156,22 +167,54 @@ oz schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
 8. Commit and push.' \
     2>/dev/null || echo "  (schedule may already exist)"
 
+# Agent F: Arena Strategy Learner — every 4 hours (NEW)
+echo "  Creating: Arena Strategy Learner (0 */4 * * *)"
+oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
+    --name "senpi-arena-learner" \
+    --prompt 'You are the Arena Strategy Learner. You study the Senpi Predators arena and extract actionable intelligence.
+
+1. Pull latest state.
+2. Read outputs/arena-state.json (written by the VPS arena-monitor every 15min).
+3. Analyze the current leaderboard:
+   - Which predators are profitable? What strategies do they use? (Check senpi-skills/ for their SKILL.md)
+   - What trade frequency correlates with success? (Universally: fewer trades = better)
+   - Are any new strategies outperforming our current approach?
+4. Compare our own performance (from memory/trade-journal.json) vs the arena:
+   - Our win rate vs FOX'"'"'s win rate
+   - Our avg trade duration vs top performers
+   - Our fee drag vs theirs
+   - Our STALKER vs STRIKER mode performance
+5. If our KOMODO scanner is producing entries — how do they perform vs ORCA entries?
+6. Generate concrete, data-driven recommendations:
+   - Should we tighten entry scores? (if win rate < 50%)
+   - Should we widen Phase 1 tolerance? (if most exits are early Phase 1 cuts)
+   - Should we favor STALKER vs STRIKER? (based on which mode produces better trades)
+   - Should we adjust leverage? (always within 7-10x)
+7. Write recommendations to outputs/arena-learnings.json with confidence levels.
+8. Auto-apply ONLY risk-reducing changes. Flag risk-increasing suggestions for manual review.
+9. Send Telegram summary of key findings.
+10. Commit and push.
+
+NEVER increase leverage above 10x. NEVER remove XYZ ban. NEVER disable stagnation TP. These are proven rules from 22 agents.' \
+    2>/dev/null || echo "  (schedule may already exist)"
+
 # --- 4. Summary ---
 echo ""
 echo "[4/4] Listing schedules..."
 oz schedule list --output-format text 2>/dev/null || echo "(list failed — check oz login)"
 
 echo ""
-echo "=== Oz Setup Complete ==="
+echo "=== Oz Setup Complete (ORCA Hybrid) ==="
 echo ""
 echo "Environment ID: $ENV_ID"
 echo ""
 echo "Scheduled agents:"
-echo "  - Trade Evaluator:    every 15 min"
-echo "  - Regime Classifier:  every hour"
-echo "  - Portfolio Review:   every 6 hours"
-echo "  - HOWL:               nightly at 23:55 UTC"
-echo "  - Whale Index:        daily at 01:00 UTC"
+echo "  - Trade Evaluator:       every 15 min  (ORCA + KOMODO signal validation)"
+echo "  - Regime Classifier:     every hour    (BTC/ETH macro regime)"
+echo "  - Portfolio Review:      every 6 hours (risk rails + reporting)"
+echo "  - HOWL:                  nightly       (self-improvement + arena comparison)"
+echo "  - Whale Index:           daily         (copy-trade rebalance)"
+echo "  - Arena Strategy Learner: every 4 hours (study winning predators)"
 echo ""
 echo "Monitor runs:  oz run list"
 echo "Check a run:   oz run get <run-id>"

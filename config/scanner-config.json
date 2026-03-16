@@ -21,12 +21,12 @@
   },
   "emAutoEntry": {
     "enabled": true,
-    "signalTypes": ["FIRST_JUMP", "CONTRIB_EXPLOSION"],
+    "signalTypes": ["FIRST_JUMP", "CONTRIB_EXPLOSION", "STALKER_CLIMB", "IMMEDIATE_MOVER"],
     "minReasons": 2,
     "maxEntryRank": 25,
     "minTraderCount": 10,
     "minVelocity": 0,
-    "requireNonErratic": false
+    "requireNonErratic": true
   },
   "hardDisqualifiers": {
     "counterTrendHourly": true,
@@ -35,5 +35,34 @@
     "volumeDying": true,
     "heavyUnfavorableFunding": true,
     "btcMacroHeadwind": true
+  },
+  "orca": {
+    "enabled": true,
+    "intervalSec": 90,
+    "modes": {
+      "stalker": {"minScore": 6, "minConsecutiveScans": 3, "minTotalClimb": 5},
+      "striker": {"minScore": 9, "minReasons": 4, "minRankJump": 15, "requireVolume": true}
+    },
+    "hardcodedGates": {
+      "_note": "These are enforced in orca-scanner-cron.py code, not here. Listed for documentation.",
+      "xyzBanned": true,
+      "minLeverage": 7,
+      "maxLeverage": 10,
+      "maxPositions": 3,
+      "maxDailyLossPct": 10,
+      "assetCooldownMinutes": 120,
+      "stagnationTp": {"enabled": true, "roeMin": 10, "hwStaleMin": 45}
+    }
+  },
+  "komodo": {
+    "enabled": true,
+    "intervalSec": 300,
+    "minScore": 10,
+    "minTraderConsensus": 2,
+    "traderQuality": {"tcsAllowed": ["Elite", "Reliable"], "tasBlocked": ["Degen"]},
+    "minConcentration": 0.4,
+    "maxEntriesPerDay": 3,
+    "dailyLossLimitPct": 8,
+    "cooldownMinutes": 120
   }
 }

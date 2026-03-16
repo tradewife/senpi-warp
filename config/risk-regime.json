@@ -7,25 +7,27 @@
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
-      "maxLeverageCrypto": 15,
-      "maxLeverageXYZ": 5,
+      "maxLeverageCrypto": 10,
+      "maxLeverageXYZ": 0,
       "allocPctPerSlot": 35,
       "newEntriesAllowed": true,
       "autoEntryEnabled": true,
-      "dslPreset": "tight",
+      "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
-      "cooldownAfterLossSec": 0
+      "cooldownAfterLossSec": 0,
+      "_note": "XYZ leverage set to 0 — XYZ equities banned per ORCA hardened rules"
     },
     "BASELINE": {
       "maxSlots": 2,
       "maxLeverageCrypto": 10,
-      "maxLeverageXYZ": 5,
+      "maxLeverageXYZ": 0,
       "allocPctPerSlot": 30,
       "newEntriesAllowed": true,
       "autoEntryEnabled": true,
-      "dslPreset": "tight",
+      "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
-      "cooldownAfterLossSec": 60
+      "cooldownAfterLossSec": 60,
+      "_note": "Default. Leverage capped at 10x (was 15x — Dire Wolf 25x blowup lesson)."
     },
     "RISK_OFF": {
       "maxSlots": 0,
@@ -34,19 +36,25 @@
       "allocPctPerSlot": 0,
       "newEntriesAllowed": false,
       "autoEntryEnabled": false,
-      "dslPreset": "tight",
+      "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
       "cooldownAfterLossSec": 0
     }
   },
 
   "globalGuardrails": {
-    "dailyLossLimitPct": 5,
+    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
     "maxConsecutiveStopOuts": 4,
     "directionalCapPct": 70,
     "perTradeRiskPct": 1.0,
     "minLeverage": 7,
-    "maxPositionsTotal": 4
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% — tighter limit bled 2.5x less",
+      "7-10x leverage band — sub-7x can't overcome fees, >10x blows up",
+      "3 positions max — concentration beats diversification across all agents"
+    ]
   }
 }

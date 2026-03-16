@@ -3,4 +3,5 @@ __pycache__/
 node_modules/
 .env
 *.log
+*.swp
 venv/
