@@ -34,7 +34,7 @@ from telegram.ext import (
 # Config
 # ---------------------------------------------------------------------------
 
-STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/app"))
+STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 CONFIG_DIR = STATE_DIR / "config"
 POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"
@@ -43,7 +43,7 @@ OUTPUTS_DIR = STATE_DIR / "outputs"
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
-CHILD_ENV = {**os.environ, "SENPI_STATE_DIR": str(STATE_DIR)}
+CHILD_ENV = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
 
 # Command descriptions — registered with BotFather and shown in /help.
 # Each tuple: (command, short_desc_for_menu, detailed_desc_for_help)
@@ -678,7 +678,7 @@ async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_git pull → reconcile closes → health validation → git push_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["bash", str(STATE_DIR / "scripts/vps/health-check-cron.sh")], timeout=90)
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/health-check-cron.py")], timeout=90)
     if output == "(no output)":
         await update.message.reply_text("🏥 Health check complete ✅ — state synced to GitHub.")
     else:

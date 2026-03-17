@@ -7,7 +7,7 @@ Type=simple
 User=senpi
 Group=senpi
 WorkingDirectory=/opt/senpi/senpi-waifu/dashboard
-Environment=SENPI_STATE_DIR=/opt/senpi/senpi-waifu
+Environment=SENPI_WAIFU_DIR=/opt/senpi/senpi-waifu
 Environment=DASH_PORT=8420
 EnvironmentFile=/opt/senpi/.env
 ExecStart=/opt/senpi/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8420

@@ -78,7 +78,7 @@ echo "[8/8] Installing cron jobs (ORCA hybrid architecture)..."
 CRON_CONTENT=$(cat <<'CRONTAB'
 # Senpi Trading Agent — VPS Cron Jobs (ORCA Hybrid Edition)
 # Architecture: ORCA scanner + KOMODO momentum + DSL HW + Risk Arbiter + Arena Monitor
-SENPI_STATE_DIR=/opt/senpi/senpi-waifu
+SENPI_WAIFU_DIR=/opt/senpi/senpi-waifu
 SENPI_SKILLS_DIR=/opt/senpi/senpi-skills
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin

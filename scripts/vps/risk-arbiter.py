@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso,
     load_regime, set_risk_mode, load_json, save_json,
-    get_enabled_strategies, get_open_positions,
+    load_strategies, get_open_positions, STRATEGIES_FILE,
     mcporter_call, send_telegram, git_sync,
     MEMORY_DIR, POSITION_STATE_DIR, OUTPUTS_DIR,
 )
@@ -98,6 +98,113 @@ def flatten_all():
                 state["closedAt"] = now_iso()
                 state["closeReason"] = "risk_arbiter_flatten"
                 save_json(Path(pos["_file"]), state)
+
+
+def process_strategy_guard_rails():
+    """Enforce per-strategy rules: maxEntriesPerDay, maxConsecutiveLosses."""
+    strategies_config = load_strategies()
+    strategies = strategies_config.get("strategies", {})
+    if not strategies:
+        return
+
+    journal = load_json(MEMORY_DIR / "trade-journal.json", default=[])
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Compute stats per strategy from journal
+    stats = {}
+    for key in strategies.keys():
+        stats[key] = {"daily_pnl": 0.0, "daily_entries": 0, "consecutive_losses": 0}
+
+    # Traverse backward to compute consecutive losses accurately
+    # Also sum daily entries and pnl
+    for trade in reversed(journal):
+        key = trade.get("strategyKey")
+        if not key or key not in stats:
+            continue
+            
+        recorded_at = trade.get("recordedAt", "")
+        # Break out of consecutive loss counter if we hit a profit
+        if trade.get("action") == "CLOSE":
+            pnl = float(trade.get("realizedPnl", 0))
+            if recorded_at.startswith(today):
+                stats[key]["daily_pnl"] += pnl
+                
+            # If we haven't broken the consecutive loss streak yet
+            if pnl > 0 and "broken_streak" not in stats[key]:
+                stats[key]["broken_streak"] = True
+            elif pnl < 0 and "broken_streak" not in stats[key]:
+                stats[key]["consecutive_losses"] += 1
+                
+        elif trade.get("action") == "OPEN":
+            if recorded_at.startswith(today):
+                stats[key]["daily_entries"] += 1
+
+    changed = False
+    for key, strat in strategies.items():
+        if not strat.get("enabled", True):
+            continue
+
+        guard_rails = strat.get("guardRails", {})
+        max_entries = guard_rails.get("maxEntriesPerDay", 8)
+        bypass_on_profit = guard_rails.get("bypassOnProfit", True)
+        max_losses = guard_rails.get("maxConsecutiveLosses", 3)
+        cooldown_min = guard_rails.get("cooldownMinutes", 60)
+
+        current_gate = strat.get("gateState", "OPEN")
+        expires_at = strat.get("gateStateExpiresAt")
+        reason = ""
+
+        # 1. Check expiration of COOLDOWN
+        if current_gate == "COOLDOWN" and expires_at:
+            try:
+                exp_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                if datetime.now(timezone.utc) >= exp_dt:
+                    strat["gateState"] = "OPEN"
+                    strat["gateStateExpiresAt"] = None
+                    changed = True
+                    log(f"RISK ARBITER: {key} cooldown expired → OPEN")
+                    continue
+            except ValueError:
+                pass
+
+        # If already closed/cooldown, don't re-trigger unless it's a new day for CLOSED
+        if current_gate == "CLOSED":
+            closed_today = strat.get("gateStateUpdatedAt", "").startswith(today)
+            if not closed_today:
+                strat["gateState"] = "OPEN"
+                strat["gateStateExpiresAt"] = None
+                changed = True
+                log(f"RISK ARBITER: {key} new day reset → OPEN")
+            continue
+        elif current_gate == "COOLDOWN":
+            continue
+
+        # 2. Check rules to close gate
+        strat_stats = stats[key]
+        new_gate = "OPEN"
+        
+        # Rule G4: Consecutive Losses
+        if strat_stats["consecutive_losses"] >= max_losses:
+            new_gate = "COOLDOWN"
+            reason = f"{strat_stats['consecutive_losses']} consecutive losses"
+            exp_time = datetime.now(timezone.utc) + timedelta(minutes=cooldown_min)
+            strat["gateStateExpiresAt"] = exp_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        
+        # Rule G3: Max Entries
+        elif strat_stats["daily_entries"] >= max_entries:
+            if not (bypass_on_profit and strat_stats["daily_pnl"] > 0):
+                new_gate = "CLOSED"
+                reason = f"Max entries hit ({strat_stats['daily_entries']}/{max_entries})"
+        
+        if new_gate != "OPEN":
+            strat["gateState"] = new_gate
+            strat["gateStateUpdatedAt"] = now_iso()
+            changed = True
+            log(f"RISK ARBITER: {key} → {new_gate} ({reason})")
+            send_telegram(f"🛡 Strategy Gate: *{key}* → {new_gate}\nReason: {reason}")
+
+    if changed:
+        save_json(STRATEGIES_FILE, strategies_config)
 
 
 def main():
@@ -179,6 +286,9 @@ def main():
                     f"⚠️ RISK OFF — {recent_stops} consecutive stop-outs\n"
                     f"Cooling down. No new entries until manual reset or next regime check."
                 )
+
+        # --- CHECK 4: Per-strategy Guard Rails ---
+        process_strategy_guard_rails()
 
         save_arbiter_state(arb_state)
 

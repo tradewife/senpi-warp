@@ -14,10 +14,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths — resolved relative to SENPI_STATE_DIR env var or /opt/senpi/senpi-waifu
+# Paths — resolved relative to SENPI_WAIFU_DIR env var or /opt/senpi/senpi-waifu
 # ---------------------------------------------------------------------------
 
-STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/opt/senpi/senpi-waifu"))
+STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/opt/senpi/senpi-waifu"))
 CONFIG_DIR = STATE_DIR / "config"
 POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"
@@ -136,7 +136,9 @@ def get_open_positions(strategy_key: str) -> list[dict]:
 
 
 def count_open_slots(strategy: dict) -> int:
-    """How many slots are free in this strategy."""
+    """How many slots are free in this strategy. Respects gate state."""
+    if strategy.get("gateState", "OPEN") != "OPEN":
+        return 0
     max_slots = strategy.get("maxSlots", 2)
     open_count = len(get_open_positions(strategy["_key"]))
     return max(0, max_slots - open_count)
@@ -218,7 +220,7 @@ def acquire_lock(name: str) -> bool:
     if lockfile.exists():
         # Check if stale (>5 min old)
         age = time.time() - lockfile.stat().st_mtime
-        if age < 300:
+        if age < 60:
             return False
         log(f"Stale lock for {name} ({age:.0f}s old), removing")
     lockfile.write_text(str(os.getpid()))

@@ -7,7 +7,7 @@ for real-time state. Chat commands dispatch locally or to Oz cloud agents.
 
 Usage:
     pip install -r requirements.txt
-    SENPI_STATE_DIR=/opt/senpi/senpi-waifu WARP_API_KEY=... uvicorn server:app --host 0.0.0.0 --port 8420
+    SENPI_WAIFU_DIR=/opt/senpi/senpi-waifu WARP_API_KEY=... uvicorn server:app --host 0.0.0.0 --port 8420
 """
 
 import asyncio
@@ -34,7 +34,7 @@ except ImportError:
 # Config
 # ---------------------------------------------------------------------------
 
-STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/opt/senpi/senpi-waifu"))
+STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/opt/senpi/senpi-waifu"))
 WARP_API_KEY = os.environ.get("WARP_API_KEY", "")
 OZ_ENV_ID = os.environ.get("OZ_ENVIRONMENT_ID", "")
 DASH_TOKEN = os.environ.get("DASH_TOKEN", "")  # Simple bearer token for auth

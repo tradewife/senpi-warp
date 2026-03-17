@@ -13,7 +13,7 @@ Environment variables (set in Railway dashboard):
   GITHUB_REPO          — e.g. tradewife/senpi-waifu
   TELEGRAM_BOT_TOKEN   — optional, for trade alerts
   TELEGRAM_CHAT_ID     — optional
-  SENPI_STATE_DIR      — defaults to /app
+  SENPI_WAIFU_DIR      — defaults to /app
   SENPI_SKILLS_DIR     — defaults to /opt/senpi/senpi-skills
 """
 
@@ -29,7 +29,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 # Config from environment
 # ---------------------------------------------------------------------------
 
-STATE_DIR = Path(os.environ.get("SENPI_STATE_DIR", "/app"))
+STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 SKILLS_DIR = Path(os.environ.get("SENPI_SKILLS_DIR", "/opt/senpi/senpi-skills"))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-waifu")
@@ -38,7 +38,7 @@ SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "")
 # Propagate key env vars to child processes
 CHILD_ENV = {
     **os.environ,
-    "SENPI_STATE_DIR": str(STATE_DIR),
+    "SENPI_WAIFU_DIR": str(STATE_DIR),
     "SENPI_SKILLS_DIR": str(SKILLS_DIR),
 }
 
@@ -130,19 +130,19 @@ def job_komodo():
 
 
 def job_dsl():
-    run_sh("scripts/vps/dsl-combined-cron.sh")
+    run_py("scripts/vps/dsl-runner.py")
 
 
 def job_smflip():
-    run_sh("scripts/vps/sm-flip-cron.sh")
+    run_py("scripts/vps/sm-flip-cron.py")
 
 
 def job_watchdog():
-    run_sh("scripts/vps/watchdog-cron.sh")
+    run_py("scripts/vps/watchdog-cron.py")
 
 
 def job_health():
-    run_sh("scripts/vps/health-check-cron.sh")
+    run_py("scripts/vps/health-check-cron.py")
     update_skills()
 
 
@@ -152,6 +152,10 @@ def job_arena():
 
 def job_arbiter():
     run_py("scripts/vps/risk-arbiter.py")
+
+
+def job_reconcile():
+    run_py("scripts/vps/reconcile-closes.py")
 
 
 # ---------------------------------------------------------------------------
@@ -166,6 +170,15 @@ def main():
 
     setup_git()
     setup_mcporter()
+
+    # Startup regime bootstrap — run arena monitor once to initialize regime
+    # before the scheduler fires any trading jobs
+    print("[startup] Running initial regime classification...")
+    try:
+        run_py("scripts/vps/arena-monitor.py")
+        print("[startup] Regime bootstrap complete")
+    except Exception as e:
+        print(f"[startup] Regime bootstrap failed (non-fatal): {e}")
 
     scheduler = BlockingScheduler(
         executors={"default": ThreadPoolExecutor(8)},
@@ -198,6 +211,10 @@ def main():
     # Risk Arbiter (mechanical safety) — every 30s
     scheduler.add_job(job_arbiter, "interval", seconds=30, id="arbiter")
 
+    # Reconcile closes — every 15min
+    scheduler.add_job(job_reconcile, "interval", minutes=15, id="reconcile",
+                      seconds=30)
+
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
     print("  🦎 KOMODO Scanner:  every 5min")
@@ -207,6 +224,7 @@ def main():
     print("  🏥 Health Check:    every 10min")
     print("  📊 Arena Monitor:   every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
+    print("  🔃 Reconcile:       every 15min")
     print("\nWorker running. Ctrl+C to stop.\n")
 
     try:
