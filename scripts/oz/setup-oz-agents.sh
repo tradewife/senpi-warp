@@ -22,7 +22,7 @@ echo "=== Oz Cloud Agent Setup (ORCA Hybrid) ==="
 
 # --- 1. Create environment ---
 echo "[1/4] Creating Oz environment..."
-ENV_OUTPUT=$(oz environment create \
+ENV_OUTPUT=$(oz-preview environment create \
     --name "senpi-orca-hybrid" \
     --docker-image "warpdotdev/dev-base:latest" \
     --repo "$STATE_REPO" \
@@ -44,7 +44,7 @@ PY
 if [ -z "$ENV_ID" ]; then
     echo "Environment creation failed or already exists."
     echo "List existing environments:"
-    oz environment list --output-format text
+    oz-preview environment list --output-format text
     echo ""
     read -rp "Enter existing environment ID: " ENV_ID
 fi
@@ -55,47 +55,46 @@ echo "Using environment: $ENV_ID"
 echo "[2/4] Creating Oz secrets..."
 
 if [ -n "${SENPI_API_KEY:-}" ]; then
-    oz secret create SENPI_API_KEY --team \
+    oz-preview secret create SENPI_API_KEY --team \
         --value "$SENPI_API_KEY" \
         --description "Senpi MCP authentication token" 2>/dev/null || echo "  (SENPI_API_KEY already exists)"
 fi
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-    oz secret create GITHUB_TOKEN --team \
+    oz-preview secret create GITHUB_TOKEN --team \
         --value "$GITHUB_TOKEN" \
         --description "GitHub fine-grained token for state repo push access" 2>/dev/null || echo "  (GITHUB_TOKEN already exists)"
 fi
 
 if [ -n "${GITHUB_REPO:-}" ]; then
-    oz secret create GITHUB_REPO --team \
+    oz-preview secret create GITHUB_REPO --team \
         --value "${GITHUB_REPO:-tradewife/senpi-waifu}" \
         --description "GitHub repo (owner/name) for state repo" 2>/dev/null || echo "  (GITHUB_REPO already exists)"
 fi
 
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
-    oz secret create TELEGRAM_BOT_TOKEN --team \
+    oz-preview secret create TELEGRAM_BOT_TOKEN --team \
         --value "$TELEGRAM_BOT_TOKEN" \
         --description "Telegram bot token for trade alerts" 2>/dev/null || echo "  (TELEGRAM_BOT_TOKEN already exists)"
 fi
 
 if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-    oz secret create TELEGRAM_CHAT_ID --team \
+    oz-preview secret create TELEGRAM_CHAT_ID --team \
         --value "$TELEGRAM_CHAT_ID" \
         --description "Telegram chat ID for alerts" 2>/dev/null || echo "  (TELEGRAM_CHAT_ID already exists)"
 fi
 
 # --- 3. Create scheduled agents ---
+# Prompts are written to temp files using quoted heredocs (<< 'PROMPT') so that
+# backticks, double quotes, and other special characters are never interpreted by bash.
 echo "[3/4] Creating scheduled cloud agents..."
-
-# Preamble injected at the start of every agent prompt.
-# Configures mcporter + git credentials using secrets available at run-time.
-INIT='Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:\n\n'
 
 # Agent A: Trade Evaluator — every 15 minutes (ORCA + KOMODO aware)
 echo "  Creating: Trade Evaluator (*/15 * * * *)"
-oz schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
-    --name "senpi-trade-evaluator" \
-    --prompt "${INIT}You are the Senpi Trade Evaluator (ORCA Hybrid Edition). Your job:
+cat > /tmp/oz_trade_evaluator.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are the Senpi Trade Evaluator (ORCA Hybrid Edition). Your job:
 
 1. Run agent-init.sh (already done above), then git pull in the senpi-waifu repo.
 2. Read `state/pending-entries.json` for queued signals from ORCA and KOMODO scanners.
@@ -115,14 +114,19 @@ oz schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
 7. Read outputs/arena-state.json for insights from winning predator strategies. Prefer selectivity over frequency.
 8. Commit and push all state changes.
 
-Key lesson from 22 agents: FEWER TRADES + HIGHER CONVICTION = better performance. FOX is #1 at +13.93% with only 436 trades. Agents with 700+ trades are all negative.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+Key lesson from 22 agents: FEWER TRADES + HIGHER CONVICTION = better performance. FOX is #1 at +13.93% with only 436 trades. Agents with 700+ trades are all negative.
+PROMPT
+oz-preview schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
+    --name "senpi-trade-evaluator" --team \
+    --prompt "$(cat /tmp/oz_trade_evaluator.txt)" \
+    || echo "  WARNING: failed to create Trade Evaluator schedule (see error above)"
 
 # Agent B: Regime Classifier — hourly
 echo "  Creating: Regime Classifier (0 * * * *)"
-oz schedule create --cron "0 * * * *" --environment "$ENV_ID" \
-    --name "senpi-regime-classifier" \
-    --prompt "${INIT}You are the Senpi Regime Classifier. Your job:
+cat > /tmp/oz_regime_classifier.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are the Senpi Regime Classifier. Your job:
 
 1. git pull in senpi-waifu repo.
 2. Fetch BTC and ETH 4h + 1h candles via mcporter.
@@ -135,14 +139,19 @@ oz schedule create --cron "0 * * * *" --environment "$ENV_ID" \
 6. Update config/risk-regime.json with: riskMode, updatedAt, updatedBy="oz-regime", reason.
 7. Commit and push.
 
-Be conservative with RISK_ON — only set it when trend evidence is clear across multiple timeframes.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+Be conservative with RISK_ON — only set it when trend evidence is clear across multiple timeframes.
+PROMPT
+oz-preview schedule create --cron "0 * * * *" --environment "$ENV_ID" \
+    --name "senpi-regime-classifier" --team \
+    --prompt "$(cat /tmp/oz_regime_classifier.txt)" \
+    || echo "  WARNING: failed to create Regime Classifier schedule (see error above)"
 
 # Agent C: Portfolio Review — every 6 hours
 echo "  Creating: Portfolio Review (0 */6 * * *)"
-oz schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
-    --name "senpi-portfolio-review" \
-    --prompt "${INIT}You are the Senpi Portfolio Reviewer. Your job:
+cat > /tmp/oz_portfolio_review.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are the Senpi Portfolio Reviewer. Your job:
 
 1. git pull in senpi-waifu repo.
 2. Read all DSL state files across all strategies in state/.
@@ -154,14 +163,19 @@ oz schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
 8. Identify dead weight: positions with SM conviction 0, negative ROE, open > 30 minutes.
 9. Write structured JSON report to outputs/latest-report.json.
 10. Send Telegram summary.
-11. Commit and push.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+11. Commit and push.
+PROMPT
+oz-preview schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
+    --name "senpi-portfolio-review" --team \
+    --prompt "$(cat /tmp/oz_portfolio_review.txt)" \
+    || echo "  WARNING: failed to create Portfolio Review schedule (see error above)"
 
 # Agent D: HOWL Nightly Review — daily at 23:55
 echo "  Creating: HOWL Nightly (55 23 * * *)"
-oz schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
-    --name "senpi-howl" \
-    --prompt "${INIT}You are HOWL — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
+cat > /tmp/oz_howl.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are HOWL — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
 
 1. git pull in senpi-waifu repo.
 2. Read senpi-skills/wolf-howl/SKILL.md for the complete analysis procedure.
@@ -175,14 +189,19 @@ oz schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
 10. Send Telegram summary.
 11. Commit and push.
 
-Key data points to always report: trade count by scanner (ORCA/KOMODO), mode breakdown (STALKER/STRIKER), win rate by mode, avg holding time by mode, fee drag as % of PnL.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+Key data points to always report: trade count by scanner (ORCA/KOMODO), mode breakdown (STALKER/STRIKER), win rate by mode, avg holding time by mode, fee drag as % of PnL.
+PROMPT
+oz-preview schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
+    --name "senpi-howl" --team \
+    --prompt "$(cat /tmp/oz_howl.txt)" \
+    || echo "  WARNING: failed to create HOWL schedule (see error above)"
 
 # Agent E: Whale Index — daily at 01:00
 echo "  Creating: Whale Index (0 1 * * *)"
-oz schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
-    --name "senpi-whale-index" \
-    --prompt "${INIT}You are the Whale Index Manager. Run daily rebalance per senpi-skills/whale-index/SKILL.md.
+cat > /tmp/oz_whale_index.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are the Whale Index Manager. Run daily rebalance per senpi-skills/whale-index/SKILL.md.
 
 1. git pull in senpi-waifu repo.
 2. Scan top 50 Discovery traders via mcporter: discovery_top_traders(limit=50, timeframe="30d").
@@ -191,14 +210,19 @@ oz schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
 5. If a trader has degraded for 2+ consecutive days AND a replacement scores 15%+ higher: swap.
 6. If no mirror strategies exist yet, present top 3 candidates and create mirrors.
 7. Update state with mirror strategy status.
-8. Commit and push.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+8. Commit and push.
+PROMPT
+oz-preview schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
+    --name "senpi-whale-index" --team \
+    --prompt "$(cat /tmp/oz_whale_index.txt)" \
+    || echo "  WARNING: failed to create Whale Index schedule (see error above)"
 
-# Agent F: Arena Strategy Learner — every 4 hours (NEW)
+# Agent F: Arena Strategy Learner — every 4 hours
 echo "  Creating: Arena Strategy Learner (0 */4 * * *)"
-oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
-    --name "senpi-arena-learner" \
-    --prompt "${INIT}You are the Arena Strategy Learner. You study the Senpi Predators arena and extract actionable intelligence.
+cat > /tmp/oz_arena_learner.txt << 'PROMPT'
+Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
+
+You are the Arena Strategy Learner. You study the Senpi Predators arena and extract actionable intelligence.
 
 1. git pull in senpi-waifu repo.
 2. Read outputs/arena-state.json (written by the VPS arena-monitor every 15min).
@@ -207,7 +231,7 @@ oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
    - What trade frequency correlates with success? (Universally: fewer trades = better)
    - Are any new strategies outperforming our current approach?
 4. Compare our own performance (from memory/trade-journal.json) vs the arena:
-   - Our win rate vs FOX'"'"'s win rate
+   - Our win rate vs FOX's win rate
    - Our avg trade duration vs top performers
    - Our fee drag vs theirs
    - Our STALKER vs STRIKER mode performance
@@ -222,13 +246,17 @@ oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
 9. Send Telegram summary of key findings.
 10. Commit and push.
 
-NEVER increase leverage above 10x. NEVER remove XYZ ban. NEVER disable stagnation TP. These are proven rules from 22 agents.' \
-    2>/dev/null || echo "  (schedule may already exist)"
+NEVER increase leverage above 10x. NEVER remove XYZ ban. NEVER disable stagnation TP. These are proven rules from 22 agents.
+PROMPT
+oz-preview schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
+    --name "senpi-arena-learner" --team \
+    --prompt "$(cat /tmp/oz_arena_learner.txt)" \
+    || echo "  WARNING: failed to create Arena Learner schedule (see error above)"
 
 # --- 4. Summary ---
 echo ""
 echo "[4/4] Listing schedules..."
-oz schedule list --output-format text 2>/dev/null || echo "(list failed — check oz login)"
+oz-preview schedule list --output-format text 2>/dev/null || echo "(list failed — check oz login)"
 
 echo ""
 echo "=== Oz Setup Complete (ORCA Hybrid) ==="
@@ -243,6 +271,6 @@ echo "  - HOWL:                  nightly       (self-improvement + arena compari
 echo "  - Whale Index:           daily         (copy-trade rebalance)"
 echo "  - Arena Strategy Learner: every 4 hours (study winning predators)"
 echo ""
-echo "Monitor runs:  oz run list"
-echo "Check a run:   oz run get <run-id>"
-echo "Manual run:    oz agent run-cloud --environment $ENV_ID --prompt '...'"
+echo "Monitor runs:  oz-preview run list"
+echo "Check a run:   oz-preview run get <run-id>"
+echo "Manual run:    oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
