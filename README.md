@@ -247,7 +247,7 @@ Register the returned strategy in `config/wolf-strategies.json`, fund the wallet
 ```bash
 export SENPI_API_KEY="..."
 export GITHUB_TOKEN="..."
-export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-waifu"
+export SENPI_WAIFU_REPO="github.com/YOUR_USER/senpi-waifu"
 bash scripts/oz/setup-oz-agents.sh
 ```
 
@@ -256,7 +256,7 @@ bash scripts/oz/setup-oz-agents.sh
 For a standalone $5/mo VPS instead of Railway:
 
 ```bash
-export SENPI_STATE_REPO="git@github.com:YOUR_USER/senpi-waifu.git"
+export SENPI_WAIFU_REPO="git@github.com:YOUR_USER/senpi-waifu.git"
 curl -sL https://raw.githubusercontent.com/YOUR_USER/senpi-waifu/main/scripts/vps/provision-vps.sh | bash
 ```
 

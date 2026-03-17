@@ -11,11 +11,11 @@ set -euo pipefail
 #   export GITHUB_TOKEN="..."   # GitHub fine-grained token (Contents read/write)
 #   export TELEGRAM_BOT_TOKEN="..."
 #   export TELEGRAM_CHAT_ID="..."
-#   export SENPI_STATE_REPO="github.com/YOUR_USER/senpi-waifu"
+#   export SENPI_WAIFU_REPO="github.com/YOUR_USER/senpi-waifu"
 #   bash scripts/oz/setup-oz-agents.sh
 # ---------------------------------------------------------------------------
 
-STATE_REPO="${SENPI_STATE_REPO:-github.com/tradewife/senpi-waifu}"
+STATE_REPO="${SENPI_WAIFU_REPO:-github.com/tradewife/senpi-waifu}"
 SKILLS_REPO="github.com/Senpi-ai/senpi-skills"
 
 echo "=== Oz Cloud Agent Setup (ORCA Hybrid) ==="

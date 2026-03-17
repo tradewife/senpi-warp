@@ -12,7 +12,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 SENPI_DIR="/opt/senpi"
-STATE_REPO="${SENPI_STATE_REPO:-git@github.com:YOUR_USER/senpi-waifu.git}"
+STATE_REPO="${SENPI_WAIFU_REPO:-git@github.com:YOUR_USER/senpi-waifu.git}"
 SKILLS_REPO="https://github.com/Senpi-ai/senpi-skills.git"
 
 echo "=== Senpi VPS Provisioning (ORCA Hybrid) ==="
