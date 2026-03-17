@@ -244,12 +244,19 @@ Register the returned strategy in `config/wolf-strategies.json`, fund the wallet
 
 ### 5. Set up Oz cloud agents (optional)
 
+> **Requires Warp Build plan or higher ($18/mo).** Scheduled ambient agents are not available on the Free plan.
+> Upgrade at: https://www.warp.dev/pricing
+>
+> Without the Build plan, all scheduling is handled by the Railway worker (APScheduler). Oz agents can still be triggered manually via the Telegram bot or `oz-preview agent run-cloud`.
+
 ```bash
 export SENPI_API_KEY="..."
 export GITHUB_TOKEN="..."
 export SENPI_WAIFU_REPO="github.com/YOUR_USER/senpi-waifu"
 bash scripts/oz/setup-oz-agents.sh
 ```
+
+The script will automatically detect if your plan supports scheduled agents and skip schedule creation if not (while still creating the environment and secrets).
 
 ## Alternative Deployment (VPS)
 
@@ -275,7 +282,9 @@ Create `/opt/senpi/.env` with your secrets, then verify: `crontab -l && tail -f 
 
 Fits within the $5 included credit. Worst case under heavy manual triggering: ~$6-7/mo.
 
-### Oz Cloud Agents (optional, billed by Warp)
+### Oz Cloud Agents (optional, Warp Build plan required)
+
+Scheduled agents require the **Warp Build plan ($18/mo)** or higher. See https://www.warp.dev/pricing.
 
 | Agent | Frequency | Est. Credits/Run | Monthly |
 |---|---|---|---|
@@ -286,6 +295,8 @@ Fits within the $5 included credit. Worst case under heavy manual triggering: ~$
 | HOWL | 1/day | 30 | ~30 |
 | Whale Index | 1/day | 25 | ~25 |
 | **Total** | | | **~1,905** |
+
+Build plan includes 1,500 credits/month. Additional credits are available via Reload. All 6 agents together use ~1,905 credits/month at full schedule.
 
 ## Key Design Decisions
 
