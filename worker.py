@@ -141,6 +141,10 @@ def job_condor():
     run_script_sync("scripts/vps/condor-scanner-cron.py")
 
 
+def job_barracuda():
+    run_script_sync("scripts/vps/barracuda-scanner-cron.py")
+
+
 def job_watchdog():
     run_py("scripts/vps/watchdog-cron.py")
 
@@ -199,6 +203,12 @@ def main():
     # DSL High Water Runner — every 3min
     scheduler.add_job(job_dsl, "interval", minutes=3, id="dsl")
 
+    # CONDOR Multi-Asset Hunter — every 3min, offset 1min
+    scheduler.add_job(job_condor, "interval", minutes=3, id="condor", seconds=60)
+
+    # BARRACUDA Funding Decay Collector — every 15min
+    scheduler.add_job(job_barracuda, "interval", minutes=15, id="barracuda", seconds=120)
+
     # SM Flip Detector — every 5min
     scheduler.add_job(job_smflip, "interval", minutes=5, id="smflip")
 
@@ -222,6 +232,8 @@ def main():
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
     print("  🦎 KOMODO Scanner:  every 5min")
+    print("  🦅 CONDOR Scanner:  every 3min")
+    print("  🎣 BARRACUDA Scan:  every 15min")
     print("  🔒 DSL HW Runner:   every 3min")
     print("  🔄 SM Flip:         every 5min")
     print("  👁  Watchdog:        every 5min")

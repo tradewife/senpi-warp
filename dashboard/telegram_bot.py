@@ -672,6 +672,20 @@ async def cmd_condor(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_barracuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🎣 *Running BARRACUDA scanner...*\n"
+        "_Funding decay collector (30%+ ann funding, 6+ hour persistence)_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/barracuda-scanner-cron.py")])
+    if output == "(no output)":
+        await update.message.reply_text("🎣 BARRACUDA scan complete — no extreme persistent funding found.")
+    else:
+        await update.message.reply_text(f"🎣 *BARRACUDA scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
 async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🚨 *Running Risk Arbiter...*\n"
@@ -912,6 +926,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("scan", cmd_scan))
     app.add_handler(CommandHandler("komodo", cmd_komodo))
     app.add_handler(CommandHandler("condor", cmd_condor))
+    app.add_handler(CommandHandler("barracuda", cmd_barracuda))
     app.add_handler(CommandHandler("arbiter", cmd_arbiter))
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("arena", cmd_arena))
