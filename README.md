@@ -4,7 +4,7 @@ Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Ra
 
 ## How It Works
 
-Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — scanning markets, managing trailing stops, and enforcing safety limits. The **strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement.
+Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — five scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -14,11 +14,14 @@ Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zer
 │  ┌────────────────────┐         ┌──────────────────┐    │
 │  │ 60s  🐋 ORCA       │         │ FastAPI dashboard │    │
 │  │ 5min 🦎 KOMODO     │         │ Telegram bot      │    │
-│  │ 3min 🔒 DSL HW     │         │ Oz dispatch       │    │
-│  │ 5min 🔄 SM Flip    │         └──────────────────┘    │
+│  │ 3min 🦅 CONDOR     │         │ Oz dispatch       │    │
+│  │ 15m  🎣 BARRACUDA  │         └──────────────────┘    │
+│  │ 30m  🦬 BISON      │                                 │
+│  │ 3min 🔒 DSL HW     │         All /commands from       │
+│  │ 5min 🔄 SM Flip    │         Telegram land here       │
 │  │ 5min 👁 Watchdog   │                                 │
-│  │ 10m  🏥 Health     │         All /commands from       │
-│  │ 15m  📊 Arena      │         Telegram land here       │
+│  │ 10m  🏥 Health     │                                 │
+│  │ 15m  📊 Arena      │                                 │
 │  │ 30s  🚨 Arbiter    │                                 │
 │  └────────────────────┘                                 │
 │                                                         │
@@ -67,6 +70,9 @@ The bot runs inside the dashboard service and gives you full control from your p
 |---|---|
 | `/scan` | Run ORCA dual-mode scanner now (STALKER + STRIKER) |
 | `/komodo` | Run KOMODO momentum event consensus scanner now |
+| `/condor` | Run CONDOR multi-asset alpha hunter now |
+| `/barracuda` | Run BARRACUDA funding decay collector now |
+| `/bison` | Run BISON conviction trend holder now |
 | `/arbiter` | Run Risk Arbiter safety checks now |
 | `/health` | Run health check + git sync now |
 | `/arena` | Run arena monitor now (polls Senpi Predators leaderboard) |
@@ -102,6 +108,39 @@ Five-gate entry model using real-time momentum threshold crossings ($2M+/$5.5M+/
 
 Score ≥10 to enter. ALO orders for fee savings.
 
+### 🦅 CONDOR — Multi-Asset Alpha Hunter (every 3min)
+
+Follows a 3-mode lifecycle across BTC, ETH, SOL, HYPE:
+
+1. **SCOUT** — scans 5m/15m/1h/4h candles for momentum, trend structure, and volume breakouts
+2. **STALK** — tracks emerging setups for up to 4 hours, waiting for confirmation reload
+3. **STRIKE** — enters when score ≥10, with correlation confirmation across paired assets
+
+Gates: SM direction alignment, funding extreme filter, volume ratio spike, multi-timeframe trend structure. Uses fee-optimized limit orders. Conviction-scaled Phase 1 timeouts (30-60 min based on score).
+
+### 🎣 BARRACUDA — Funding Decay Collector (every 15min)
+
+Counter-trend strategy that fades extreme funding rates:
+
+1. **Funding persistence** → annualized rate ≥30% sustained for 6+ hours
+2. **SM alignment** → smart money must agree with the fade direction
+3. **4H trend confirmation** → SMA(20) slope must support entry
+4. **RSI filter** → avoids entering at extremes that haven't started reverting
+
+Score ≥8 to enter. Conservative DSL tiers (Phase 2 at +5% ROE). Stagnation TP at 120 min. Max 3 entries per day.
+
+### 🦬 BISON — Conviction Trend Holder (every 30min)
+
+Scans Top 10 assets by volume for 4H/1H trend alignment, optimized for longer holds:
+
+1. **Multi-timeframe trend** → both 4H and 1H must show aligned trend structure
+2. **Momentum confirmation** → 1H momentum ≥0.5%
+3. **Volume trend** → rising volume confirms conviction
+4. **RSI guard** → blocks long entries above RSI 72, shorts below RSI 28
+5. **SM hard block** → won't enter against smart money consensus
+
+Score ≥8 to enter. Wider DSL tiers (Phase 2 at +10% ROE) designed for trend-following holds. 6-tier high-water lock up to +100% ROE. Conviction-scaled timeouts from 60 to 120 min.
+
 ### 🔒 DSL High Water Mode (every 3min)
 
 7-tier infinite trailing stop that locks increasingly large percentages of peak ROE:
@@ -130,6 +169,7 @@ Mechanical safety net. No LLM dependency. Checks:
 - **Daily loss limit** (10%) → sets RISK_OFF
 - **Catastrophic drawdown** (20% from peak) → flattens ALL positions + RISK_OFF
 - **Consecutive stop-outs** (4 in 2 hours) → sets RISK_OFF
+- **Abnormal conditions** (API failures, funding spikes) → sets RISK_OFF
 
 ### Hardcoded Gates
 
@@ -151,6 +191,9 @@ senpi-waifu/
 ├── config/                    # Shared configuration (both layers read/write)
 │   ├── risk-regime.json       # RISK_ON / BASELINE / RISK_OFF + guardrails
 │   ├── scanner-config.json    # ORCA + KOMODO thresholds (gates are in code)
+│   ├── condor-config.json     # CONDOR assets, correlation map, DSL tiers
+│   ├── barracuda-config.json  # BARRACUDA funding thresholds, persistence
+│   ├── bison-config.json      # BISON trend/momentum params, DSL tiers
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
 ├── state/                     # Runtime state (VPS writes, Oz reads)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
@@ -178,13 +221,16 @@ senpi-waifu/
 │   ├── vps/                   # Cron job scripts (run by worker.py)
 │   │   ├── orca-scanner-cron.py     # 🐋 ORCA dual-mode scanner
 │   │   ├── komodo-scanner-cron.py   # 🦎 KOMODO momentum events
+│   │   ├── condor-scanner-cron.py   # 🦅 CONDOR multi-asset hunter
+│   │   ├── barracuda-scanner-cron.py # 🎣 BARRACUDA funding decay
+│   │   ├── bison-scanner-cron.py    # 🦬 BISON conviction trend
+│   │   ├── dsl-runner.py            # 🔒 DSL High Water runner
+│   │   ├── sm-flip-cron.py          # 🔄 SM flip detector
+│   │   ├── watchdog-cron.py         # 👁 Watchdog (margin/liq)
+│   │   ├── health-check-cron.py     # 🏥 Health check + git sync
 │   │   ├── risk-arbiter.py          # 🚨 Mechanical safety
 │   │   ├── arena-monitor.py         # 📊 Arena performance tracker
 │   │   ├── reconcile-closes.py      # Trade journal close reconciler
-│   │   ├── dsl-combined-cron.sh     # 🔒 DSL High Water runner
-│   │   ├── sm-flip-cron.sh          # 🔄 SM flip detector
-│   │   ├── watchdog-cron.sh         # 👁 Watchdog
-│   │   ├── health-check-cron.sh     # 🏥 Health check + git sync
 │   │   └── provision-vps.sh         # One-shot VPS setup (alt deploy)
 │   └── oz/
 │       ├── setup-oz-agents.sh       # Creates Oz environment + schedules
@@ -301,9 +347,12 @@ Build plan includes 1,500 credits/month. Additional credits are available via Re
 ## Key Design Decisions
 
 - **Hybrid architecture.** VPS handles mechanical execution (sub-2s entry) at zero LLM cost. Cloud agents handle strategic decisions at 15min+ intervals. 1/50th the credit cost of pure-cloud.
-- **ORCA dual-mode.** STALKER catches accumulation before explosions. STRIKER catches the explosion itself. Both modes were missed by single-mode scanners.
-- **KOMODO momentum events.** Real-time threshold crossings, not stale position data. Fixes the fundamental data source bug that killed Scorpion (-24.2%).
+- **Five-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends). Different edge types, different timeframes, one shared DSL exit engine.
+- **CONDOR correlation confirmation.** Cross-validates signals against paired assets (e.g. ETH↔BTC) to filter false breakouts on correlated pairs.
+- **BARRACUDA counter-trend.** Fades extreme funding rates only after 6+ hours of persistence with SM alignment — avoids the classic "knife catch" failure mode.
+- **BISON wide trailing.** Wider DSL tiers and longer conviction timeouts (up to 120 min) optimized for multi-hour trend rides.
 - **DSL High Water Mode.** No ceiling on trailing stops. The geometry that lets positions hold +200% winners.
+- **Native Python everywhere.** All VPS scripts rewritten from shell to Python using senpi_common.py. No dependency on senpi-skills or OpenClaw at runtime.
 - **Fee optimisation.** STALKER and KOMODO use ALO (maker) orders for ~60-80% fee reduction. Fee drag is the #1 killer across all 22 agents.
 - **Risk Arbiter is not an LLM.** Mechanical safety should never depend on a language model or cloud credits.
 - **Git as state bus.** Simple, auditable, works offline. Both layers read/write independently.
