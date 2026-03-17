@@ -686,6 +686,20 @@ async def cmd_barracuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_bison(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🦬 *Running BISON scanner...*\n"
+        "_Conviction Top 10 Trend Holder (4H/1H aligned)_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/bison-scanner-cron.py")])
+    if output == "(no output)":
+        await update.message.reply_text("🦬 BISON scan complete — no conviction trends found.")
+    else:
+        await update.message.reply_text(f"🦬 *BISON scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
 async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🚨 *Running Risk Arbiter...*\n"
@@ -927,6 +941,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("komodo", cmd_komodo))
     app.add_handler(CommandHandler("condor", cmd_condor))
     app.add_handler(CommandHandler("barracuda", cmd_barracuda))
+    app.add_handler(CommandHandler("bison", cmd_bison))
     app.add_handler(CommandHandler("arbiter", cmd_arbiter))
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("arena", cmd_arena))

@@ -1,0 +1,53 @@
+{
+  "topAssets": 10,
+  "maxPositions": 3,
+  "leverage": {
+    "default": 10,
+    "min": 7,
+    "max": 10
+  },
+  "entry": {
+    "minMom1hPct": 0.5,
+    "minVolTrendPct": 10,
+    "minScore": 8,
+    "marginPctBase": 0.25,
+    "rsiMaxLong": 72,
+    "rsiMinShort": 28,
+    "smHardBlock": true,
+    "fundingExtremeThreshold": 0.015
+  },
+  "dsl": {
+    "lockMode": "pct_of_high_water",
+    "phase2TriggerRoe": 10,
+    "tiers": [
+      {"triggerPct": 10, "lockHwPct": 0, "consecutiveBreachesRequired": 3},
+      {"triggerPct": 20, "lockHwPct": 25, "consecutiveBreachesRequired": 3},
+      {"triggerPct": 30, "lockHwPct": 40, "consecutiveBreachesRequired": 2},
+      {"triggerPct": 50, "lockHwPct": 60, "consecutiveBreachesRequired": 2},
+      {"triggerPct": 75, "lockHwPct": 75, "consecutiveBreachesRequired": 1},
+      {"triggerPct": 100, "lockHwPct": 85, "consecutiveBreachesRequired": 1}
+    ],
+    "convictionTiers": [
+      {"minScore": 6, "absoluteFloorRoe": -25, "hardTimeoutMin": 60, "weakPeakCutMin": 30, "deadWeightCutMin": 30},
+      {"minScore": 8, "absoluteFloorRoe": -30, "hardTimeoutMin": 90, "weakPeakCutMin": 45, "deadWeightCutMin": 45},
+      {"minScore": 10, "absoluteFloorRoe": -35, "hardTimeoutMin": 120, "weakPeakCutMin": 60, "deadWeightCutMin": 60}
+    ],
+    "stagnationTp": {
+      "enabled": true,
+      "roeMin": 15,
+      "hwStaleMin": 120
+    }
+  },
+  "risk": {
+    "maxEntriesPerDay": 6,
+    "maxDailyLossPct": 10,
+    "maxDrawdownPct": 25,
+    "maxSingleLossPct": 8,
+    "cooldownMinutes": 120
+  },
+  "execution": {
+    "entryOrderType": "FEE_OPTIMIZED_LIMIT",
+    "entryEnsureTaker": true,
+    "exitOrderType": "MARKET"
+  }
+}

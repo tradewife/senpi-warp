@@ -145,6 +145,10 @@ def job_barracuda():
     run_script_sync("scripts/vps/barracuda-scanner-cron.py")
 
 
+def job_bison():
+    run_script_sync("scripts/vps/bison-scanner-cron.py")
+
+
 def job_watchdog():
     run_py("scripts/vps/watchdog-cron.py")
 
@@ -209,6 +213,9 @@ def main():
     # BARRACUDA Funding Decay Collector — every 15min
     scheduler.add_job(job_barracuda, "interval", minutes=15, id="barracuda", seconds=120)
 
+    # BISON Conviction Trend Holder — every 30min
+    scheduler.add_job(job_bison, "interval", minutes=30, id="bison", seconds=180)
+
     # SM Flip Detector — every 5min
     scheduler.add_job(job_smflip, "interval", minutes=5, id="smflip")
 
@@ -234,6 +241,7 @@ def main():
     print("  🦎 KOMODO Scanner:  every 5min")
     print("  🦅 CONDOR Scanner:  every 3min")
     print("  🎣 BARRACUDA Scan:  every 15min")
+    print("  🦬 BISON Scanner:   every 30min")
     print("  🔒 DSL HW Runner:   every 3min")
     print("  🔄 SM Flip:         every 5min")
     print("  👁  Watchdog:        every 5min")
