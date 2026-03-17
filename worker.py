@@ -137,6 +137,10 @@ def job_smflip():
     run_py("scripts/vps/sm-flip-cron.py")
 
 
+def job_condor():
+    run_script_sync("scripts/vps/condor-scanner-cron.py")
+
+
 def job_watchdog():
     run_py("scripts/vps/watchdog-cron.py")
 

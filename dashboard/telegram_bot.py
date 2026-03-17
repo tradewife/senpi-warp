@@ -658,6 +658,20 @@ async def cmd_komodo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_condor(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🦅 *Running CONDOR scanner...*\n"
+        "_Multi-asset hunter (BTC, ETH, SOL, HYPE): HUNTING / RIDING / STALKING_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/condor-scanner-cron.py")])
+    if output == "(no output)":
+        await update.message.reply_text("🦅 CONDOR scan complete — no action taken.")
+    else:
+        await update.message.reply_text(f"🦅 *CONDOR scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
 async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🚨 *Running Risk Arbiter...*\n"
@@ -897,6 +911,7 @@ def create_bot_application() -> Optional[Application]:
     # Manual triggers
     app.add_handler(CommandHandler("scan", cmd_scan))
     app.add_handler(CommandHandler("komodo", cmd_komodo))
+    app.add_handler(CommandHandler("condor", cmd_condor))
     app.add_handler(CommandHandler("arbiter", cmd_arbiter))
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("arena", cmd_arena))

@@ -1,0 +1,39 @@
+{
+  "assets": ["BTC", "ETH", "SOL", "HYPE"],
+  "correlationMap": {
+    "BTC": "ETH",
+    "ETH": "BTC",
+    "SOL": "BTC",
+    "HYPE": "BTC"
+  },
+  "bonusOnlyCorrelation": ["HYPE"],
+  "leverage": {"default": 10, "min": 7, "max": 10},
+  "entry": {
+    "minScore": 10,
+    "minMom15mPct": 0.1,
+    "fundingExtremeThreshold": 0.012,
+    "stalking": {
+      "maxStalkHours": 4,
+      "minReloadVolPct": 50
+    }
+  },
+  "dsl": {
+    "lockMode": "pct_of_high_water",
+    "phase2TriggerRoe": 7,
+    "tiers": [
+      {"triggerPct": 7,  "lockHwPct": 40, "consecutiveBreachesRequired": 3},
+      {"triggerPct": 12, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+      {"triggerPct": 15, "lockHwPct": 75, "consecutiveBreachesRequired": 2},
+      {"triggerPct": 20, "lockHwPct": 85, "consecutiveBreachesRequired": 1}
+    ],
+    "stagnationTp": {"enabled": true, "roeMin": 10, "hwStaleMin": 45},
+    "convictionTiers": [
+      { "minScore": 14, "hardTimeoutMin": 60, "weakPeakCutMin": 30, "deadWeightCutMin": 20, "absoluteFloorRoe": -35 },
+      { "minScore": 12, "hardTimeoutMin": 45, "weakPeakCutMin": 20, "deadWeightCutMin": 15, "absoluteFloorRoe": -30 },
+      { "minScore": 10, "hardTimeoutMin": 30, "weakPeakCutMin": 15, "deadWeightCutMin": 10, "absoluteFloorRoe": -25 }
+    ]
+  },
+  "execution": {
+    "entryOrderType": "FEE_OPTIMIZED_LIMIT"
+  }
+}
