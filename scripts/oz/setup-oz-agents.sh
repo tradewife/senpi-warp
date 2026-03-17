@@ -6,6 +6,12 @@ set -euo pipefail
 # Creates the Oz environment, secrets, and scheduled agent tasks.
 # Now includes Arena Strategy Learner for data-driven self-improvement.
 #
+# PREREQUISITES:
+#   - Warp Build plan or higher ($18/mo) is required for scheduled agents.
+#     The Free plan only supports on-demand agents, not cron-scheduled ones.
+#     Upgrade at: https://www.warp.dev/pricing
+#   - Run `oz-preview login` (or set WARP_API_KEY) before running this script.
+#
 # Usage:
 #   export SENPI_API_KEY="..."
 #   export GITHUB_TOKEN="..."   # GitHub fine-grained token (Contents read/write)
@@ -88,6 +94,50 @@ fi
 # Prompts are written to temp files using quoted heredocs (<< 'PROMPT') so that
 # backticks, double quotes, and other special characters are never interpreted by bash.
 echo "[3/4] Creating scheduled cloud agents..."
+
+# Plan check: scheduled agents are only available on Warp Build plan or higher.
+# Test by creating a minimal probe schedule (never triggers — Feb 31 doesn't exist).
+echo "  Checking if scheduled ambient agents are available on this account..."
+PLAN_OK=false
+if oz-preview schedule create --cron "0 12 31 2 *" --no-environment \
+    --name "__senpi-plan-probe__" --personal \
+    --prompt "probe" 2>/tmp/oz_plan_check.err; then
+    # Probe succeeded — plan supports scheduled agents. Clean up immediately.
+    PLAN_OK=true
+    PROBE_ID=$(oz-preview schedule list --output-format json 2>/dev/null | \
+        python3 -c "import json,sys; d=json.load(sys.stdin); ids=[s['id'] for s in d.get('schedules',[]) if s.get('name')=='__senpi-plan-probe__']; print(ids[0] if ids else '')" 2>/dev/null || true)
+    [ -n "${PROBE_ID:-}" ] && oz-preview schedule delete "$PROBE_ID" 2>/dev/null || true
+    echo "  Plan check passed — scheduled agents are available."
+else
+    # Probe failed — likely a plan restriction (FEATURE_NOT_AVAILABLE).
+    PLAN_OK=false
+fi
+
+if [ "$PLAN_OK" = false ]; then
+    echo ""
+    echo "  ┌─────────────────────────────────────────────────────────────────┐"
+    echo "  │  PLAN UPGRADE REQUIRED                                          │"
+    echo "  │                                                                 │"
+    echo "  │  Scheduled ambient agents require Warp Build plan or higher.   │"
+    echo "  │  Free plan only supports on-demand (non-scheduled) agents.      │"
+    echo "  │                                                                 │"
+    echo "  │  Upgrade at: https://www.warp.dev/pricing  ($18/mo Build plan)  │"
+    echo "  │                                                                 │"
+    echo "  │  WORKAROUND: Until upgraded, all scheduling is handled by the  │"
+    echo "  │  Railway worker (worker.py / APScheduler). The Oz agents can   │"
+    echo "  │  still be triggered manually via /oz command in Telegram or    │"
+    echo "  │  via: oz-preview agent run-cloud --environment <ENV_ID>        │"
+    echo "  └─────────────────────────────────────────────────────────────────┘"
+    echo ""
+    echo "  Skipping schedule creation. Continuing with environment setup only."
+    echo ""
+    # Skip to summary
+    SKIP_SCHEDULES=true
+else
+    SKIP_SCHEDULES=false
+fi
+
+if [ "${SKIP_SCHEDULES:-false}" = false ]; then
 
 # Agent A: Trade Evaluator — every 15 minutes (ORCA + KOMODO aware)
 echo "  Creating: Trade Evaluator (*/15 * * * *)"
@@ -253,6 +303,8 @@ oz-preview schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
     --prompt "$(cat /tmp/oz_arena_learner.txt)" \
     || echo "  WARNING: failed to create Arena Learner schedule (see error above)"
 
+fi  # end SKIP_SCHEDULES check
+
 # --- 4. Summary ---
 echo ""
 echo "[4/4] Listing schedules..."
@@ -263,14 +315,22 @@ echo "=== Oz Setup Complete (ORCA Hybrid) ==="
 echo ""
 echo "Environment ID: $ENV_ID"
 echo ""
-echo "Scheduled agents:"
-echo "  - Trade Evaluator:       every 15 min  (ORCA + KOMODO signal validation)"
-echo "  - Regime Classifier:     every hour    (BTC/ETH macro regime)"
-echo "  - Portfolio Review:      every 6 hours (risk rails + reporting)"
-echo "  - HOWL:                  nightly       (self-improvement + arena comparison)"
-echo "  - Whale Index:           daily         (copy-trade rebalance)"
-echo "  - Arena Strategy Learner: every 4 hours (study winning predators)"
-echo ""
-echo "Monitor runs:  oz-preview run list"
-echo "Check a run:   oz-preview run get <run-id>"
-echo "Manual run:    oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
+if [ "${SKIP_SCHEDULES:-false}" = true ]; then
+    echo "Scheduled agents: NOT CREATED (Warp plan upgrade required)"
+    echo "  Upgrade at: https://www.warp.dev/pricing"
+    echo ""
+    echo "On-demand agent run (works on all plans):"
+    echo "  oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
+else
+    echo "Scheduled agents:"
+    echo "  - Trade Evaluator:       every 15 min  (ORCA + KOMODO signal validation)"
+    echo "  - Regime Classifier:     every hour    (BTC/ETH macro regime)"
+    echo "  - Portfolio Review:      every 6 hours (risk rails + reporting)"
+    echo "  - HOWL:                  nightly       (self-improvement + arena comparison)"
+    echo "  - Whale Index:           daily         (copy-trade rebalance)"
+    echo "  - Arena Strategy Learner: every 4 hours (study winning predators)"
+    echo ""
+    echo "Monitor runs:  oz-preview run list"
+    echo "Check a run:   oz-preview run get <run-id>"
+    echo "Manual run:    oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
+fi
