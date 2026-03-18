@@ -225,21 +225,15 @@ echo "  Creating: HOWL Nightly (55 23 * * *)"
 cat > /tmp/oz_howl.txt << 'PROMPT'
 Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
 
-You are HOWL — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
+You are HOWL v2 — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
 
 1. git pull in senpi-waifu repo.
-2. Read senpi-skills/wolf-howl/SKILL.md for the complete analysis procedure.
-3. Gather: memory/trade-journal.json (last 24h), all DSL state files, state/orca-scan-history.json, state/komodo-events.json, config/*.json.
-4. Compute ALL metrics: win rate, profit factor, fee drag ratio, holding period buckets, LONG vs SHORT, scanner source comparison (ORCA STALKER vs STRIKER vs KOMODO).
-5. Read outputs/arena-state.json — compare our performance against the top Senpi Predators. What are they doing differently?
-6. Identify patterns: STALKER entries vs STRIKER entries — which mode is winning? Should we adjust mode weights?
-7. Auto-apply ONLY risk-reducing changes (tighten thresholds, reduce leverage). Risk increases require manual approval.
-8. Save report to memory/howl-YYYY-MM-DD.md.
-9. Append distilled summary to memory/MEMORY.md.
-10. Send Telegram summary.
-11. Commit and push.
+2. Read senpi-waifu/memory/howl-analysis-prompt.md — this is your COMPLETE analysis procedure with all 10 pillars. Follow it exactly.
+3. The prompt file contains: data sources to gather, all analysis pillars (core metrics, scanner breakdown, monster trade dependency, FDR, rotation costs, holding period buckets, direction regime, DSL distribution, arena benchmarking, drift detection), output format, and auto-apply rules.
+4. Execute every pillar. Do not skip any.
+5. Save report, update MEMORY.md, send Telegram, commit and push — all per the prompt file.
 
-Key data points to always report: trade count by scanner (ORCA/KOMODO), mode breakdown (STALKER/STRIKER), win rate by mode, avg holding time by mode, fee drag as % of PnL.
+The analysis prompt is version-controlled in the repo so updates take effect without recreating this schedule.
 PROMPT
 oz-preview schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
     --name "senpi-howl" --team \

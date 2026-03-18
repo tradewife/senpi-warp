@@ -31,7 +31,7 @@ from senpi_common import (
     load_regime, current_regime_params, is_entries_allowed, is_auto_entry_enabled,
     get_enabled_strategies, count_open_slots, get_strategy_state_dir,
     add_pending_entry, record_trade, send_telegram,
-    mcporter_call,
+    mcporter_call, record_heartbeat,
 )
 
 # ---------------------------------------------------------------------------
@@ -593,6 +593,7 @@ def main():
         return
 
     try:
+        record_heartbeat("orca")
         git_pull()
 
         raw = fetch_markets()

@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso,
     load_json, save_json, OUTPUTS_DIR,
+    record_heartbeat,
 )
 
 ARENA_STATE_FILE = OUTPUTS_DIR / "arena-state.json"
@@ -154,6 +155,7 @@ def main():
         return
 
     try:
+        record_heartbeat("arena")
         # 1. Fetch full leaderboard
         leaderboard = fetch_leaderboard()
         if not leaderboard:

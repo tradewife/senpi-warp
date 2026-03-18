@@ -77,6 +77,16 @@ COMMANDS = [
      "Manually trigger the ORCA dual-mode scanner (STALKER accumulation + STRIKER explosion detection). Normally runs every 60s."),
     ("komodo",   "Run KOMODO scanner now",
      "Manually trigger the KOMODO momentum event consensus scanner. Normally runs every 5 minutes."),
+    ("condor",   "Run CONDOR scanner now",
+     "Manually trigger the CONDOR multi-asset alpha hunter. Normally runs every 3 minutes."),
+    ("barracuda", "Run BARRACUDA scanner now",
+     "Manually trigger the BARRACUDA funding decay collector. Normally runs every 15 minutes."),
+    ("bison",    "Run BISON scanner now",
+     "Manually trigger the BISON conviction trend holder. Normally runs every 30 minutes."),
+    ("shark",    "Run SHARK scanner now",
+     "Manually trigger the SHARK liquidation cascade front-runner. Normally runs every 2 minutes."),
+    ("sentinel", "Run SENTINEL scanner now",
+     "Manually trigger the SENTINEL quality trader convergence scanner. Normally runs every 3 minutes."),
     ("arbiter",  "Run Risk Arbiter now",
      "Check daily loss limits, catastrophic drawdown, and consecutive stop-outs. Normally runs every 30s."),
     ("health",   "Run health check + git sync",
@@ -211,6 +221,10 @@ Runs every 30-60 seconds. No LLM, no cloud credits.
   ↳ STRIKER: catches violent first-jump breakouts
 • 🦎 *KOMODO Scanner* — momentum event consensus
   ↳ 2+ elite traders crossing PnL thresholds on same asset
+• 🦈 *SHARK Scanner* — liquidation cascade front-runner
+  ↳ OI buildup, liquidation zone pressure, cascade trigger confirmation
+• 🛡 *SENTINEL Scanner* — quality trader convergence
+  ↳ rising SM contribution confirmed by quality trader momentum events
 • 🔒 *DSL High Water* — 7-tier infinite trailing stop (up to 90% of peak)
 • 🚨 *Risk Arbiter* — hard safety limits, no LLM dependency
 
@@ -256,6 +270,9 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "risk_on": "🎛 Control", "risk_off": "🎛 Control",
         "baseline": "🎛 Control", "flatten": "🎛 Control",
         "scan": "▶️ Manual Triggers", "komodo": "▶️ Manual Triggers",
+        "condor": "▶️ Manual Triggers", "barracuda": "▶️ Manual Triggers",
+        "bison": "▶️ Manual Triggers", "shark": "▶️ Manual Triggers",
+        "sentinel": "▶️ Manual Triggers",
         "arbiter": "▶️ Manual Triggers", "health": "▶️ Manual Triggers",
         "arena": "▶️ Manual Triggers",
         "howl": "📜 Reports", "journal": "📜 Reports",
@@ -361,7 +378,7 @@ async def cmd_trades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not recent:
         await update.message.reply_text(
             "No trades recorded yet.\n\n"
-            "_Trades are recorded when ORCA or KOMODO opens a position, "
+            "_Trades are recorded when scanners open a position, "
             "and when DSL, Risk Arbiter, or Oz closes one._"
         )
         return
@@ -462,7 +479,7 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not pending:
         await update.message.reply_text(
             "No pending signals.\n\n"
-            "_ORCA scans every 60s, KOMODO every 5 min. "
+            "_Mechanical scanners run continuously across ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, and SENTINEL. "
             "Signals appear here when detected and are cleared by the Oz Trade Evaluator (every 15 min)._"
         )
         return
@@ -484,7 +501,7 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     lines.append(
-        f"\n_Auto-entry: STRIKER ≥9, STALKER ≥6, KOMODO ≥10._\n"
+        f"\n_Auto-entry thresholds vary by scanner; see the active config for each strategy._\n"
         f"_Signals below threshold queue for Oz Trade Evaluator review._"
     )
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
@@ -700,6 +717,34 @@ async def cmd_bison(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_shark(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🦈 *Running SHARK scanner...*\n"
+        "_Liquidation cascade front-runner: OI tracker -> liq mapper -> proximity -> strike_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/shark-scanner-cron.py")], timeout=90)
+    if output == "(no output)":
+        await update.message.reply_text("🦈 SHARK scan complete — no cascade setups firing.")
+    else:
+        await update.message.reply_text(f"🦈 *SHARK scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
+async def cmd_sentinel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🛡 *Running SENTINEL scanner...*\n"
+        "_Quality trader convergence: rising SM -> momentum-event quality check -> top-trader bonus_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/sentinel-scanner-cron.py")], timeout=90)
+    if output == "(no output)":
+        await update.message.reply_text("🛡 SENTINEL scan complete — no qualified convergence setups.")
+    else:
+        await update.message.reply_text(f"🛡 *SENTINEL scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
 async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🚨 *Running Risk Arbiter...*\n"
@@ -769,7 +814,7 @@ async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not journal:
         await update.message.reply_text(
             "📒 No trades recorded yet.\n\n"
-            "_The trade journal is populated automatically when ORCA or KOMODO opens positions, "
+            "_The trade journal is populated automatically when scanners open positions, "
             "and when the health check reconciles DSL closes every 10 minutes._"
         )
         return
@@ -942,6 +987,8 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("condor", cmd_condor))
     app.add_handler(CommandHandler("barracuda", cmd_barracuda))
     app.add_handler(CommandHandler("bison", cmd_bison))
+    app.add_handler(CommandHandler("shark", cmd_shark))
+    app.add_handler(CommandHandler("sentinel", cmd_sentinel))
     app.add_handler(CommandHandler("arbiter", cmd_arbiter))
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("arena", cmd_arena))

@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -136,10 +136,31 @@ def get_open_positions(strategy_key: str) -> list[dict]:
 
 
 def count_open_slots(strategy: dict) -> int:
-    """How many slots are free in this strategy. Respects gate state."""
+    """How many slots are free in this strategy. Respects gate state and dynamic unlocking."""
     if strategy.get("gateState", "OPEN") != "OPEN":
         return 0
     max_slots = strategy.get("maxSlots", 2)
+
+    # Dynamic slot unlocking (senpi-skills v6.3 pattern)
+    dynamic = strategy.get("dynamicSlots", {})
+    if dynamic.get("enabled", False):
+        absolute_max = dynamic.get("absoluteMax", max_slots)
+        # Compute today's realized PnL from trade journal
+        journal = load_trade_journal()
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        daily_pnl = sum(
+            float(t.get("realizedPnl", 0))
+            for t in journal
+            if t.get("action") == "CLOSE"
+            and t.get("strategyKey") == strategy["_key"]
+            and t.get("recordedAt", "").startswith(today)
+        )
+        for threshold in sorted(dynamic.get("unlockThresholds", []),
+                                key=lambda x: x.get("pnl", 0), reverse=True):
+            if daily_pnl >= threshold.get("pnl", 0):
+                max_slots = min(threshold.get("maxEntries", max_slots), absolute_max)
+                break
+
     open_count = len(get_open_positions(strategy["_key"]))
     return max(0, max_slots - open_count)
 
@@ -180,6 +201,30 @@ def record_trade(trade: dict):
     save_json(TRADE_JOURNAL_FILE, journal)
 
 
+def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
+    """Check if an asset was closed too recently (rotation cooldown).
+    
+    Per senpi-skills v6.3: prevents re-entry within 45 min of closing
+    a position on the same asset, avoiding churn from close+reopen cycles.
+    Returns True if the asset is still in cooldown (should NOT enter).
+    """
+    journal = load_trade_journal()
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=cooldown_minutes)
+    for trade in reversed(journal):
+        recorded = trade.get("recordedAt", "")
+        if not recorded:
+            continue
+        try:
+            trade_time = datetime.fromisoformat(recorded.replace("Z", "+00:00"))
+            if trade_time < cutoff:
+                break  # No more recent trades to check
+            if trade.get("action") == "CLOSE" and trade.get("asset") == asset:
+                return True
+        except (ValueError, TypeError):
+            continue
+    return False
+
+
 # ---------------------------------------------------------------------------
 # mcporter execution
 # ---------------------------------------------------------------------------
@@ -207,6 +252,27 @@ def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     except json.JSONDecodeError:
         log(f"mcporter bad JSON ({tool}): {result.stdout[:200]}")
         return {"error": "bad_json", "raw": result.stdout[:500]}
+
+
+def mcporter_call_retry(tool: str, args: dict, *, timeout: int = 30, max_attempts: int = 4, delay: float = 1.0) -> dict:
+    """mcporter_call with retry logic (senpi-skills v5.3.1 pattern).
+
+    Retries up to max_attempts times with delay between attempts.
+    Only retries on transient errors (timeout, bad_json), not on valid error responses.
+    """
+    last_result = {}
+    for attempt in range(max_attempts):
+        result = mcporter_call(tool, args, timeout=timeout)
+        if "error" not in result:
+            return result
+        err = result.get("error", "")
+        # Don't retry on non-transient errors (valid API error responses)
+        if err not in ("timeout", "bad_json") and not err.startswith("mcporter"):
+            return result
+        last_result = result
+        if attempt < max_attempts - 1:
+            time.sleep(delay)
+    return last_result
 
 
 # ---------------------------------------------------------------------------
@@ -272,6 +338,61 @@ def git_pull():
         )
     except subprocess.TimeoutExpired:
         log("git pull timeout")
+
+
+# ---------------------------------------------------------------------------
+# Cron heartbeat monitoring
+# ---------------------------------------------------------------------------
+
+HEARTBEAT_FILE = OUTPUTS_DIR / "cron-heartbeats.json"
+
+
+def record_heartbeat(cron_name: str):
+    """Record that a cron job has just run. Called at start of each scanner."""
+    heartbeats = load_json(HEARTBEAT_FILE, default={})
+    heartbeats[cron_name] = now_iso()
+    save_json(HEARTBEAT_FILE, heartbeats)
+
+
+def check_stale_heartbeats(max_stale_minutes: dict[str, int] | None = None) -> list[str]:
+    """Return list of cron names that haven't run within their expected window.
+    
+    max_stale_minutes maps cron name → max minutes before considered stale.
+    Defaults to 2x the expected interval for safety margin.
+    """
+    defaults = {
+        "orca": 3,       # runs every 60s, stale after 3 min
+        "komodo": 12,    # runs every 5min, stale after 12 min
+        "condor": 8,     # runs every 3min, stale after 8 min
+        "barracuda": 35, # runs every 15min, stale after 35 min
+        "bison": 65,     # runs every 30min, stale after 65 min
+        "shark": 5,      # runs every 2min, stale after 5 min
+        "sentinel": 8,   # runs every 3min, stale after 8 min
+        "dsl-runner": 8, # runs every 3min, stale after 8 min
+        "sm-flip": 12,   # runs every 5min, stale after 12 min
+        "watchdog": 12,  # runs every 5min, stale after 12 min
+        "risk-arbiter": 3, # runs every 30s, stale after 3 min
+        "arena": 35,     # runs every 15min, stale after 35 min
+    }
+    if max_stale_minutes:
+        defaults.update(max_stale_minutes)
+
+    heartbeats = load_json(HEARTBEAT_FILE, default={})
+    now = datetime.now(timezone.utc)
+    stale = []
+
+    for cron_name, max_min in defaults.items():
+        last_run = heartbeats.get(cron_name)
+        if not last_run:
+            continue  # Never ran — don't alert on first boot
+        try:
+            last_time = datetime.fromisoformat(last_run.replace("Z", "+00:00"))
+            if (now - last_time).total_seconds() > max_min * 60:
+                stale.append(cron_name)
+        except (ValueError, TypeError):
+            continue
+
+    return stale
 
 
 # ---------------------------------------------------------------------------

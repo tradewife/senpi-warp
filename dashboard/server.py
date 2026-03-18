@@ -257,11 +257,41 @@ HELP_TEXT = """**Commands:**
 `/risk-on` — Set RISK_ON
 `/baseline` — Set BASELINE
 `/flatten` — Emergency close all (via Oz)
+`/scan` — Run ORCA scanner now
+`/komodo` — Run KOMODO scanner now
+`/condor` — Run CONDOR scanner now
+`/barracuda` — Run BARRACUDA scanner now
+`/bison` — Run BISON scanner now
+`/shark` — Run SHARK scanner now
+`/sentinel` — Run SENTINEL scanner now
+`/arbiter` — Run Risk Arbiter now
+`/health` — Run health check now
+`/arena` — Run arena monitor now
 `/pending` — Show queued signals
 `/howl` — Last HOWL report summary
 `/help` — This message
 
 Anything else is sent to Oz as a free-text prompt."""
+
+
+async def _run_local_script(script: str, *, timeout: int = 60) -> str:
+    """Run a local scanner/maintenance script and return its output."""
+    env = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
+    proc = await asyncio.create_subprocess_exec(
+        "python3", str(STATE_DIR / script),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env,
+    )
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.communicate()
+        return "⏱ Script timed out"
+
+    output = stderr.decode().strip() or stdout.decode().strip()
+    return output[-2000:] if output else "(no output)"
 
 
 async def handle_chat_message(message: str) -> str:
@@ -303,16 +333,52 @@ async def handle_chat_message(message: str) -> str:
     if cmd == "/flatten":
         return await _cmd_flatten()
 
+    if cmd == "/scan":
+        return await _cmd_run_script("ORCA", "scripts/vps/orca-scanner-cron.py")
+
+    if cmd == "/komodo":
+        return await _cmd_run_script("KOMODO", "scripts/vps/komodo-scanner-cron.py")
+
+    if cmd == "/condor":
+        return await _cmd_run_script("CONDOR", "scripts/vps/condor-scanner-cron.py")
+
+    if cmd == "/barracuda":
+        return await _cmd_run_script("BARRACUDA", "scripts/vps/barracuda-scanner-cron.py")
+
+    if cmd == "/bison":
+        return await _cmd_run_script("BISON", "scripts/vps/bison-scanner-cron.py")
+
+    if cmd == "/shark":
+        return await _cmd_run_script("SHARK", "scripts/vps/shark-scanner-cron.py", timeout=90)
+
+    if cmd == "/sentinel":
+        return await _cmd_run_script("SENTINEL", "scripts/vps/sentinel-scanner-cron.py", timeout=90)
+
+    if cmd == "/arbiter":
+        return await _cmd_run_script("Risk Arbiter", "scripts/vps/risk-arbiter.py")
+
+    if cmd == "/health":
+        return await _cmd_run_script("Health Check", "scripts/vps/health-check-cron.py", timeout=90)
+
+    if cmd == "/arena":
+        return await _cmd_run_script("Arena Monitor", "scripts/vps/arena-monitor.py")
+
     if cmd == "/pending":
         pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
         if not pending:
             return "No pending signals."
         lines = [f"**{len(pending)} pending signals:**"]
         for p in pending[-10:]:
-            lines.append(f"• {p.get('signalType', '?')} {p.get('direction', '?')} "
-                        f"**{p.get('asset', '?')}** rank={p.get('rank', '?')} "
-                        f"reasons={p.get('reasons', [])} "
-                        f"{'✅ auto-entered' if p.get('autoEntered') else '⏳ queued'}")
+            mode = p.get("mode", p.get("signalType", p.get("entryMode", "?")))
+            scanner = p.get("scanner", p.get("source", "unknown"))
+            score = p.get("score", p.get("entryScore", "?"))
+            reasons = p.get("reasons", [])
+            reason_text = f" reasons={reasons}" if reasons else ""
+            status = "✅ auto-entered" if p.get("autoEntered") else "⏳ queued"
+            lines.append(
+                f"• [{scanner}/{mode}] {p.get('direction', '?')} **{p.get('asset', '?')}** "
+                f"score={score}{reason_text} {status}"
+            )
         return "\n".join(lines)
 
     if cmd == "/howl":
@@ -409,6 +475,13 @@ async def _cmd_flatten() -> str:
     # Also set RISK_OFF locally for immediate effect
     await _set_regime("RISK_OFF", "Emergency flatten from dashboard")
     return f"🚨 RISK_OFF set locally. Oz flatten dispatched.\n\n{result}"
+
+
+async def _cmd_run_script(name: str, script: str, *, timeout: int = 60) -> str:
+    output = await _run_local_script(script, timeout=timeout)
+    if output == "(no output)":
+        return f"✅ {name} complete."
+    return f"**{name}**\n```\n{output}\n```"
 
 
 async def _dispatch_to_oz(prompt: str) -> str:

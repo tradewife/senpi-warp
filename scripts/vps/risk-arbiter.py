@@ -21,9 +21,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso,
     load_regime, set_risk_mode, load_json, save_json,
-    load_strategies, get_open_positions, STRATEGIES_FILE,
+    load_strategies, get_open_positions, get_enabled_strategies, STRATEGIES_FILE,
     mcporter_call, send_telegram, git_sync,
     MEMORY_DIR, POSITION_STATE_DIR, OUTPUTS_DIR,
+    record_heartbeat,
 )
 
 ARBITER_STATE_FILE = OUTPUTS_DIR / "arbiter-state.json"
@@ -212,6 +213,7 @@ def main():
         return
 
     try:
+        record_heartbeat("risk-arbiter")
         regime = load_regime()
         guardrails = regime.get("globalGuardrails", {})
         arb_state = load_arbiter_state()
@@ -287,7 +289,44 @@ def main():
                     f"Cooling down. No new entries until manual reset or next regime check."
                 )
 
-        # --- CHECK 4: Per-strategy Guard Rails ---
+        # --- CHECK 4: Single trade loss guard ---
+        # Per senpi-skills v6.3: close any position losing > 5% of account value
+        if equity and equity > 0:
+            single_loss_pct = guardrails.get("singleTradeLossPct", 5)
+            strategies = get_enabled_strategies()
+            for strat in strategies:
+                positions = get_open_positions(strat["_key"])
+                for pos in positions:
+                    pos_pnl = float(pos.get("unrealizedPnl", 0))
+                    # Also estimate from ROE if unrealizedPnl not available
+                    if pos_pnl == 0:
+                        entry_price = pos.get("entryPrice", 0)
+                        size = pos.get("size", 0)
+                        direction = pos.get("direction", "LONG").upper()
+                        current_roe = pos.get("currentRoe")
+                        if current_roe is not None and entry_price > 0 and size > 0:
+                            margin = entry_price * size / max(1, pos.get("leverage", 1))
+                            pos_pnl = margin * float(current_roe) / 100
+                    if pos_pnl < 0 and abs(pos_pnl) > equity * single_loss_pct / 100:
+                        asset = pos.get("asset", "?")
+                        log(f"RISK ARBITER: Single trade loss ${abs(pos_pnl):.0f} > {single_loss_pct}% of equity — closing {asset}")
+                        mcporter_call("strategy_close_position", {
+                            "strategyId": strat.get("strategyId", pos.get("strategyId")),
+                            "asset": asset,
+                        }, timeout=15)
+                        if "_file" in pos:
+                            state = load_json(Path(pos["_file"]))
+                            state["active"] = False
+                            state["closedAt"] = now_iso()
+                            state["closeReason"] = "risk_arbiter_single_loss"
+                            save_json(Path(pos["_file"]), state)
+                        send_telegram(
+                            f"🛡 Single trade loss guard: Closed {asset}\n"
+                            f"Loss: ${abs(pos_pnl):.0f} ({abs(pos_pnl)/equity*100:.1f}% of equity)\n"
+                            f"Limit: {single_loss_pct}%"
+                        )
+
+        # --- CHECK 5: Per-strategy Guard Rails ---
         process_strategy_guard_rails()
 
         save_arbiter_state(arb_state)

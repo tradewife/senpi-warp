@@ -138,15 +138,23 @@ def job_smflip():
 
 
 def job_condor():
-    run_script_sync("scripts/vps/condor-scanner-cron.py")
+    run_py("scripts/vps/condor-scanner-cron.py")
 
 
 def job_barracuda():
-    run_script_sync("scripts/vps/barracuda-scanner-cron.py")
+    run_py("scripts/vps/barracuda-scanner-cron.py")
 
 
 def job_bison():
-    run_script_sync("scripts/vps/bison-scanner-cron.py")
+    run_py("scripts/vps/bison-scanner-cron.py")
+
+
+def job_shark():
+    run_py("scripts/vps/shark-scanner-cron.py")
+
+
+def job_sentinel():
+    run_py("scripts/vps/sentinel-scanner-cron.py")
 
 
 def job_watchdog():
@@ -216,6 +224,12 @@ def main():
     # BISON Conviction Trend Holder — every 30min
     scheduler.add_job(job_bison, "interval", minutes=30, id="bison", seconds=180)
 
+    # SHARK Liquidation Cascade — every 2min, offset 30s
+    scheduler.add_job(job_shark, "interval", minutes=2, id="shark", seconds=30)
+
+    # SENTINEL Quality Trader Convergence — every 3min, offset 90s
+    scheduler.add_job(job_sentinel, "interval", minutes=3, id="sentinel", seconds=90)
+
     # SM Flip Detector — every 5min
     scheduler.add_job(job_smflip, "interval", minutes=5, id="smflip")
 
@@ -242,6 +256,8 @@ def main():
     print("  🦅 CONDOR Scanner:  every 3min")
     print("  🎣 BARRACUDA Scan:  every 15min")
     print("  🦬 BISON Scanner:   every 30min")
+    print("  🦈 SHARK Scanner:   every 2min")
+    print("  🛡 SENTINEL Scan:   every 3min")
     print("  🔒 DSL HW Runner:   every 3min")
     print("  🔄 SM Flip:         every 5min")
     print("  👁  Watchdog:        every 5min")

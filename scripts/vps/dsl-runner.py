@@ -24,14 +24,15 @@ from senpi_common import (
     acquire_lock, release_lock, log, now_iso,
     load_json, save_json,
     get_enabled_strategies, get_strategy_state_dir, get_open_positions,
-    mcporter_call, send_telegram, record_trade, git_sync,
+    mcporter_call, mcporter_call_retry, send_telegram, record_trade, git_sync,
+    record_heartbeat,
 )
 
 
 def get_current_price(asset: str, dex: str = "") -> float | None:
     """Fetch current price for an asset via mcporter."""
     asset_name = f"{dex}:{asset}" if dex else asset
-    result = mcporter_call("market_get_asset_data", {"asset": asset_name}, timeout=15)
+    result = mcporter_call_retry("market_get_asset_data", {"asset": asset_name}, timeout=15)
     if "error" in result:
         return None
     data = result.get("data", result)
@@ -84,7 +85,7 @@ def sync_hl_stop_loss(dsl_state: dict, floor_price: float, phase: int):
     strategy_id = dsl_state.get("strategyId", "")
     sl_type = "MARKET" if phase == 1 else "LIMIT"
 
-    result = mcporter_call("edit_position", {
+    result = mcporter_call_retry("edit_position", {
         "strategyId": strategy_id,
         "asset": asset,
         "stopLossPrice": round(floor_price, 6),
@@ -107,7 +108,7 @@ def close_position(dsl_state: dict, reason: str, current_price: float, roe: floa
     log(f"DSL CLOSE: {asset} reason={reason} roe={roe:.1f}% price={current_price:.4f}")
 
     # Call mcporter to close
-    mcporter_call("strategy_close_position", {
+    mcporter_call_retry("strategy_close_position", {
         "strategyId": strategy_id,
         "asset": asset,
     }, timeout=15)
@@ -119,6 +120,16 @@ def close_position(dsl_state: dict, reason: str, current_price: float, roe: floa
     dsl_state["closePrice"] = current_price
     dsl_state["closeRoe"] = round(roe, 2)
     save_json(Path(dsl_state["_file"]), dsl_state)
+
+    # Archive state file (DSL v5.3.1 lifecycle)
+    original = Path(dsl_state["_file"])
+    archive_name = f"{original.stem}_archived_{reason}_{int(time.time())}.json"
+    archived_path = original.parent / archive_name
+    try:
+        original.rename(archived_path)
+        dsl_state["_file"] = str(archived_path)
+    except OSError as e:
+        log(f"DSL archive rename failed for {original}: {e}")
 
     # Record trade
     record_trade({
@@ -245,7 +256,12 @@ def process_dead_weight(dsl_state: dict, current_price: float, roe: float) -> bo
 
 
 def process_phase2(dsl_state: dict, current_price: float, roe: float) -> bool:
-    """Phase 2: Tiered high-water lock. Returns True if closed."""
+    """Phase 2: Tiered high-water lock with per-tick floor ratchet (DSL v5.3.1).
+    
+    The floor re-prices on every tick using the latest highWaterRoe, but is
+    strictly ratcheting — it never moves backwards (down for LONG, up for SHORT).
+    Returns True if closed.
+    """
     tiers = dsl_state.get("tiers", [])
     current_tier = dsl_state.get("currentTierIndex", -1)
     entry_price = dsl_state.get("entryPrice", 0)
@@ -266,13 +282,27 @@ def process_phase2(dsl_state: dict, current_price: float, roe: float) -> bool:
         dsl_state["currentBreachCount"] = 0
         log(f"DSL {dsl_state['asset']}: tier up → {new_tier} (hw_roe={hw_roe:.1f}%)")
 
-    # Check floor breach at current tier
+    # Per-tick floor ratchet (v5.3.1): recompute floor from current HW, but never loosen
     if new_tier >= 0 and new_tier < len(tiers):
         tier = tiers[new_tier]
         lock_pct = tier["lockHwPct"] / 100
         floor_roe = hw_roe * lock_pct
+        new_floor_price = compute_floor_price(entry_price, floor_roe, direction, leverage)
 
-        if roe < floor_roe:
+        # Ratchet: floor only tightens, never loosens
+        stored_floor = dsl_state.get("tierFloorPrice")
+        if stored_floor is not None:
+            if direction == "LONG":
+                new_floor_price = max(new_floor_price, float(stored_floor))
+            else:
+                new_floor_price = min(new_floor_price, float(stored_floor))
+        dsl_state["tierFloorPrice"] = round(new_floor_price, 6)
+
+        # Check floor breach at current tier
+        breached = (direction == "LONG" and current_price < new_floor_price) or \
+                   (direction == "SHORT" and current_price > new_floor_price)
+
+        if breached:
             breach_count = dsl_state.get("currentBreachCount", 0) + 1
             dsl_state["currentBreachCount"] = breach_count
             required = tier.get("consecutiveBreachesRequired", 1)
@@ -328,14 +358,19 @@ def process_position(dsl_state: dict):
 
     roe = compute_roe(entry_price, current_price, direction, leverage)
 
-    # Update high water
+    # Update high water (price + ROE per DSL v5.3.1)
     hw_price = dsl_state.get("highWaterPrice", entry_price)
+    hw_advanced = False
     if direction.upper() == "LONG" and current_price > hw_price:
         dsl_state["highWaterPrice"] = current_price
+        dsl_state["highWaterRoe"] = compute_roe(entry_price, current_price, direction, leverage)
         dsl_state["highWaterUpdatedAt"] = now_iso()
+        hw_advanced = True
     elif direction.upper() == "SHORT" and current_price < hw_price:
         dsl_state["highWaterPrice"] = current_price
+        dsl_state["highWaterRoe"] = compute_roe(entry_price, current_price, direction, leverage)
         dsl_state["highWaterUpdatedAt"] = now_iso()
+        hw_advanced = True
 
     phase = dsl_state.get("phase", 1)
     phase2_trigger = dsl_state.get("phase2TriggerRoe", 5)
@@ -362,16 +397,12 @@ def process_position(dsl_state: dict):
     else:
         if process_phase2(dsl_state, current_price, roe):
             return
-        # Compute Phase 2 floor price for HL SL sync
-        tiers = dsl_state.get("tiers", [])
-        tier_idx = dsl_state.get("currentTierIndex", -1)
-        if 0 <= tier_idx < len(tiers):
-            tier = tiers[tier_idx]
-            lock_pct = tier["lockHwPct"] / 100
-            hw_roe = compute_roe(entry_price, hw_price, direction, leverage)
-            floor_roe = hw_roe * lock_pct
-            floor_price = compute_floor_price(entry_price, floor_roe, direction, leverage)
-            sync_hl_stop_loss(dsl_state, floor_price, phase=2)
+        # Phase 2: sync HL SL using the ratcheted tierFloorPrice
+        tier_floor = dsl_state.get("tierFloorPrice")
+        if tier_floor is not None:
+            last_synced = dsl_state.get("lastSlPrice")
+            if last_synced is None or abs(float(tier_floor) - float(last_synced)) > 1e-6:
+                sync_hl_stop_loss(dsl_state, float(tier_floor), phase=2)
 
     # Stagnation TP (any phase)
     if process_stagnation_tp(dsl_state, current_price, roe):
@@ -386,6 +417,7 @@ def main():
         return
 
     try:
+        record_heartbeat("dsl-runner")
         strategies = get_enabled_strategies()
         if not strategies:
             return

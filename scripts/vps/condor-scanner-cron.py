@@ -14,7 +14,8 @@ from senpi_common import (
     acquire_lock, release_lock, log, now_iso, load_json, save_json,
     mcporter_call, send_telegram, current_regime_params,
     count_open_slots, get_enabled_strategies, get_strategy_state_dir,
-    POSITION_STATE_DIR, CONFIG_DIR, record_trade, add_pending_entry
+    POSITION_STATE_DIR, CONFIG_DIR, record_trade, add_pending_entry,
+    record_heartbeat,
 )
 
 
@@ -546,7 +547,9 @@ def scan():
 
 def main():
     if not acquire_lock("condor-scanner"): return
-    try: scan()
+    try:
+        record_heartbeat("condor")
+        scan()
     finally: release_lock("condor-scanner")
 
 if __name__ == "__main__":

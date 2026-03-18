@@ -1,0 +1,64 @@
+{
+  "maxSlots": 2,
+  "leverage": {"default": 8, "min": 7, "max": 10},
+  "marginPct": 0.18,
+  "oiTracker": {
+    "maxAssets": 60,
+    "maxSnapshotsPerAsset": 288,
+    "minSnapshotsForZone": 6
+  },
+  "liqMapper": {
+    "stalkingThreshold": 0.42,
+    "oiBuildupMinUsd": 5000000,
+    "proximityThreshold": 0.07,
+    "topCandidatesForDetail": 12
+  },
+  "proximity": {
+    "distanceGate": 0.05,
+    "strikeThreshold": 0.45,
+    "oiCrackPct": 0.01,
+    "volumeSurgeMult": 2.0
+  },
+  "entry": {
+    "minTriggers": 2,
+    "oiDropThreshold": 0.03,
+    "oiChaseThreshold": 0.10,
+    "priceChasePct": 0.05,
+    "volumeExplosionMult": 3.0,
+    "fundingSpikeMult": 2.0,
+    "oiIncreasingBlock": 0.005,
+    "smMinConcentration": 3.0,
+    "aloFillTimeoutSec": 45,
+    "slRoePct": 5.0
+  },
+  "risk": {
+    "oiInvalidationPct": 0.02,
+    "maxEntriesPerDay": 6,
+    "maxDailyLossPct": 12,
+    "maxDrawdownPct": 25,
+    "maxSingleLossPct": 5,
+    "consecutiveLossLimit": 3,
+    "consecutiveLossCooldownMin": 45,
+    "dslPromoteRoe": 8.0
+  },
+  "dsl": {
+    "lockMode": "pct_of_high_water",
+    "phase2TriggerRoe": 7,
+    "tiers": [
+      {"triggerPct": 7,  "lockHwPct": 35, "consecutiveBreachesRequired": 3},
+      {"triggerPct": 12, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+      {"triggerPct": 20, "lockHwPct": 75, "consecutiveBreachesRequired": 1},
+      {"triggerPct": 30, "lockHwPct": 85, "consecutiveBreachesRequired": 1}
+    ],
+    "convictionTiers": [
+      {"minScore": 4, "absoluteFloorRoe": -25, "hardTimeoutMin": 60, "weakPeakCutMin": 25, "deadWeightCutMin": 20},
+      {"minScore": 3, "absoluteFloorRoe": -20, "hardTimeoutMin": 45, "weakPeakCutMin": 20, "deadWeightCutMin": 15},
+      {"minScore": 2, "absoluteFloorRoe": -15, "hardTimeoutMin": 30, "weakPeakCutMin": 15, "deadWeightCutMin": 10}
+    ],
+    "stagnationTp": {"enabled": true, "roeMin": 10, "hwStaleMin": 45}
+  },
+  "execution": {
+    "entryOrderType": "FEE_OPTIMIZED_LIMIT",
+    "exitOrderType": "MARKET"
+  }
+}

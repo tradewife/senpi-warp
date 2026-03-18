@@ -6,7 +6,8 @@ Health Check — System health monitor. Runs every 10 minutes via APScheduler.
   2. Reconcile closed positions into trade journal
   3. Verify mcporter connectivity
   4. Validate config files
-  5. Git sync any state changes
+  5. Detect stale cron heartbeats
+  6. Git sync any state changes
 
 Native Python implementation using senpi_common.py.
 No dependency on senpi-skills or OpenClaw.
@@ -20,12 +21,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso,
     load_json, save_json, git_pull, git_sync,
-    mcporter_call, send_telegram,
+    mcporter_call, send_telegram, check_stale_heartbeats,
     CONFIG_DIR, STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
     OUTPUTS_DIR,
 )
 
 HEALTH_STATE_FILE = OUTPUTS_DIR / "health-state.json"
+SHARK_CONFIG_FILE = CONFIG_DIR / "shark-config.json"
+SENTINEL_CONFIG_FILE = CONFIG_DIR / "sentinel-config.json"
 
 
 def check_mcporter() -> bool:
@@ -40,7 +43,8 @@ def check_mcporter() -> bool:
 def check_config_files() -> list[str]:
     """Validate all config JSON files are parseable."""
     issues = []
-    for config_file in [STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE]:
+    for config_file in [STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
+                        SHARK_CONFIG_FILE, SENTINEL_CONFIG_FILE]:
         if not config_file.exists():
             issues.append(f"Missing: {config_file.name}")
             continue
@@ -99,12 +103,22 @@ def main():
                 + "\n".join(f"  • {i}" for i in health["configIssues"])
             )
 
+        # 5. Check cron heartbeats for stale jobs
+        stale_crons = check_stale_heartbeats()
+        health["staleCrons"] = stale_crons
+        if stale_crons:
+            send_telegram(
+                f"⚠️ HEALTH: Stale crons detected:\n"
+                + "\n".join(f"  • {c}" for c in stale_crons)
+            )
+            log(f"Health: stale crons: {stale_crons}")
+
         # Save health state
         save_json(HEALTH_STATE_FILE, health)
         log(f"Health: mcporter={'OK' if health['mcporterOk'] else 'FAIL'} "
             f"config_issues={len(health['configIssues'])}")
 
-        # 5. Git sync any state changes
+        # 6. Git sync any state changes
         git_sync("auto: health check")
 
     finally:

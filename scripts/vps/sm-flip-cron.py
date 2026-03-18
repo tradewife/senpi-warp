@@ -21,6 +21,7 @@ from senpi_common import (
     load_json, save_json,
     get_enabled_strategies, get_open_positions,
     mcporter_call, send_telegram, record_trade, git_sync,
+    record_heartbeat,
 )
 
 
@@ -105,6 +106,7 @@ def main():
         return
 
     try:
+        record_heartbeat("sm-flip")
         strategies = get_enabled_strategies()
         if not strategies:
             return
