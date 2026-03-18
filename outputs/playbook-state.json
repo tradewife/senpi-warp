@@ -1,0 +1,275 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-03-18T05:55:09Z",
+  "profile": {
+    "mode": "BASELINE",
+    "hybrid": "deterministic-mechanical + oz-supervisory"
+  },
+  "limits": {
+    "regime": {
+      "maxSlots": 2,
+      "maxLeverageCrypto": 10,
+      "maxLeverageXYZ": 0,
+      "allocPctPerSlot": 30,
+      "newEntriesAllowed": true,
+      "autoEntryEnabled": true,
+      "dslPreset": "high_water",
+      "cooldownAfterProfitSec": 0,
+      "cooldownAfterLossSec": 60,
+      "_note": "Default. Leverage capped at 10x (was 15x \u2014 Dire Wolf 25x blowup lesson)."
+    },
+    "brainCaps": {
+      "maxSlotsCap": 2,
+      "maxLeverageCap": 10.0,
+      "allocPctCap": 30.0,
+      "allowAutoEntry": true
+    },
+    "guardrails": {
+      "dailyLossLimitPct": 10,
+      "catastrophicDrawdownPct": 20,
+      "maxConsecutiveStopOuts": 4,
+      "directionalCapPct": 70,
+      "perTradeRiskPct": 1.0,
+      "minLeverage": 7,
+      "maxLeverage": 10,
+      "maxPositionsTotal": 3,
+      "_lessons": [
+        "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+        "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+        "3 positions max \u2014 concentration beats diversification across all agents"
+      ]
+    }
+  },
+  "scoreThresholds": {
+    "orca": {
+      "STALKER": 6,
+      "STRIKER": 9
+    },
+    "komodo": {
+      "CONSENSUS": 10
+    },
+    "condor": {
+      "minScore": 10
+    },
+    "barracuda": {
+      "minScore": 8
+    },
+    "bison": {
+      "minScore": 8
+    },
+    "sentinel": {
+      "minScore": 8
+    },
+    "rhino": {
+      "minScore": 10
+    }
+  },
+  "scannerProfiles": {
+    "orca": {
+      "version": "1.1",
+      "scanner": "orca",
+      "status": "baseline",
+      "priority": 68,
+      "basePriority": 68,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 18.0,
+      "minHighWaterRoe": 2.5,
+      "rotationPriorityGap": 8,
+      "minTraderRatio": 0.25,
+      "minTraderCountFloor": 20,
+      "minConvictionRatio": 0.6,
+      "minConcentrationRatio": 0.55
+    },
+    "komodo": {
+      "version": "1.1",
+      "scanner": "komodo",
+      "status": "baseline",
+      "priority": 70,
+      "basePriority": 70,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 25.0,
+      "minHighWaterRoe": 3.0,
+      "rotationPriorityGap": 8,
+      "minTraderRatio": 0.3,
+      "minTraderCountFloor": 16,
+      "minConvictionRatio": 0.65,
+      "minConcentrationRatio": 0.6
+    },
+    "condor": {
+      "version": "1.1",
+      "scanner": "condor",
+      "status": "baseline",
+      "priority": 58,
+      "basePriority": 58,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 40.0,
+      "minHighWaterRoe": 4.5,
+      "rotationPriorityGap": 10,
+      "minTraderRatio": 0.4,
+      "minTraderCountFloor": 24,
+      "minConvictionRatio": 0.75,
+      "minConcentrationRatio": 0.7
+    },
+    "barracuda": {
+      "version": "1.1",
+      "scanner": "barracuda",
+      "status": "baseline",
+      "priority": 52,
+      "basePriority": 52,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 60.0,
+      "minHighWaterRoe": 4.0,
+      "rotationPriorityGap": 10,
+      "minTraderRatio": 0.45,
+      "minTraderCountFloor": 18,
+      "minConvictionRatio": 0.7,
+      "minConcentrationRatio": 0.7
+    },
+    "bison": {
+      "version": "1.1",
+      "scanner": "bison",
+      "status": "baseline",
+      "priority": 55,
+      "basePriority": 55,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 50.0,
+      "minHighWaterRoe": 6.0,
+      "rotationPriorityGap": 12,
+      "minTraderRatio": 0.45,
+      "minTraderCountFloor": 24,
+      "minConvictionRatio": 0.78,
+      "minConcentrationRatio": 0.72
+    },
+    "shark": {
+      "version": "1.1",
+      "scanner": "shark",
+      "status": "baseline",
+      "priority": 62,
+      "basePriority": 62,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 12.0,
+      "minHighWaterRoe": 1.5,
+      "rotationPriorityGap": 5,
+      "minTraderRatio": 0.2,
+      "minTraderCountFloor": 20,
+      "minConvictionRatio": 0.55,
+      "minConcentrationRatio": 0.5
+    },
+    "sentinel": {
+      "version": "1.1",
+      "scanner": "sentinel",
+      "status": "baseline",
+      "priority": 66,
+      "basePriority": 66,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 30.0,
+      "minHighWaterRoe": 3.5,
+      "rotationPriorityGap": 9,
+      "minTraderRatio": 0.35,
+      "minTraderCountFloor": 18,
+      "minConvictionRatio": 0.7,
+      "minConcentrationRatio": 0.65
+    },
+    "rhino": {
+      "version": "1.1",
+      "scanner": "rhino",
+      "status": "baseline",
+      "priority": 60,
+      "basePriority": 60,
+      "realizedEdgeScore": 0.0,
+      "weightedEdgeScore": 0.0,
+      "sampleConfidence": 0.0,
+      "sampleCloses": 0,
+      "sampleWins": 0,
+      "sampleLosses": 0,
+      "sampleWinRate": 0.0,
+      "samplePnl": 0.0,
+      "sampleAvgPnl": 0.0,
+      "deadWeightMin": 35.0,
+      "minHighWaterRoe": 5.0,
+      "rotationPriorityGap": 10,
+      "minTraderRatio": 0.4,
+      "minTraderCountFloor": 20,
+      "minConvictionRatio": 0.75,
+      "minConcentrationRatio": 0.68
+    }
+  },
+  "portfolio": {
+    "directionalExposure": {
+      "currentOpenPositions": 0,
+      "projectedOpenPositions": 0,
+      "longNotional": 0.0,
+      "shortNotional": 0.0,
+      "totalNotional": 0.0,
+      "projectedLongNotional": 0.0,
+      "projectedShortNotional": 0.0,
+      "projectedTotalNotional": 0.0,
+      "projectedLongPct": 0.0,
+      "projectedShortPct": 0.0
+    },
+    "activePositions": []
+  },
+  "tradeLoop": [
+    "scan",
+    "evaluate",
+    "trade",
+    "protect",
+    "review"
+  ]
+}
