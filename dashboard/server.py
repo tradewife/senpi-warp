@@ -264,6 +264,7 @@ HELP_TEXT = """**Commands:**
 `/bison` — Run BISON scanner now
 `/shark` — Run SHARK scanner now
 `/sentinel` — Run SENTINEL scanner now
+`/rhino` — Run RHINO scanner now
 `/arbiter` — Run Risk Arbiter now
 `/health` — Run health check now
 `/arena` — Run arena monitor now
@@ -353,6 +354,9 @@ async def handle_chat_message(message: str) -> str:
 
     if cmd == "/sentinel":
         return await _cmd_run_script("SENTINEL", "scripts/vps/sentinel-scanner-cron.py", timeout=90)
+
+    if cmd == "/rhino":
+        return await _cmd_run_script("RHINO", "scripts/vps/rhino-scanner-cron.py", timeout=90)
 
     if cmd == "/arbiter":
         return await _cmd_run_script("Risk Arbiter", "scripts/vps/risk-arbiter.py")

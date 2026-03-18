@@ -4,7 +4,7 @@ Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Ra
 
 ## How It Works
 
-Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — seven scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies.
+Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -19,6 +19,7 @@ Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zer
 │  │ 30m  🦬 BISON      │                                 │
 │  │ 2min 🦈 SHARK      │                                 │
 │  │ 3min 🛡 SENTINEL   │                                 │
+│  │ 3min 🦏 RHINO      │                                 │
 │  │ 3min 🔒 DSL HW     │         All /commands from       │
 │  │ 5min 🔄 SM Flip    │         Telegram land here       │
 │  │ 5min 👁 Watchdog   │                                 │
@@ -77,6 +78,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/bison` | Run BISON conviction trend holder now |
 | `/shark` | Run SHARK liquidation cascade scanner now |
 | `/sentinel` | Run SENTINEL quality trader convergence scanner now |
+| `/rhino` | Run RHINO momentum pyramider now |
 | `/arbiter` | Run Risk Arbiter safety checks now |
 | `/health` | Run health check + git sync now |
 | `/arena` | Run arena monitor now (polls Senpi Predators leaderboard) |
@@ -167,6 +169,16 @@ Inverts the usual momentum pipeline:
 
 SENTINEL is designed to catch the period between "smart money is building in the asset" and "the asset is already obvious on the leaderboard." It is a higher-conviction, lower-frequency scanner that looks for quality-trader convergence rather than raw rank velocity.
 
+### 🦏 RHINO — Momentum Pyramider (every 3min)
+
+Builds into winners instead of entering full size immediately:
+
+1. **SCOUT** → enter 30% of max size on a high-conviction top-10 OI/volume thesis
+2. **CONFIRM** → add 40% more at `+10% ROE` if the 4H trend, SM alignment, and volume still hold
+3. **CONVICTION** → add the final 30% at `+20% ROE` if the thesis still holds
+
+RHINO uses one DSL High Water state for the full position and prioritizes adds over new entries.
+
 ### 🔒 DSL High Water Mode (every 3min)
 
 7-tier infinite trailing stop that locks increasingly large percentages of peak ROE:
@@ -222,6 +234,7 @@ senpi-waifu/
 │   ├── bison-config.json      # BISON trend/momentum params, DSL tiers
 │   ├── shark-config.json      # SHARK OI/liquidation/proximity thresholds
 │   ├── sentinel-config.json   # SENTINEL quality-convergence thresholds
+│   ├── rhino-config.json      # RHINO pyramid stages and trend filters
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
 ├── state/                     # Runtime state (VPS writes, Oz reads)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
@@ -254,6 +267,7 @@ senpi-waifu/
 │   │   ├── bison-scanner-cron.py    # 🦬 BISON conviction trend
 │   │   ├── shark-scanner-cron.py    # 🦈 SHARK liquidation cascade
 │   │   ├── sentinel-scanner-cron.py # 🛡 SENTINEL quality convergence
+│   │   ├── rhino-scanner-cron.py    # 🦏 RHINO momentum pyramider
 │   │   ├── dsl-runner.py            # 🔒 DSL High Water runner
 │   │   ├── sm-flip-cron.py          # 🔄 SM flip detector
 │   │   ├── watchdog-cron.py         # 👁 Watchdog (margin/liq)
@@ -377,12 +391,13 @@ Build plan includes 1,500 credits/month. Additional credits are available via Re
 ## Key Design Decisions
 
 - **Hybrid architecture.** VPS handles mechanical execution (sub-2s entry) at zero LLM cost. Cloud agents handle strategic decisions at 15min+ intervals. 1/50th the credit cost of pure-cloud.
-- **Seven-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends), SHARK (liquidation cascades), SENTINEL (quality trader convergence). Different edge types, different timeframes, one shared DSL exit engine.
+- **Eight-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends), SHARK (liquidation cascades), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, different timeframes, one shared DSL exit engine.
 - **CONDOR correlation confirmation.** Cross-validates signals against paired assets (e.g. ETH↔BTC) to filter false breakouts on correlated pairs.
 - **BARRACUDA counter-trend.** Fades extreme funding rates only after 6+ hours of persistence with SM alignment — avoids the classic "knife catch" failure mode.
 - **BISON wide trailing.** Wider DSL tiers and longer conviction timeouts (up to 120 min) optimized for multi-hour trend rides.
 - **SHARK cascade logic.** Uses OI buildup + funding-implied leverage to estimate liquidation zones, then waits for zone pressure plus trigger confirmation before striking.
 - **SENTINEL inverted discovery.** Finds assets where smart money is building first, then verifies that quality traders are the ones profiting from the move before entering.
+- **RHINO staged deployment.** Risks only 30% of max size at scout entry, then adds to confirmed winners instead of going all-in at the least certain moment.
 - **DSL High Water Mode.** No ceiling on trailing stops. The geometry that lets positions hold +200% winners.
 - **Native Python everywhere.** All VPS scripts rewritten from shell to Python using senpi_common.py. No dependency on senpi-skills or OpenClaw at runtime.
 - **Fee optimisation.** STALKER and KOMODO use ALO (maker) orders for ~60-80% fee reduction. Fee drag is the #1 killer across all 22 agents.

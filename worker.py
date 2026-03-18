@@ -157,6 +157,10 @@ def job_sentinel():
     run_py("scripts/vps/sentinel-scanner-cron.py")
 
 
+def job_rhino():
+    run_py("scripts/vps/rhino-scanner-cron.py")
+
+
 def job_watchdog():
     run_py("scripts/vps/watchdog-cron.py")
 
@@ -230,6 +234,9 @@ def main():
     # SENTINEL Quality Trader Convergence — every 3min, offset 90s
     scheduler.add_job(job_sentinel, "interval", minutes=3, id="sentinel", seconds=90)
 
+    # RHINO Momentum Pyramider — every 3min, offset 150s
+    scheduler.add_job(job_rhino, "interval", minutes=3, id="rhino", seconds=150)
+
     # SM Flip Detector — every 5min
     scheduler.add_job(job_smflip, "interval", minutes=5, id="smflip")
 
@@ -258,6 +265,7 @@ def main():
     print("  🦬 BISON Scanner:   every 30min")
     print("  🦈 SHARK Scanner:   every 2min")
     print("  🛡 SENTINEL Scan:   every 3min")
+    print("  🦏 RHINO Scan:      every 3min")
     print("  🔒 DSL HW Runner:   every 3min")
     print("  🔄 SM Flip:         every 5min")
     print("  👁  Watchdog:        every 5min")

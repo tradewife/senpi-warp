@@ -87,6 +87,8 @@ COMMANDS = [
      "Manually trigger the SHARK liquidation cascade front-runner. Normally runs every 2 minutes."),
     ("sentinel", "Run SENTINEL scanner now",
      "Manually trigger the SENTINEL quality trader convergence scanner. Normally runs every 3 minutes."),
+    ("rhino",    "Run RHINO scanner now",
+     "Manually trigger the RHINO momentum pyramider. Normally runs every 3 minutes."),
     ("arbiter",  "Run Risk Arbiter now",
      "Check daily loss limits, catastrophic drawdown, and consecutive stop-outs. Normally runs every 30s."),
     ("health",   "Run health check + git sync",
@@ -225,6 +227,8 @@ Runs every 30-60 seconds. No LLM, no cloud credits.
   ↳ OI buildup, liquidation zone pressure, cascade trigger confirmation
 • 🛡 *SENTINEL Scanner* — quality trader convergence
   ↳ rising SM contribution confirmed by quality trader momentum events
+• 🦏 *RHINO Scanner* — momentum pyramider
+  ↳ scout small, add to winners at +10% and +20% ROE if thesis holds
 • 🔒 *DSL High Water* — 7-tier infinite trailing stop (up to 90% of peak)
 • 🚨 *Risk Arbiter* — hard safety limits, no LLM dependency
 
@@ -272,7 +276,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "scan": "▶️ Manual Triggers", "komodo": "▶️ Manual Triggers",
         "condor": "▶️ Manual Triggers", "barracuda": "▶️ Manual Triggers",
         "bison": "▶️ Manual Triggers", "shark": "▶️ Manual Triggers",
-        "sentinel": "▶️ Manual Triggers",
+        "sentinel": "▶️ Manual Triggers", "rhino": "▶️ Manual Triggers",
         "arbiter": "▶️ Manual Triggers", "health": "▶️ Manual Triggers",
         "arena": "▶️ Manual Triggers",
         "howl": "📜 Reports", "journal": "📜 Reports",
@@ -479,7 +483,7 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not pending:
         await update.message.reply_text(
             "No pending signals.\n\n"
-            "_Mechanical scanners run continuously across ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, and SENTINEL. "
+            "_Mechanical scanners run continuously across ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, and RHINO. "
             "Signals appear here when detected and are cleared by the Oz Trade Evaluator (every 15 min)._"
         )
         return
@@ -745,6 +749,20 @@ async def cmd_sentinel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_rhino(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🦏 *Running RHINO scanner...*\n"
+        "_Momentum pyramider: scout small, then add to winners at +10% / +20% ROE_",
+        parse_mode="Markdown",
+    )
+    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/rhino-scanner-cron.py")], timeout=90)
+    if output == "(no output)":
+        await update.message.reply_text("🦏 RHINO scan complete — no scout or pyramid-add setup qualified.")
+    else:
+        await update.message.reply_text(f"🦏 *RHINO scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+
+@authorized
 async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🚨 *Running Risk Arbiter...*\n"
@@ -989,6 +1007,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("bison", cmd_bison))
     app.add_handler(CommandHandler("shark", cmd_shark))
     app.add_handler(CommandHandler("sentinel", cmd_sentinel))
+    app.add_handler(CommandHandler("rhino", cmd_rhino))
     app.add_handler(CommandHandler("arbiter", cmd_arbiter))
     app.add_handler(CommandHandler("health", cmd_health))
     app.add_handler(CommandHandler("arena", cmd_arena))
