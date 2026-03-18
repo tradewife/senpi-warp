@@ -10,7 +10,7 @@ set -euo pipefail
 #   - Warp Build plan or higher ($18/mo) is required for scheduled agents.
 #     The Free plan only supports on-demand agents, not cron-scheduled ones.
 #     Upgrade at: https://www.warp.dev/pricing
-#   - Run `oz-preview login` (or set WARP_API_KEY) before running this script.
+#   - Run `oz login` (or set WARP_API_KEY) before running this script.
 #
 # Usage:
 #   export SENPI_API_KEY="..."
@@ -28,7 +28,7 @@ echo "=== Oz Cloud Agent Setup (ORCA Hybrid) ==="
 
 # --- 1. Create environment ---
 echo "[1/4] Creating Oz environment..."
-ENV_OUTPUT=$(oz-preview environment create \
+ENV_OUTPUT=$(oz environment create \
     --name "senpi-orca-hybrid" \
     --docker-image "warpdotdev/dev-base:latest" \
     --repo "$STATE_REPO" \
@@ -50,7 +50,7 @@ PY
 if [ -z "$ENV_ID" ]; then
     echo "Environment creation failed or already exists."
     echo "List existing environments:"
-    oz-preview environment list --output-format text
+    oz environment list --output-format text
     echo ""
     read -rp "Enter existing environment ID: " ENV_ID
 fi
@@ -61,31 +61,31 @@ echo "Using environment: $ENV_ID"
 echo "[2/4] Creating Oz secrets..."
 
 if [ -n "${SENPI_API_KEY:-}" ]; then
-    oz-preview secret create SENPI_API_KEY --team \
+    oz secret create SENPI_API_KEY --team \
         --value "$SENPI_API_KEY" \
         --description "Senpi MCP authentication token" 2>/dev/null || echo "  (SENPI_API_KEY already exists)"
 fi
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-    oz-preview secret create GITHUB_TOKEN --team \
+    oz secret create GITHUB_TOKEN --team \
         --value "$GITHUB_TOKEN" \
         --description "GitHub fine-grained token for state repo push access" 2>/dev/null || echo "  (GITHUB_TOKEN already exists)"
 fi
 
 if [ -n "${GITHUB_REPO:-}" ]; then
-    oz-preview secret create GITHUB_REPO --team \
+    oz secret create GITHUB_REPO --team \
         --value "${GITHUB_REPO:-tradewife/senpi-waifu}" \
         --description "GitHub repo (owner/name) for state repo" 2>/dev/null || echo "  (GITHUB_REPO already exists)"
 fi
 
 if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
-    oz-preview secret create TELEGRAM_BOT_TOKEN --team \
+    oz secret create TELEGRAM_BOT_TOKEN --team \
         --value "$TELEGRAM_BOT_TOKEN" \
         --description "Telegram bot token for trade alerts" 2>/dev/null || echo "  (TELEGRAM_BOT_TOKEN already exists)"
 fi
 
 if [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-    oz-preview secret create TELEGRAM_CHAT_ID --team \
+    oz secret create TELEGRAM_CHAT_ID --team \
         --value "$TELEGRAM_CHAT_ID" \
         --description "Telegram chat ID for alerts" 2>/dev/null || echo "  (TELEGRAM_CHAT_ID already exists)"
 fi
@@ -99,14 +99,14 @@ echo "[3/4] Creating scheduled cloud agents..."
 # Test by creating a minimal probe schedule (never triggers — Feb 31 doesn't exist).
 echo "  Checking if scheduled ambient agents are available on this account..."
 PLAN_OK=false
-if oz-preview schedule create --cron "0 12 31 2 *" --no-environment \
+if oz schedule create --cron "0 12 31 2 *" --no-environment \
     --name "__senpi-plan-probe__" --personal \
     --prompt "probe" 2>/tmp/oz_plan_check.err; then
     # Probe succeeded — plan supports scheduled agents. Clean up immediately.
     PLAN_OK=true
-    PROBE_ID=$(oz-preview schedule list --output-format json 2>/dev/null | \
+    PROBE_ID=$(oz schedule list --output-format json 2>/dev/null | \
         python3 -c "import json,sys; d=json.load(sys.stdin); ids=[s['id'] for s in d.get('schedules',[]) if s.get('name')=='__senpi-plan-probe__']; print(ids[0] if ids else '')" 2>/dev/null || true)
-    [ -n "${PROBE_ID:-}" ] && oz-preview schedule delete "$PROBE_ID" 2>/dev/null || true
+    [ -n "${PROBE_ID:-}" ] && oz schedule delete "$PROBE_ID" 2>/dev/null || true
     echo "  Plan check passed — scheduled agents are available."
 else
     # Probe failed — likely a plan restriction (FEATURE_NOT_AVAILABLE).
@@ -126,7 +126,7 @@ if [ "$PLAN_OK" = false ]; then
     echo "  │  WORKAROUND: Until upgraded, all scheduling is handled by the  │"
     echo "  │  Railway worker (worker.py / APScheduler). The Oz agents can   │"
     echo "  │  still be triggered manually via /oz command in Telegram or    │"
-    echo "  │  via: oz-preview agent run-cloud --environment <ENV_ID>        │"
+    echo "  │  via: oz agent run-cloud --environment <ENV_ID>                │"
     echo "  └─────────────────────────────────────────────────────────────────┘"
     echo ""
     echo "  Skipping schedule creation. Continuing with environment setup only."
@@ -166,7 +166,7 @@ You are the Senpi Trade Evaluator (ORCA Hybrid Edition). Your job:
 
 Key lesson from 22 agents: FEWER TRADES + HIGHER CONVICTION = better performance. FOX is #1 at +13.93% with only 436 trades. Agents with 700+ trades are all negative.
 PROMPT
-oz-preview schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
+oz schedule create --cron "*/15 * * * *" --environment "$ENV_ID" \
     --name "senpi-trade-evaluator" --team \
     --prompt "$(cat /tmp/oz_trade_evaluator.txt)" \
     || echo "  WARNING: failed to create Trade Evaluator schedule (see error above)"
@@ -191,7 +191,7 @@ You are the Senpi Regime Classifier. Your job:
 
 Be conservative with RISK_ON — only set it when trend evidence is clear across multiple timeframes.
 PROMPT
-oz-preview schedule create --cron "0 * * * *" --environment "$ENV_ID" \
+oz schedule create --cron "0 * * * *" --environment "$ENV_ID" \
     --name "senpi-regime-classifier" --team \
     --prompt "$(cat /tmp/oz_regime_classifier.txt)" \
     || echo "  WARNING: failed to create Regime Classifier schedule (see error above)"
@@ -215,7 +215,7 @@ You are the Senpi Portfolio Reviewer. Your job:
 10. Send Telegram summary.
 11. Commit and push.
 PROMPT
-oz-preview schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
+oz schedule create --cron "0 */6 * * *" --environment "$ENV_ID" \
     --name "senpi-portfolio-review" --team \
     --prompt "$(cat /tmp/oz_portfolio_review.txt)" \
     || echo "  WARNING: failed to create Portfolio Review schedule (see error above)"
@@ -235,7 +235,7 @@ You are HOWL v2 — Hunt, Optimize, Win, Learn. Run the full nightly analysis.
 
 The analysis prompt is version-controlled in the repo so updates take effect without recreating this schedule.
 PROMPT
-oz-preview schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
+oz schedule create --cron "55 23 * * *" --environment "$ENV_ID" \
     --name "senpi-howl" --team \
     --prompt "$(cat /tmp/oz_howl.txt)" \
     || echo "  WARNING: failed to create HOWL schedule (see error above)"
@@ -254,7 +254,7 @@ You are the Whale Index Manager. Run daily rebalance per senpi-waifu/memory/whal
 5. Include whale-index skill attribution when creating new mirror strategies.
 6. Commit and push updated state after each run.
 PROMPT
-oz-preview schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
+oz schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
     --name "senpi-whale-index" --team \
     --prompt "$(cat /tmp/oz_whale_index.txt)" \
     || echo "  WARNING: failed to create Whale Index schedule (see error above)"
@@ -290,7 +290,7 @@ You are the Arena Strategy Learner. You study the Senpi Predators arena and extr
 
 NEVER increase leverage above 10x. NEVER remove XYZ ban. NEVER disable stagnation TP. These are proven rules from 22 agents.
 PROMPT
-oz-preview schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
+oz schedule create --cron "0 */4 * * *" --environment "$ENV_ID" \
     --name "senpi-arena-learner" --team \
     --prompt "$(cat /tmp/oz_arena_learner.txt)" \
     || echo "  WARNING: failed to create Arena Learner schedule (see error above)"
@@ -300,7 +300,7 @@ fi  # end SKIP_SCHEDULES check
 # --- 4. Summary ---
 echo ""
 echo "[4/4] Listing schedules..."
-oz-preview schedule list --output-format text 2>/dev/null || echo "(list failed — check oz login)"
+oz schedule list --output-format text 2>/dev/null || echo "(list failed — check oz login)"
 
 echo ""
 echo "=== Oz Setup Complete (ORCA Hybrid) ==="
@@ -312,7 +312,7 @@ if [ "${SKIP_SCHEDULES:-false}" = true ]; then
     echo "  Upgrade at: https://www.warp.dev/pricing"
     echo ""
     echo "On-demand agent run (works on all plans):"
-    echo "  oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
+    echo "  oz agent run-cloud --environment $ENV_ID --prompt '...'"
 else
     echo "Scheduled agents:"
     echo "  - Trade Evaluator:       every 15 min  (ORCA + KOMODO signal validation)"
@@ -322,7 +322,7 @@ else
     echo "  - Whale Index:           daily         (copy-trade rebalance)"
     echo "  - Arena Strategy Learner: every 4 hours (study winning predators)"
     echo ""
-    echo "Monitor runs:  oz-preview run list"
-    echo "Check a run:   oz-preview run get <run-id>"
-    echo "Manual run:    oz-preview agent run-cloud --environment $ENV_ID --prompt '...'"
+    echo "Monitor runs:  oz run list"
+    echo "Check a run:   oz run get <run-id>"
+    echo "Manual run:    oz agent run-cloud --environment $ENV_ID --prompt '...'"
 fi

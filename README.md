@@ -382,7 +382,7 @@ Register the returned strategy in `config/wolf-strategies.json`, fund the wallet
 > **Requires Warp Build plan or higher ($18/mo).** Scheduled ambient agents are not available on the Free plan.
 > Upgrade at: https://www.warp.dev/pricing
 >
-> Without the Build plan, all scheduling is handled by the Railway worker (APScheduler). Oz agents can still be triggered manually via the Telegram bot or `oz-preview agent run-cloud`.
+> Without the Build plan, all scheduling is handled by the Railway worker (APScheduler). Oz agents can still be triggered manually via the Telegram bot or `oz agent run-cloud`.
 
 ```bash
 export SENPI_API_KEY="..."
