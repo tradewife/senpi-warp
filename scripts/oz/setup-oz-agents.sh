@@ -245,16 +245,14 @@ echo "  Creating: Whale Index (0 1 * * *)"
 cat > /tmp/oz_whale_index.txt << 'PROMPT'
 Run `bash senpi-waifu/scripts/oz/agent-init.sh` first to configure mcporter and git push credentials. Then:
 
-You are the Whale Index Manager. Run daily rebalance per senpi-skills/whale-index/SKILL.md.
+You are the Whale Index Manager. Run daily rebalance per senpi-waifu/memory/whale-index-prompt.md.
 
 1. git pull in senpi-waifu repo.
-2. Scan top 50 Discovery traders via mcporter: discovery_top_traders(limit=50, timeframe="30d").
-3. Score: PnL rank (35%), win rate (25%), consistency (20%), hold time (10%), drawdown (10%).
-4. Check existing mirror strategies for watch status (2-day watch before swaps).
-5. If a trader has degraded for 2+ consecutive days AND a replacement scores 15%+ higher: swap.
-6. If no mirror strategies exist yet, present top 3 candidates and create mirrors.
-7. Update state with mirror strategy status.
-8. Commit and push.
+2. Read senpi-waifu/memory/whale-index-prompt.md and follow it exactly.
+3. Use outputs/whale-index-state.json as the persistent state file for slot/watch/rebalance tracking.
+4. Apply the 2-day watch rule before swapping any trader.
+5. Include whale-index skill attribution when creating new mirror strategies.
+6. Commit and push updated state after each run.
 PROMPT
 oz-preview schedule create --cron "0 1 * * *" --environment "$ENV_ID" \
     --name "senpi-whale-index" --team \
