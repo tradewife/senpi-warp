@@ -1,10 +1,10 @@
 # senpi-waifu
 
-Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Railway container (mechanical execution) with optional Oz cloud agents (strategic LLM decisions). Fully controllable from Telegram.
+Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for slower high-intelligence supervision. Fully controllable from Telegram.
 
 ## How It Works
 
-Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies.
+Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **local brain layer** builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Oz strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -21,14 +21,15 @@ Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zer
 │  │ 3min 🛡 SENTINEL   │                                 │
 │  │ 3min 🦏 RHINO      │                                 │
 │  │ 3min 🔒 DSL HW     │         All /commands from       │
-│  │ 5min 🔄 SM Flip    │         Telegram land here       │
+│  │ 5min 🧠 Brain      │         Telegram land here       │
+│  │ 5min 🔄 Supervisor │                                 │
 │  │ 5min 👁 Watchdog   │                                 │
 │  │ 10m  🏥 Health     │                                 │
 │  │ 15m  📊 Arena      │                                 │
 │  │ 30s  🚨 Arbiter    │                                 │
 │  └────────────────────┘                                 │
 │                                                         │
-│  Writes state → git push                                │
+│  Writes state + playbook → git push                     │
 └────────────────────┬────────────────────────────────────┘
                      │  senpi-waifu repo (this repo)
                      │  git pull ↔ git push
@@ -42,9 +43,16 @@ Two layers, one repo. The **mechanical layer** runs every 30-60 seconds with zer
 │  daily  HOWL               → nightly self-improvement   │
 │  daily  Whale Index        → copy-trade rebalance       │
 │                                                         │
-│  Reads state → decides → writes config → git push       │
+│  Reads state → advises/updates → writes config → git push│
 └─────────────────────────────────────────────────────────┘
 ```
+
+## Control Model
+
+- **Deterministic hot path.** Entries, exits, risk checks, exposure caps, and position supervision run locally in Python with no LLM dependency.
+- **Local autonomous brain.** `scripts/vps/autonomous-brain.py` synthesizes a policy layer from runtime state and writes `outputs/autonomous-brain.json`, `outputs/playbook-state.json`, and `outputs/codebase-index.json`.
+- **Oz as supervisory intelligence.** Oz is used for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
+- **Git as state bus.** Mechanical state, playbook state, reports, and config changes remain auditable and easy to inspect.
 
 ## Telegram Bot
 
@@ -58,7 +66,8 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/trades` | Last 10 trades with PnL, close reason (DSL trailing stop, Phase 1 timeout, stagnation TP, etc.) |
 | `/equity` | Current equity, day start, peak, drawdown %, proximity to safety limits |
 | `/regime` | Active regime parameters: slots, leverage, allocation, guardrails |
-| `/pending` | Queued scanner signals awaiting Oz review or already auto-entered |
+| `/brain` | Current autonomous brain policy: entry status, caps, preferred scanners, blocked scanners |
+| `/pending` | Queued scanner signals with local brain priority context and auto-entry status |
 
 **Control**
 | Command | What it does |
@@ -66,7 +75,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/risk_on` | Max 3 slots, 7-10x leverage, 35% allocation. Use when trend is clear |
 | `/risk_off` | Block all new entries. Existing positions managed by DSL trailing stops |
 | `/baseline` | Default balanced regime: 2 slots, 30% allocation, 60s loss cooldown |
-| `/flatten` | Emergency close ALL positions (sets RISK_OFF + dispatches Oz agent) |
+| `/flatten` | Emergency close ALL positions (sets RISK_OFF locally + optionally dispatches Oz agent) |
 
 **Manual Triggers**
 | Command | What it does |
@@ -209,6 +218,31 @@ Mechanical safety net. No LLM dependency. Checks:
 - **Consecutive stop-outs** (4 in 2 hours) → sets RISK_OFF
 - **Abnormal conditions** (API failures, funding spikes) → sets RISK_OFF
 
+### 🧠 Autonomous Brain (every 5min)
+
+Local strategic synthesizer. No execution authority by itself. It reads:
+- `config/risk-regime.json`
+- `memory/trade-journal.json`
+- `state/pending-entries.json`
+- `outputs/arena-state.json`
+- `outputs/arena-learnings.json`
+- `outputs/latest-report.json`
+- health / heartbeat outputs
+
+And writes:
+- `outputs/autonomous-brain.json` → current policy, scanner priorities, caps, block reasons
+- `outputs/playbook-state.json` → normalized execution playbook and scanner profiles
+- `outputs/codebase-index.json` → indexed runtime map of the repo
+
+### 🔄 Position Supervisor (every 5min)
+
+Upgrades the old SM flip monitor into a broader deterministic supervisor:
+- **Hard smart-money flip** → closes when conviction flips decisively against the position
+- **Conviction collapse** → closes when trader participation / conviction / concentration decay below the position’s playbook thresholds
+- **Dead-weight rotation** → closes stale losers only when better queued opportunities materially outrank them
+
+This keeps rotation selective instead of churn-heavy.
+
 ### Hardcoded Gates
 
 These are enforced in Python code, not config. Agents cannot override them:
@@ -218,6 +252,7 @@ These are enforced in Python code, not config. Agents cannot override them:
 | XYZ equities banned | Net negative across all 22 live agents (Fox SNDK -$57) |
 | 7-10x leverage only | Sub-7x can't overcome fees, >10x blows up (Dire Wolf 25x lesson) |
 | Max 3 positions | Concentration beats diversification across all agents |
+| Directional exposure cap | New entries are blocked when projected book concentration breaches the global directional cap |
 | 10% daily loss limit | Fox's 10% > Vixen's 25% — tighter limit bled 2.5x less |
 | 2hr per-asset cooldown | Prevents re-entry after Phase 1 exit (PAXG double-entry lesson) |
 | Stagnation TP mandatory | Positions that peaked then reversed to zero (Mantis lesson) |
@@ -236,10 +271,10 @@ senpi-waifu/
 │   ├── sentinel-config.json   # SENTINEL quality-convergence thresholds
 │   ├── rhino-config.json      # RHINO pyramid stages and trend filters
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
-├── state/                     # Runtime state (VPS writes, Oz reads)
+├── state/                     # Runtime state (mechanical layer writes, brain/Oz read)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
 │   │   └── dsl-{ASSET}.json   # Position state (High Water Mode)
-│   ├── pending-entries.json   # Signals queued for Oz evaluation
+│   ├── pending-entries.json   # Signals queued with brain priority context
 │   ├── orca-scan-history.json # Last 40 ORCA scans
 │   ├── orca-cooldowns.json    # Per-asset 2hr cooldown tracking
 │   ├── komodo-events.json     # KOMODO momentum event history
@@ -249,10 +284,13 @@ senpi-waifu/
 │   ├── howl-*.md              # Nightly HOWL reports
 │   └── trade-journal.json     # All trades with entry source tags
 ├── outputs/                   # Reports and observational data
+│   ├── autonomous-brain.json  # Local strategic policy snapshot
 │   ├── latest-report.json     # Last portfolio review
 │   ├── arbiter-state.json     # Risk arbiter peak/drawdown tracking
 │   ├── arena-state.json       # Senpi Predators performance snapshot
-│   └── arena-learnings.json   # Arena-derived strategy recommendations
+│   ├── arena-learnings.json   # Arena-derived strategy recommendations
+│   ├── playbook-state.json    # Normalized execution playbook + scanner profiles
+│   └── codebase-index.json    # Indexed runtime map of this repo
 ├── dashboard/
 │   ├── server.py              # FastAPI dashboard + Telegram bot
 │   ├── telegram_bot.py        # Telegram command handlers + Oz dispatch
@@ -269,7 +307,8 @@ senpi-waifu/
 │   │   ├── sentinel-scanner-cron.py # 🛡 SENTINEL quality convergence
 │   │   ├── rhino-scanner-cron.py    # 🦏 RHINO momentum pyramider
 │   │   ├── dsl-runner.py            # 🔒 DSL High Water runner
-│   │   ├── sm-flip-cron.py          # 🔄 SM flip detector
+│   │   ├── autonomous-brain.py      # 🧠 Local policy/playbook builder
+│   │   ├── sm-flip-cron.py          # 🔄 Position supervisor (flip/collapse/rotation)
 │   │   ├── watchdog-cron.py         # 👁 Watchdog (margin/liq)
 │   │   ├── health-check-cron.py     # 🏥 Health check + git sync
 │   │   ├── risk-arbiter.py          # 🚨 Mechanical safety
@@ -301,7 +340,7 @@ Create two services from the same GitHub repo in Railway dashboard:
 
 | Service | Start Command | Purpose |
 |---|---|---|
-| `senpi-worker` | `python3 worker.py` | Runs all scanners + safety checks |
+| `senpi-worker` | `python3 worker.py` | Runs scanners, brain, supervisor, and safety checks |
 | `senpi-dashboard` | `uvicorn dashboard.server:app --host 0.0.0.0 --port $PORT` | Web dashboard + Telegram bot |
 
 ### 3. Set environment variables
@@ -390,8 +429,10 @@ Build plan includes 1,500 credits/month. Additional credits are available via Re
 
 ## Key Design Decisions
 
-- **Hybrid architecture.** VPS handles mechanical execution (sub-2s entry) at zero LLM cost. Cloud agents handle strategic decisions at 15min+ intervals. 1/50th the credit cost of pure-cloud.
+- **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Oz handles slower, higher-intelligence supervisory work.
+- **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Oz or embedding LLM logic in the hot path.
 - **Eight-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends), SHARK (liquidation cascades), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, different timeframes, one shared DSL exit engine.
+- **Scanner-specific supervision.** Conviction collapse and dead-weight rotation are tuned per scanner rather than handled by one generic kill rule.
 - **CONDOR correlation confirmation.** Cross-validates signals against paired assets (e.g. ETH↔BTC) to filter false breakouts on correlated pairs.
 - **BARRACUDA counter-trend.** Fades extreme funding rates only after 6+ hours of persistence with SM alignment — avoids the classic "knife catch" failure mode.
 - **BISON wide trailing.** Wider DSL tiers and longer conviction timeouts (up to 120 min) optimized for multi-hour trend rides.
@@ -402,6 +443,7 @@ Build plan includes 1,500 credits/month. Additional credits are available via Re
 - **Native Python everywhere.** All VPS scripts rewritten from shell to Python using senpi_common.py. No dependency on senpi-skills or OpenClaw at runtime.
 - **Fee optimisation.** STALKER and KOMODO use ALO (maker) orders for ~60-80% fee reduction. Fee drag is the #1 killer across all 22 agents.
 - **Risk Arbiter is not an LLM.** Mechanical safety should never depend on a language model or cloud credits.
+- **Directional exposure enforcement.** New entries are blocked when projected long/short concentration would breach the portfolio cap.
 - **Git as state bus.** Simple, auditable, works offline. Both layers read/write independently.
 - **Telegram-first control.** Full monitoring and manual override from your phone. Free-text messages dispatch to Oz.
 - **Arena-informed learning.** Oz studies 24 competing predator strategies and auto-applies risk-reducing improvements.

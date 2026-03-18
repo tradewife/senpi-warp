@@ -21,6 +21,8 @@ from senpi_common import (
     CONFIG_DIR,
     acquire_lock,
     add_pending_entry,
+    attach_position_playbook,
+    check_directional_exposure_limit,
     count_open_slots,
     current_regime_params,
     get_enabled_strategies,
@@ -462,6 +464,14 @@ def scan() -> bool:
 
     asset = best["token"]
     direction = best["direction"]
+    allowed_exposure, exposure = check_directional_exposure_limit(direction, margin, leverage)
+    if not allowed_exposure:
+        log(
+            f"SENTINEL: directional cap blocked {asset} {direction} "
+            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+        )
+        return False
+
     log(f"SENTINEL: entering {asset} {direction} score={best['score']}")
     result = mcporter_call("strategy_create_position", {
         "strategyId": target_strategy.get("strategyId"),
@@ -482,6 +492,22 @@ def scan() -> bool:
     dsl["strategyId"] = target_strategy.get("strategyId")
     dsl["strategyKey"] = target_strategy["_key"]
     dsl["size"] = size
+    attach_position_playbook(
+        dsl,
+        scanner="sentinel",
+        margin=margin,
+        leverage=leverage,
+        score=best["score"],
+        reasons=best["reasons"],
+        sm_snapshot={
+            "traderCount": best["leaderboard"].get("trader_count"),
+            "concentration": best["quality_traders"][0]["concentration"] if best["quality_traders"] else None,
+        },
+        setup={
+            "qualityTraderCount": len(best["quality_traders"]),
+            "topTraderAppearances": best.get("top_trader_appearances", 0),
+        },
+    )
 
     state_dir = get_strategy_state_dir(target_strategy["_key"])
     save_json(state_dir / f"dsl-{asset}.json", dsl)

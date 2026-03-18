@@ -20,6 +20,8 @@ from senpi_common import (
     POSITION_STATE_DIR,
     acquire_lock,
     add_pending_entry,
+    attach_position_playbook,
+    check_directional_exposure_limit,
     count_open_slots,
     current_regime_params,
     get_enabled_strategies,
@@ -388,6 +390,15 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
         return False
 
     leverage = _safe_float(dsl_state.get("leverage", config.get("leverage", {}).get("default", 10)))
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        dsl_state["direction"], add_margin, leverage, additional_position=False
+    )
+    if not allowed_exposure:
+        log(
+            f"RHINO add blocked by directional cap {dsl_state['asset']} {dsl_state['direction']} "
+            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+        )
+        return False
     result = mcporter_call("strategy_create_position", {
         "strategyId": strategy.get("strategyId"),
         "asset": dsl_state["asset"],
@@ -408,6 +419,15 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
     dsl_state["size"] = _safe_float(result.get("size", dsl_state.get("size", 0)), dsl_state.get("size", 0))
     dsl_state["entryMode"] = f"RHINO_STAGE_{stage['stage']}"
     dsl_state["entryScore"] = max(int(dsl_state.get("entryScore", 0)), 10)
+    attach_position_playbook(
+        dsl_state,
+        scanner="rhino",
+        margin=_safe_float(pyramid_state.get("currentMargin", 0)) + add_margin,
+        leverage=leverage,
+        score=dsl_state.get("entryScore", 0),
+        reasons=reasons,
+        setup={"stage": stage["stage"], "add": True},
+    )
     save_json(Path(dsl_state["_file"]), dsl_state)
 
     send_telegram(
@@ -549,6 +569,17 @@ def scan() -> bool:
         save_state(state)
         return False
 
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        best["direction"], scout_margin, leverage
+    )
+    if not allowed_exposure:
+        log(
+            f"RHINO: directional cap blocked {best['coin']} {best['direction']} "
+            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+        )
+        save_state(state)
+        return False
+
     result = mcporter_call("strategy_create_position", {
         "strategyId": target_strategy.get("strategyId"),
         "asset": best["coin"],
@@ -569,6 +600,15 @@ def scan() -> bool:
     dsl["strategyId"] = target_strategy.get("strategyId")
     dsl["strategyKey"] = target_strategy["_key"]
     dsl["size"] = size
+    attach_position_playbook(
+        dsl,
+        scanner="rhino",
+        margin=scout_margin,
+        leverage=leverage,
+        score=best["score"],
+        reasons=best["reasons"],
+        setup={"stage": 1, "maxMarginUsd": round(max_margin, 2)},
+    )
     state_dir = get_strategy_state_dir(target_strategy["_key"])
     save_json(state_dir / f"dsl-{best['coin']}.json", dsl)
 

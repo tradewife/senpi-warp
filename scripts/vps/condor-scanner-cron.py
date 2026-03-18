@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso, load_json, save_json,
     mcporter_call, send_telegram, current_regime_params,
+    check_directional_exposure_limit, attach_position_playbook,
     count_open_slots, get_enabled_strategies, get_strategy_state_dir,
     POSITION_STATE_DIR, CONFIG_DIR, record_trade, add_pending_entry,
     record_heartbeat,
@@ -433,6 +434,13 @@ def scan():
                 alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
                 margin = budget * alloc * 1.4  # Reloads get slightly higher margin 35% vs 25%
                 lev = config["leverage"]["default"]
+                allowed_exposure, exposure = check_directional_exposure_limit(dirn, margin, lev)
+                if not allowed_exposure:
+                    log(
+                        f"CONDOR: directional cap blocked reload {asset} {dirn} "
+                        f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+                    )
+                    return
                 
                 log(f"CONDOR: Reload triggered for {asset} {dirn}")
                 res = mcporter_call("strategy_create_position", {
@@ -447,6 +455,15 @@ def scan():
                     dsl["wallet"] = condor_strat.get("wallet")
                     dsl["strategyId"] = condor_strat.get("strategyId")
                     dsl["strategyKey"] = condor_strat["_key"]
+                    attach_position_playbook(
+                        dsl,
+                        scanner="condor",
+                        margin=margin,
+                        leverage=lev,
+                        score=10,
+                        reasons=reasons,
+                        setup={"reload": True},
+                    )
                     sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{asset}.json"
                     save_json(sfile, dsl)
                     
@@ -501,6 +518,14 @@ def scan():
     margin = budget * alloc * base_adj
     lev = config["leverage"]["default"]
 
+    allowed_exposure, exposure = check_directional_exposure_limit(best["direction"], margin, lev)
+    if not allowed_exposure:
+        log(
+            f"CONDOR: directional cap blocked {best['asset']} {best['direction']} "
+            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+        )
+        return
+
     log(f"CONDOR: Entering {best['asset']} {best['direction']} at score {best['score']}")
     
     res = mcporter_call("strategy_create_position", {
@@ -515,6 +540,15 @@ def scan():
         dsl["wallet"] = condor_strat.get("wallet")
         dsl["strategyId"] = condor_strat.get("strategyId")
         dsl["strategyKey"] = condor_strat["_key"]
+        attach_position_playbook(
+            dsl,
+            scanner="condor",
+            margin=margin,
+            leverage=lev,
+            score=best["score"],
+            reasons=best["reasons"],
+            setup={"asset": best["asset"]},
+        )
         
         sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{best['asset']}.json"
         save_json(sfile, dsl)

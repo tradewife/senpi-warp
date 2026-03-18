@@ -174,6 +174,10 @@ def job_arena():
     run_py("scripts/vps/arena-monitor.py")
 
 
+def job_brain():
+    run_py("scripts/vps/autonomous-brain.py")
+
+
 def job_arbiter():
     run_py("scripts/vps/risk-arbiter.py")
 
@@ -200,6 +204,7 @@ def main():
     print("[startup] Running initial regime classification...")
     try:
         run_py("scripts/vps/arena-monitor.py")
+        run_py("scripts/vps/autonomous-brain.py")
         print("[startup] Regime bootstrap complete")
     except Exception as e:
         print(f"[startup] Regime bootstrap failed (non-fatal): {e}")
@@ -249,6 +254,9 @@ def main():
 
     # Arena Monitor — every 15min
     scheduler.add_job(job_arena, "interval", minutes=15, id="arena")
+
+    # Autonomous Brain — every 5min, offset 210s
+    scheduler.add_job(job_brain, "interval", minutes=5, id="brain", seconds=210)
 
     # Risk Arbiter (mechanical safety) — every 30s
     scheduler.add_job(job_arbiter, "interval", seconds=30, id="arbiter")

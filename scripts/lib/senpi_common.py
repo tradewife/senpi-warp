@@ -31,6 +31,9 @@ STRATEGIES_FILE = CONFIG_DIR / "wolf-strategies.json"
 PENDING_ENTRIES_FILE = POSITION_STATE_DIR / "pending-entries.json"
 SCAN_HISTORY_FILE = POSITION_STATE_DIR / "scan-history.json"
 TRADE_JOURNAL_FILE = MEMORY_DIR / "trade-journal.json"
+BRAIN_STATE_FILE = OUTPUTS_DIR / "autonomous-brain.json"
+CODEBASE_INDEX_FILE = OUTPUTS_DIR / "codebase-index.json"
+PLAYBOOK_STATE_FILE = OUTPUTS_DIR / "playbook-state.json"
 
 LOCKFILE_DIR = Path("/tmp/senpi-locks")
 
@@ -71,11 +74,80 @@ def load_regime() -> dict:
     return load_json(RISK_REGIME_FILE)
 
 
+def load_brain_state() -> dict:
+    """Return the latest strategic brain snapshot if available."""
+    return load_json(BRAIN_STATE_FILE, default={})
+
+
+def load_playbook_state() -> dict:
+    """Return the latest normalized playbook snapshot if available."""
+    return load_json(PLAYBOOK_STATE_FILE, default={})
+
+
+def current_scanner_profile(scanner: str) -> dict:
+    """Return the active scanner profile from the brain/playbook snapshot."""
+    scanner_key = str(scanner or "unknown").lower()
+    brain = load_brain_state()
+    signal_policy = brain.get("signalPolicy", {}) if isinstance(brain, dict) else {}
+    profiles = signal_policy.get("scannerProfiles", {})
+    if scanner_key in profiles:
+        return profiles.get(scanner_key, {})
+
+    playbook = load_playbook_state()
+    return playbook.get("scannerProfiles", {}).get(scanner_key, {}) if isinstance(playbook, dict) else {}
+
+
+def current_brain_policy() -> dict:
+    brain = load_brain_state()
+    if not isinstance(brain, dict):
+        return {}
+    policy = brain.get("executionPolicy", {})
+    return policy if isinstance(policy, dict) else {}
+
+
+def _apply_brain_policy(params: dict) -> dict:
+    """Overlay risk-reducing brain directives on top of regime params."""
+    policy = current_brain_policy()
+    if not params:
+        params = {}
+    effective = dict(params)
+
+    if policy.get("blockNewEntries"):
+        effective["newEntriesAllowed"] = False
+        effective["autoEntryEnabled"] = False
+
+    if policy.get("allowAutoEntry") is False:
+        effective["autoEntryEnabled"] = False
+
+    max_slots_cap = policy.get("maxSlotsCap")
+    if isinstance(max_slots_cap, (int, float)) and "maxSlots" in effective:
+        effective["maxSlots"] = min(int(effective["maxSlots"]), int(max_slots_cap))
+
+    max_leverage_cap = policy.get("maxLeverageCap")
+    if isinstance(max_leverage_cap, (int, float)) and "maxLeverageCrypto" in effective:
+        effective["maxLeverageCrypto"] = min(float(effective["maxLeverageCrypto"]), float(max_leverage_cap))
+
+    alloc_pct_cap = policy.get("allocPctCap")
+    if isinstance(alloc_pct_cap, (int, float)) and "allocPctPerSlot" in effective:
+        effective["allocPctPerSlot"] = min(float(effective["allocPctPerSlot"]), float(alloc_pct_cap))
+
+    if policy:
+        effective["_brainPolicy"] = {
+            "generatedAt": policy.get("generatedAt"),
+            "mode": policy.get("mode"),
+            "reasonCount": len(policy.get("reasons", [])),
+        }
+
+    return effective
+
+
 def current_regime_params() -> dict:
     """Return the active regime's parameter block."""
     regime = load_regime()
     mode = regime.get("riskMode", "BASELINE")
-    return regime.get("regimes", {}).get(mode, regime["regimes"]["BASELINE"])
+    regimes = regime.get("regimes", {})
+    params = regimes.get(mode) or regimes.get("BASELINE", {})
+    return _apply_brain_policy(params)
 
 
 def is_entries_allowed() -> bool:
@@ -135,11 +207,221 @@ def get_open_positions(strategy_key: str) -> list[dict]:
     return positions
 
 
+def get_all_open_positions() -> list[dict]:
+    """Return all active positions across enabled strategies."""
+    positions = []
+    for strat in get_enabled_strategies():
+        positions.extend(get_open_positions(strat["_key"]))
+    return positions
+
+
+def compute_roe_pct(entry_price: float, current_price: float, direction: str, leverage: float) -> float:
+    """Compute leverage-adjusted ROE percentage."""
+    if entry_price <= 0 or leverage <= 0:
+        return 0.0
+    if direction.upper() == "LONG":
+        pnl_pct = (current_price - entry_price) / entry_price
+    else:
+        pnl_pct = (entry_price - current_price) / entry_price
+    return pnl_pct * leverage * 100
+
+
+def _position_notional_usd(position: dict) -> float:
+    margin = float(position.get("margin", 0) or 0)
+    leverage = float(position.get("leverage", 0) or 0)
+    if margin > 0 and leverage > 0:
+        return abs(margin * leverage)
+    size = float(position.get("size", 0) or 0)
+    entry_price = float(position.get("entryPrice", 0) or 0)
+    if size > 0 and entry_price > 0:
+        return abs(size * entry_price)
+    return 0.0
+
+
+def directional_exposure_snapshot(
+    *,
+    additional_direction: str | None = None,
+    additional_margin: float = 0.0,
+    additional_leverage: float = 1.0,
+    additional_position: bool = True,
+) -> dict:
+    """Summarize current and projected directional notional exposure."""
+    positions = get_all_open_positions()
+    long_notional = 0.0
+    short_notional = 0.0
+
+    for pos in positions:
+        direction = str(pos.get("direction", "")).upper()
+        notional = _position_notional_usd(pos)
+        if direction == "LONG":
+            long_notional += notional
+        elif direction == "SHORT":
+            short_notional += notional
+
+    additional_notional = max(0.0, float(additional_margin or 0) * max(float(additional_leverage or 0), 1.0))
+    projected_long = long_notional
+    projected_short = short_notional
+    if additional_direction:
+        if additional_direction.upper() == "LONG":
+            projected_long += additional_notional
+        elif additional_direction.upper() == "SHORT":
+            projected_short += additional_notional
+
+    current_total = long_notional + short_notional
+    projected_total = projected_long + projected_short
+    projected_open_positions = len(positions) + (1 if additional_notional > 0 and additional_position else 0)
+    return {
+        "currentOpenPositions": len(positions),
+        "projectedOpenPositions": projected_open_positions,
+        "longNotional": round(long_notional, 2),
+        "shortNotional": round(short_notional, 2),
+        "totalNotional": round(current_total, 2),
+        "projectedLongNotional": round(projected_long, 2),
+        "projectedShortNotional": round(projected_short, 2),
+        "projectedTotalNotional": round(projected_total, 2),
+        "projectedLongPct": round(projected_long / projected_total * 100, 2) if projected_total > 0 else 0.0,
+        "projectedShortPct": round(projected_short / projected_total * 100, 2) if projected_total > 0 else 0.0,
+    }
+
+
+def check_directional_exposure_limit(
+    direction: str,
+    additional_margin: float,
+    additional_leverage: float,
+    *,
+    additional_position: bool = True,
+) -> tuple[bool, dict]:
+    """Check whether a new or expanded position would breach the directional cap.
+
+    The first position is allowed. After that, the projected book must respect
+    the configured directional cap.
+    """
+    regime = load_regime()
+    guardrails = regime.get("globalGuardrails", {})
+    cap_pct = float(guardrails.get("directionalCapPct", 70) or 70)
+    snapshot = directional_exposure_snapshot(
+        additional_direction=direction,
+        additional_margin=additional_margin,
+        additional_leverage=additional_leverage,
+        additional_position=additional_position,
+    )
+    offending_pct = snapshot["projectedLongPct"] if direction.upper() == "LONG" else snapshot["projectedShortPct"]
+    snapshot["capPct"] = cap_pct
+    snapshot["offendingPct"] = offending_pct
+
+    if snapshot["projectedOpenPositions"] <= 1:
+        return True, snapshot
+    return offending_pct <= cap_pct, snapshot
+
+
+def build_position_playbook_metadata(
+    *,
+    scanner: str,
+    score: int | float = 0,
+    margin: float = 0,
+    leverage: float = 0,
+    reasons: list[str] | None = None,
+    sm_snapshot: dict | None = None,
+    setup: dict | None = None,
+) -> dict:
+    """Build normalized position metadata for the local playbook/supervisor."""
+    scanner_key = str(scanner or "unknown").lower()
+    profile = current_scanner_profile(scanner_key)
+    signal_policy = load_brain_state().get("signalPolicy", {})
+    priority = profile.get("priority", signal_policy.get("priorityByScanner", {}).get(scanner_key, 50))
+    fast_scanners = {"orca", "komodo", "sentinel", "shark", "rhino"}
+    dead_weight_min = profile.get("deadWeightMin", 20 if scanner_key in fast_scanners else 45)
+    return {
+        "schemaVersion": "1.0",
+        "scanner": scanner_key,
+        "profileVersion": profile.get("version", "default"),
+        "priority": priority,
+        "entry": {
+            "score": float(score or 0),
+            "marginUsd": round(float(margin or 0), 2),
+            "leverage": float(leverage or 0),
+            "notionalUsd": round(float(margin or 0) * float(leverage or 0), 2),
+        },
+        "signal": {
+            "reasons": list(reasons or [])[:8],
+            "setup": setup or {},
+        },
+        "smSnapshot": sm_snapshot or {},
+        "rotation": {
+            "eligible": True,
+            "deadWeightMin": dead_weight_min,
+            "minHighWaterRoe": profile.get("minHighWaterRoe", 2.0),
+            "closeIfNegative": True,
+            "priorityGap": profile.get("rotationPriorityGap", 8),
+        },
+        "collapse": {
+            "minTraderRatio": profile.get("minTraderRatio", 0.2),
+            "minTraderCountFloor": profile.get("minTraderCountFloor", 24),
+            "minConvictionRatio": profile.get("minConvictionRatio", 0.5),
+            "minConcentrationRatio": profile.get("minConcentrationRatio", 0.5),
+        },
+        "realizedEdge": {
+            "score": profile.get("realizedEdgeScore", 0.0),
+            "confidence": profile.get("sampleConfidence", 0.0),
+            "closes": profile.get("sampleCloses", 0),
+        },
+    }
+
+
+def attach_position_playbook(
+    dsl_state: dict,
+    *,
+    scanner: str,
+    margin: float,
+    leverage: float,
+    score: int | float = 0,
+    reasons: list[str] | None = None,
+    sm_snapshot: dict | None = None,
+    setup: dict | None = None,
+) -> dict:
+    """Attach normalized playbook metadata to a DSL state dict."""
+    playbook = build_position_playbook_metadata(
+        scanner=scanner,
+        score=score,
+        margin=margin,
+        leverage=leverage,
+        reasons=reasons,
+        sm_snapshot=sm_snapshot,
+        setup=setup,
+    )
+    dsl_state["scanner"] = str(scanner or "unknown").lower()
+    dsl_state["margin"] = round(float(margin or dsl_state.get("margin", 0) or 0), 2)
+    dsl_state["notionalUsd"] = round(
+        dsl_state["margin"] * float(leverage or dsl_state.get("leverage", 0) or 0),
+        2,
+    )
+    dsl_state["playbook"] = playbook
+
+    snapshot = playbook.get("smSnapshot", {})
+    if "traderCount" in snapshot:
+        dsl_state["entrySmTraderCount"] = snapshot["traderCount"]
+    if "conviction" in snapshot:
+        dsl_state["entrySmConviction"] = snapshot["conviction"]
+    if "concentration" in snapshot:
+        dsl_state["entrySmConcentration"] = snapshot["concentration"]
+    return dsl_state
+
+
 def count_open_slots(strategy: dict) -> int:
     """How many slots are free in this strategy. Respects gate state and dynamic unlocking."""
     if strategy.get("gateState", "OPEN") != "OPEN":
         return 0
     max_slots = strategy.get("maxSlots", 2)
+    regime_slots = current_regime_params().get("maxSlots")
+    if isinstance(regime_slots, (int, float)):
+        max_slots = min(max_slots, int(regime_slots))
+
+    policy = current_brain_policy()
+    strategy_caps = policy.get("strategyCaps", {})
+    strat_cap = strategy_caps.get(strategy.get("_key", ""), {})
+    strat_max_slots = strat_cap.get("maxSlotsCap")
+    if isinstance(strat_max_slots, (int, float)):
+        max_slots = min(max_slots, int(strat_max_slots))
 
     # Dynamic slot unlocking (senpi-skills v6.3 pattern)
     dynamic = strategy.get("dynamicSlots", {})
@@ -181,6 +463,18 @@ def add_pending_entry(entry: dict):
     """Append an entry to the pending queue."""
     entries = load_pending_entries()
     entry["queuedAt"] = now_iso()
+    brain = load_brain_state()
+    policy = brain.get("executionPolicy", {}) if isinstance(brain, dict) else {}
+    signal_policy = brain.get("signalPolicy", {}) if isinstance(brain, dict) else {}
+    scanner = (entry.get("scanner") or entry.get("source") or entry.get("entryMode") or entry.get("mode") or "unknown")
+    scanner_key = str(scanner).lower()
+    entry["brainContext"] = {
+        "brainAt": brain.get("generatedAt"),
+        "mode": policy.get("mode", "UNSET"),
+        "priority": signal_policy.get("priorityByScanner", {}).get(scanner_key, 0),
+        "blockedScanner": scanner_key in signal_policy.get("blockedScanners", []),
+        "preferredScanner": scanner_key in signal_policy.get("preferredScanners", []),
+    }
     entries.append(entry)
     save_pending_entries(entries)
 
@@ -374,6 +668,7 @@ def check_stale_heartbeats(max_stale_minutes: dict[str, int] | None = None) -> l
         "watchdog": 12,  # runs every 5min, stale after 12 min
         "risk-arbiter": 3, # runs every 30s, stale after 3 min
         "arena": 35,     # runs every 15min, stale after 35 min
+        "brain": 12,     # runs every 5min, stale after 12 min
     }
     if max_stale_minutes:
         defaults.update(max_stale_minutes)

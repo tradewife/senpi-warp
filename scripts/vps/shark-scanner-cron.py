@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 from senpi_common import (
     acquire_lock, release_lock, log, now_iso, load_json, save_json,
     mcporter_call, mcporter_call_retry, send_telegram, current_regime_params,
+    check_directional_exposure_limit, attach_position_playbook,
     count_open_slots, get_enabled_strategies, get_strategy_state_dir,
     is_entries_allowed, record_heartbeat, record_trade, add_pending_entry,
     is_rotation_cooled_down, git_sync,
@@ -609,7 +610,7 @@ def run_entry(strike_candidates: list[dict], oi_history: dict,
         if len(triggers) < min_triggers:
             continue
 
-        sm_dir, _, _ = get_sm_direction(asset)
+        sm_dir, sm_pct, sm_traders = get_sm_direction(asset)
         if sm_dir and sm_dir != direction:
             continue
 
@@ -621,6 +622,13 @@ def run_entry(strike_candidates: list[dict], oi_history: dict,
         margin_pct = config.get("marginPct", 0.18)
         margin = budget * margin_pct
         lev = config.get("leverage", {}).get("default", 8)
+        allowed_exposure, exposure = check_directional_exposure_limit(direction, margin, lev)
+        if not allowed_exposure:
+            log(
+                f"SHARK: directional cap blocked {asset} {direction} "
+                f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+            )
+            continue
 
         res = mcporter_call_retry("strategy_create_position", {
             "strategyId": shark_strat.get("strategyId"),
@@ -643,6 +651,22 @@ def run_entry(strike_candidates: list[dict], oi_history: dict,
         dsl["strategyId"] = shark_strat.get("strategyId")
         dsl["strategyKey"] = shark_strat["_key"]
         dsl["size"] = size
+        attach_position_playbook(
+            dsl,
+            scanner="shark",
+            margin=margin,
+            leverage=lev,
+            score=len(triggers),
+            reasons=[t["trigger"] for t in triggers],
+            sm_snapshot={
+                "traderCount": sm_traders,
+                "concentration": sm_pct,
+            },
+            setup={
+                "zonePrice": zone_price,
+                "distancePct": candidate.get("distance_pct"),
+            },
+        )
         sdir = get_strategy_state_dir(shark_strat["_key"])
         save_json(sdir / f"dsl-{asset}.json", dsl)
 

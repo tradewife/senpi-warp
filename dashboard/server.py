@@ -115,6 +115,7 @@ def get_dashboard_state() -> dict:
     strategies = load_json(CONFIG_DIR / "wolf-strategies.json")
     scanner_config = load_json(CONFIG_DIR / "scanner-config.json")
     arbiter = load_json(OUTPUTS_DIR / "arbiter-state.json")
+    brain = load_json(OUTPUTS_DIR / "autonomous-brain.json")
     journal = load_json(MEMORY_DIR / "trade-journal.json", default=[])
     pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
 
@@ -169,6 +170,14 @@ def get_dashboard_state() -> dict:
             "wins": daily_wins,
             "winRate": round(daily_wins / daily_count * 100, 1) if daily_count > 0 else 0,
         },
+        "brain": {
+            "mode": brain.get("executionPolicy", {}).get("mode", "UNSET"),
+            "generatedAt": relative_time(brain.get("generatedAt", "")),
+            "blockNewEntries": brain.get("executionPolicy", {}).get("blockNewEntries", False),
+            "preferredScanners": brain.get("signalPolicy", {}).get("preferredScanners", []),
+            "blockedScanners": brain.get("signalPolicy", {}).get("blockedScanners", []),
+            "reasons": brain.get("summary", {}).get("reasons", []),
+        },
         "timestamp": now_iso(),
     }
 
@@ -204,6 +213,13 @@ async def api_state(request: Request):
     if not check_auth(request):
         return {"error": "unauthorized"}
     return get_dashboard_state()
+
+
+@app.get("/api/brain")
+async def api_brain(request: Request):
+    if not check_auth(request):
+        return {"error": "unauthorized"}
+    return load_json(OUTPUTS_DIR / "autonomous-brain.json", default={})
 
 
 @app.post("/api/chat")
@@ -268,6 +284,7 @@ HELP_TEXT = """**Commands:**
 `/arbiter` — Run Risk Arbiter now
 `/health` — Run health check now
 `/arena` — Run arena monitor now
+`/brain` — Show current autonomous brain policy
 `/pending` — Show queued signals
 `/howl` — Last HOWL report summary
 `/help` — This message
@@ -367,6 +384,9 @@ async def handle_chat_message(message: str) -> str:
     if cmd == "/arena":
         return await _cmd_run_script("Arena Monitor", "scripts/vps/arena-monitor.py")
 
+    if cmd == "/brain":
+        return _cmd_brain()
+
     if cmd == "/pending":
         pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
         if not pending:
@@ -396,9 +416,11 @@ def _cmd_status() -> str:
     state = get_dashboard_state()
     r = state["regime"]
     d = state["daily"]
+    brain = state["brain"]
     lines = [
         f"**Regime:** {r['mode']} ({r['updatedAt']})",
         f"**Positions:** {state['positionCount']} open | {state['pendingSignals']} pending",
+        f"**Brain:** {brain['mode']} | {'entries blocked' if brain['blockNewEntries'] else 'entries live'}",
         f"**Daily PnL:** ${d['pnl']:+.2f} | {d['trades']} trades | {d['winRate']}% WR",
     ]
     if state["positions"]:
@@ -450,6 +472,31 @@ def _cmd_howl() -> str:
     if len(content) > 1500:
         return f"**{name}:**\n\n{content[:1500]}...\n\n_(truncated — full report in memory/{name})_"
     return f"**{name}:**\n\n{content}"
+
+
+def _cmd_brain() -> str:
+    brain = load_json(OUTPUTS_DIR / "autonomous-brain.json", default={})
+    if not brain:
+        return "No autonomous brain state yet."
+
+    policy = brain.get("executionPolicy", {})
+    signal_policy = brain.get("signalPolicy", {})
+    reasons = policy.get("reasons", [])
+    lines = [
+        f"**Brain:** {policy.get('mode', 'UNSET')} ({relative_time(brain.get('generatedAt', ''))})",
+        f"**Entries:** {'blocked' if policy.get('blockNewEntries') else 'allowed'} | "
+        f"auto-entry={'on' if policy.get('allowAutoEntry') else 'off'}",
+        f"**Caps:** slots={policy.get('maxSlotsCap', '?')} | "
+        f"leverage={policy.get('maxLeverageCap', '?')}x | "
+        f"alloc={policy.get('allocPctCap', '?')}%",
+        f"**Preferred:** {', '.join(signal_policy.get('preferredScanners', [])) or 'none'}",
+        f"**Blocked:** {', '.join(signal_policy.get('blockedScanners', [])) or 'none'}",
+    ]
+    if reasons:
+        lines.append("**Reasons:**")
+        for reason in reasons[:5]:
+            lines.append(f"• {reason}")
+    return "\n".join(lines)
 
 
 async def _set_regime(mode: str, reason: str):

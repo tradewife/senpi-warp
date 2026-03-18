@@ -59,8 +59,10 @@ COMMANDS = [
      "Current equity, day-start equity, peak, drawdown from peak, and daily change percentage."),
     ("regime",   "Risk regime details",
      "Active regime (RISK\\_ON / BASELINE / RISK\\_OFF), who set it, why, and the parameter block (slots, leverage, alloc)."),
+    ("brain",    "Autonomous brain state",
+     "Show the current local brain policy: entry status, risk caps, preferred scanners, blocked scanners, and the reasons behind them."),
     ("pending",  "Queued scanner signals",
-     "Signals from ORCA and KOMODO scanners awaiting Oz evaluation or already auto-entered."),
+     "Queued scanner signals with local brain priority context and auto-entry status."),
 
     # Control
     ("risk_on",  "⚡ Set RISK_ON",
@@ -214,7 +216,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """🐺 *Welcome to Senpi*
 _Autonomous hybrid trading agent_
 
-Senpi runs a two-layer architecture for crypto perpetual futures:
+Senpi runs a deterministic hybrid architecture for crypto perpetual futures:
 
 ⚙️ *Mechanical Layer* (this server)
 Runs every 30-60 seconds. No LLM, no cloud credits.
@@ -229,10 +231,14 @@ Runs every 30-60 seconds. No LLM, no cloud credits.
   ↳ rising SM contribution confirmed by quality trader momentum events
 • 🦏 *RHINO Scanner* — momentum pyramider
   ↳ scout small, add to winners at +10% and +20% ROE if thesis holds
+• 🧠 *Autonomous Brain* — local policy + playbook synthesis
+  ↳ scanner priorities, caps, risk mode overlays, and queue context
+• 🔄 *Position Supervisor* — deterministic rotation logic
+  ↳ SM flip, conviction collapse, and dead-weight rotation
 • 🔒 *DSL High Water* — 7-tier infinite trailing stop (up to 90% of peak)
 • 🚨 *Risk Arbiter* — hard safety limits, no LLM dependency
 
-🧠 *Strategic Layer* (Oz Cloud)
+☁️ *Oz Strategic Layer* (optional)
 LLM-powered agents on scheduled intervals.
 • Trade evaluation, regime classification, portfolio review
 • Nightly HOWL self-improvement + arena benchmarking
@@ -270,7 +276,8 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     section_map = {
         "status": "📊 Status & Monitoring", "positions": "📊 Status & Monitoring",
         "trades": "📊 Status & Monitoring", "equity": "📊 Status & Monitoring",
-        "regime": "📊 Status & Monitoring", "pending": "📊 Status & Monitoring",
+        "regime": "📊 Status & Monitoring", "brain": "📊 Status & Monitoring",
+        "pending": "📊 Status & Monitoring",
         "risk_on": "🎛 Control", "risk_off": "🎛 Control",
         "baseline": "🎛 Control", "flatten": "🎛 Control",
         "scan": "▶️ Manual Triggers", "komodo": "▶️ Manual Triggers",
@@ -309,6 +316,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     regime = load_json(CONFIG_DIR / "risk-regime.json")
     arbiter = load_json(OUTPUTS_DIR / "arbiter-state.json")
+    brain = load_json(OUTPUTS_DIR / "autonomous-brain.json", default={})
     journal = load_json(MEMORY_DIR / "trade-journal.json", default=[])
     pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
     pos_count, _ = _count_open_positions()
@@ -322,12 +330,17 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     dd = (peak - equity) / peak * 100 if peak > 0 else 0
 
     pnl_emoji = "📈" if daily["pnl"] >= 0 else "📉"
+    brain_policy = brain.get("executionPolicy", {})
+    brain_mode = brain_policy.get("mode", "UNSET")
+    entries_state = "blocked" if brain_policy.get("blockNewEntries") else "live"
 
     text = (
         f"🐺 *Senpi Status*\n\n"
         f"{mode_emoji} *Regime:* {mode}\n"
         f"↳ {regime.get('reason', 'No reason set')}\n"
         f"↳ Set by {regime.get('updatedBy', '?')} · {relative_time(regime.get('updatedAt', ''))}\n\n"
+        f"🧠 *Brain:* {brain_mode} · entries {entries_state}\n"
+        f"↳ {relative_time(brain.get('generatedAt', ''))}\n\n"
         f"📊 *Positions:* {pos_count}/3 open · {len(pending)} signals pending\n"
         f"{pnl_emoji} *Daily PnL:* {'+'if daily['pnl']>=0 else ''}${daily['pnl']:.2f} · "
         f"{daily['count']} trades · {daily['wr']}% WR\n\n"
@@ -478,13 +491,42 @@ async def cmd_regime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_brain(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    brain = load_json(OUTPUTS_DIR / "autonomous-brain.json", default={})
+    if not brain:
+        await update.message.reply_text(
+            "No autonomous brain state yet.\n\n_Run /health or wait for the worker to build it._"
+        )
+        return
+
+    policy = brain.get("executionPolicy", {})
+    signal_policy = brain.get("signalPolicy", {})
+    reasons = policy.get("reasons", [])
+    text = (
+        f"🧠 *Autonomous Brain*\n\n"
+        f"*Mode:* {policy.get('mode', 'UNSET')}\n"
+        f"*Updated:* {relative_time(brain.get('generatedAt', ''))}\n"
+        f"*Entries:* {'blocked' if policy.get('blockNewEntries') else 'allowed'}\n"
+        f"*Auto-entry:* {'on' if policy.get('allowAutoEntry') else 'off'}\n"
+        f"*Caps:* {policy.get('maxSlotsCap', '?')} slots · "
+        f"{policy.get('maxLeverageCap', '?')}x · "
+        f"{policy.get('allocPctCap', '?')}% alloc\n"
+        f"*Preferred:* {', '.join(signal_policy.get('preferredScanners', [])) or 'none'}\n"
+        f"*Blocked:* {', '.join(signal_policy.get('blockedScanners', [])) or 'none'}\n\n"
+        f"*Reasons:*\n"
+        + ("\n".join(f"• {reason}" for reason in reasons[:5]) if reasons else "• No cautions active")
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+
+@authorized
 async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
     if not pending:
         await update.message.reply_text(
             "No pending signals.\n\n"
             "_Mechanical scanners run continuously across ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, and RHINO. "
-            "Signals appear here when detected and are cleared by the Oz Trade Evaluator (every 15 min)._"
+            "Signals appear here when detected. The local brain assigns priority, and Oz can optionally review or act on them._"
         )
         return
 
@@ -493,20 +535,23 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mode = p.get("mode", p.get("signalType", "?"))
         score = p.get("score", "?")
         scanner = p.get("scanner", p.get("source", "orca"))
-        entered = "✅ auto-entered" if p.get("autoEntered") else "⏳ awaiting Oz review"
+        brain_ctx = p.get("brainContext", {})
+        priority = brain_ctx.get("priority")
+        entered = "✅ auto-entered" if p.get("autoEntered") else "⏳ queued"
         age = relative_time(p.get("queuedAt", p.get("timestamp", "")))
         reasons = p.get("reasons", [])
         reason_str = f" · {', '.join(reasons[:3])}" if reasons else ""
+        prio_str = f" · priority {priority}" if priority is not None else ""
 
         lines.append(
             f"• *{p.get('direction', '?')} {p.get('asset', '?')}* [{scanner}/{mode}]\n"
             f"  Score: {score}{reason_str}\n"
-            f"  {entered} · {age}"
+            f"  {entered}{prio_str} · {age}"
         )
 
     lines.append(
         f"\n_Auto-entry thresholds vary by scanner; see the active config for each strategy._\n"
-        f"_Signals below threshold queue for Oz Trade Evaluator review._"
+        f"_Queued signals can be consumed by the local supervisor, the dashboard, or Oz workflows._"
     )
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
@@ -991,6 +1036,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("trades", cmd_trades))
     app.add_handler(CommandHandler("equity", cmd_equity))
     app.add_handler(CommandHandler("regime", cmd_regime))
+    app.add_handler(CommandHandler("brain", cmd_brain))
     app.add_handler(CommandHandler("pending", cmd_pending))
 
     # Control

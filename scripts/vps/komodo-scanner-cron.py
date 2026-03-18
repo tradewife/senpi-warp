@@ -29,6 +29,7 @@ from senpi_common import (
     POSITION_STATE_DIR, SCANNER_CONFIG_FILE,
     load_regime, current_regime_params, is_entries_allowed, is_auto_entry_enabled,
     get_enabled_strategies, count_open_slots, get_strategy_state_dir,
+    check_directional_exposure_limit, attach_position_playbook,
     add_pending_entry, record_trade, send_telegram,
     mcporter_call, record_heartbeat,
 )
@@ -507,6 +508,14 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
     )
     margin = budget * alloc_pct
 
+    allowed_exposure, exposure = check_directional_exposure_limit(direction, margin, leverage)
+    if not allowed_exposure:
+        log(
+            f"KOMODO: directional cap blocked {asset} {direction} "
+            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
+        )
+        return
+
     # KOMODO: ALO (maker) orders for fee savings — patient ambush, not speed-critical
     log(f"🦎 KOMODO AUTO-ENTRY: {direction} {asset} | "
         f"margin=${margin:.0f} lev={leverage}x order=ALO | "
@@ -539,6 +548,23 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
         strategy_id=target_strategy.get("strategyId"),
         strategy_key=target_strategy["_key"],
         score=score,
+    )
+    attach_position_playbook(
+        dsl_state,
+        scanner="komodo",
+        margin=margin,
+        leverage=leverage,
+        score=score,
+        reasons=[
+            f"CONSENSUS {breakdown.get('traderCount', 0)}",
+            f"TIER {breakdown.get('avgTier', 0)}",
+            f"CONC {breakdown.get('avgConcentration', 0)}",
+        ],
+        sm_snapshot={
+            "traderCount": breakdown.get("traderCount"),
+            "concentration": breakdown.get("avgConcentration"),
+        },
+        setup={"breakdown": breakdown},
     )
     state_dir = get_strategy_state_dir(target_strategy["_key"])
     save_json(state_dir / f"dsl-{asset}.json", dsl_state)
