@@ -60,9 +60,9 @@ COMMANDS = [
     ("regime",   "Risk regime details",
      "Active regime (RISK\\_ON / BASELINE / RISK\\_OFF), who set it, why, and the parameter block (slots, leverage, alloc)."),
     ("brain",    "Autonomous brain state",
-     "Show the current local brain policy: entry status, risk caps, preferred scanners, blocked scanners, and the reasons behind them."),
+     "Show the current in-container brain policy: entry status, risk caps, preferred scanners, blocked scanners, and the reasons behind them."),
     ("pending",  "Queued scanner signals",
-     "Queued scanner signals with local brain priority context and auto-entry status."),
+     "Queued scanner signals with in-container brain priority context and auto-entry status."),
 
     # Control
     ("risk_on",  "⚡ Set RISK_ON",
@@ -231,7 +231,7 @@ Runs every 30-60 seconds. No LLM, no cloud credits.
   ↳ rising SM contribution confirmed by quality trader momentum events
 • 🦏 *RHINO Scanner* — momentum pyramider
   ↳ scout small, add to winners at +10% and +20% ROE if thesis holds
-• 🧠 *Autonomous Brain* — local policy + playbook synthesis
+• 🧠 *Autonomous Brain* — in-container policy + playbook synthesis
   ↳ scanner priorities, caps, risk mode overlays, and queue context
 • 🔄 *Position Supervisor* — deterministic rotation logic
   ↳ SM flip, conviction collapse, and dead-weight rotation
@@ -526,7 +526,7 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "No pending signals.\n\n"
             "_Mechanical scanners run continuously across ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, and RHINO. "
-            "Signals appear here when detected. The local brain assigns priority, and Oz can optionally review or act on them._"
+            "Signals appear here when detected. The in-container brain assigns priority, and Oz can optionally review or act on them._"
         )
         return
 

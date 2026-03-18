@@ -1,10 +1,10 @@
 # senpi-waifu
 
-Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for slower high-intelligence supervision. Fully controllable from Telegram.
+Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
 
 ## How It Works
 
-Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **local brain layer** builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Oz strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
+Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Oz strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -50,9 +50,15 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 ## Control Model
 
 - **Deterministic hot path.** Entries, exits, risk checks, exposure caps, and position supervision run locally in Python with no LLM dependency.
-- **Local autonomous brain.** `scripts/vps/autonomous-brain.py` synthesizes a policy layer from runtime state and writes `outputs/autonomous-brain.json`, `outputs/playbook-state.json`, and `outputs/codebase-index.json`.
+- **In-container autonomous brain.** `scripts/vps/autonomous-brain.py` runs inside the Railway worker/runtime, synthesizes a policy layer from runtime state, and writes `outputs/autonomous-brain.json`, `outputs/playbook-state.json`, and `outputs/codebase-index.json`.
 - **Oz as supervisory intelligence.** Oz is used for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
 - **Git as state bus.** Mechanical state, playbook state, reports, and config changes remain auditable and easy to inspect.
+
+## Railway ↔ Oz Connection
+
+- **Your laptop is not in the runtime path.** Once deployed, Railway runs the mechanical layer and the in-container brain whether or not your local machine is online.
+- **State sync happens through the repo and API calls.** Railway writes state and can push it to GitHub. Oz agents read that state, update config/reports, and push back. Railway pulls the latest changes during health checks and on scanner cycles.
+- **Direct cloud dispatch is optional.** The dashboard/Telegram service can also call Oz directly via `WARP_API_KEY` and `OZ_ENVIRONMENT_ID` when you send free-text prompts or run `/flatten`.
 
 ## Telegram Bot
 
