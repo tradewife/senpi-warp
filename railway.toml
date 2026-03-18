@@ -27,7 +27,8 @@ restartPolicyMaxRetries = 10
 #   WARP_API_KEY         = Warp API key for /flatten command
 #   OZ_ENVIRONMENT_ID    = Oz environment ID from setup-oz-agents.sh
 #   DASH_TOKEN           = secret token for dashboard auth
-#   DASH_PORT            = 8420 (Railway sets $PORT automatically)
+#   PORT                 = set automatically by Railway
+#   DASH_PORT            = optional local override only when running server.py directly
 #
 # Telegram bot (runs inside dashboard service):
 #   TELEGRAM_BOT_TOKEN   = Telegram bot token (from @BotFather)
