@@ -1,5 +1,5 @@
 # senpi-waifu
-vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
+Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
 
 ## How It Works
 
