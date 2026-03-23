@@ -18,4 +18,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Default: run the worker (Railway can override with dashboard start command)
+ENV PYTHONUNBUFFERED=1
 CMD ["python3", "worker.py"]

@@ -277,4 +277,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        print(f"[FATAL] Worker crashed: {e}")
+        traceback.print_exc()
+        raise
