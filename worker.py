@@ -63,24 +63,11 @@ def setup_git():
 
 
 def setup_mcporter():
-    """Configure mcporter with Senpi MCP server."""
-    if not SENPI_API_KEY:
-        print("[startup] WARNING: SENPI_API_KEY not set — mcporter will not work")
-        return
-    result = subprocess.run(
-        [
-            "mcporter", "config", "add", "senpi",
-            "--command", "npx",
-            "--env", f"SENPI_AUTH_TOKEN={SENPI_API_KEY}",
-            "--", "mcp-remote", "https://mcp.prod.senpi.ai/mcp",
-            "--header", f"Authorization: Bearer {SENPI_API_KEY}",
-        ],
-        capture_output=True, text=True, env=CHILD_ENV,
-    )
-    if result.returncode == 0:
-        print("[startup] mcporter configured with Senpi MCP")
+    """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
+    if SENPI_API_KEY:
+        print(f"[startup] SENPI_API_KEY found — using direct MCP HTTP calls (mcporter bypassed)")
     else:
-        print(f"[startup] mcporter config warning: {result.stderr.strip()[:200]}")
+        print("[startup] WARNING: SENPI_API_KEY not set — Senpi MCP calls will fail")
 
 
 def update_skills():
