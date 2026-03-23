@@ -1,12 +1,9 @@
 FROM python:3.11-slim
 
-# Install Node.js, npm, git (needed for mcporter and git sync)
+# Install git (needed for git sync)
 RUN apt-get update && apt-get install -y \
-    nodejs npm git curl \
+    git curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Install mcporter (Senpi MCP client)
-RUN npm install -g mcporter
 
 # Clone senpi-skills (DSL runner, watchdog, SM flip scripts live here)
 RUN git clone --depth 1 https://github.com/Senpi-ai/senpi-skills.git /opt/senpi/senpi-skills

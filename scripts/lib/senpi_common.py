@@ -520,39 +520,81 @@ def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# mcporter execution
+# Senpi MCP direct HTTP calls (bypasses mcporter)
 # ---------------------------------------------------------------------------
+
+_SENPI_MCP_URL = "https://mcp.prod.senpi.ai/mcp"
+_SENPI_AUTH_TOKEN = os.environ.get("SENPI_API_KEY", "")
+
+
+def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
+    """Call a Senpi MCP tool via direct HTTP JSON-RPC (streaming SSE response).
+
+    The Senpi MCP endpoint returns a streaming SSE response. We read the
+    full response body, then parse the JSON-RPC result from the last
+    "data:" line (which contains the final tool result).
+    """
+    if not _SENPI_AUTH_TOKEN:
+        return {"error": "SENPI_API_KEY not set"}
+
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": tool,
+            "arguments": args,
+        },
+    }
+
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            _SENPI_MCP_URL,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {_SENPI_AUTH_TOKEN}",
+                "Accept": "text/event-stream",
+            },
+            method="POST",
+        )
+        resp = urllib.request.urlopen(req, timeout=timeout)
+        body = resp.read().decode("utf-8")
+
+        # SSE format: lines of "data: {...}" — last one has the result
+        last_json = None
+        for line in body.split("\n"):
+            line = line.strip()
+            if line.startswith("data: "):
+                last_json = line[6:]
+            elif line.startswith("data:"):
+                last_json = line[5:]
+
+        if not last_json:
+            return {"error": "empty MCP response", "raw": body[:500]}
+
+        parsed = json.loads(last_json)
+        return parsed.get("result", parsed)
+
+    except Exception as e:
+        log(f"MCP HTTP error ({tool}): {e}")
+        return {"error": str(e)}
+
 
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
-    Call a Senpi MCP tool via mcporter.
-    Returns parsed JSON response or raises on failure.
+    Call a Senpi MCP tool via direct HTTP (mcporter bypassed).
+    Returns parsed JSON response or dict with 'error' key on failure.
     """
-    cmd = ["mcporter", "call", "senpi", tool, "--json", json.dumps(args)]
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        if result.returncode != 0:
-            log(f"mcporter error ({tool}): {result.stderr.strip()}")
-            return {"error": result.stderr.strip()}
-        return json.loads(result.stdout) if result.stdout.strip() else {}
-    except subprocess.TimeoutExpired:
-        log(f"mcporter timeout ({tool})")
-        return {"error": "timeout"}
-    except json.JSONDecodeError:
-        log(f"mcporter bad JSON ({tool}): {result.stdout[:200]}")
-        return {"error": "bad_json", "raw": result.stdout[:500]}
+    return _senpi_mcp_request(tool, args, timeout=timeout)
 
 
 def mcporter_call_retry(tool: str, args: dict, *, timeout: int = 30, max_attempts: int = 4, delay: float = 1.0) -> dict:
-    """mcporter_call with retry logic (senpi-skills v5.3.1 pattern).
+    """mcporter_call with retry logic.
 
     Retries up to max_attempts times with delay between attempts.
-    Only retries on transient errors (timeout, bad_json), not on valid error responses.
+    Only retries on transient errors (timeout, connection), not on valid API errors.
     """
     last_result = {}
     for attempt in range(max_attempts):
@@ -561,7 +603,7 @@ def mcporter_call_retry(tool: str, args: dict, *, timeout: int = 30, max_attempt
             return result
         err = result.get("error", "")
         # Don't retry on non-transient errors (valid API error responses)
-        if err not in ("timeout", "bad_json") and not err.startswith("mcporter"):
+        if err not in ("timeout",) and "timed out" not in err and "URLError" not in err:
             return result
         last_result = result
         if attempt < max_attempts - 1:
