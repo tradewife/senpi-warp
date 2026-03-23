@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "PAPER_TRADING_START",
-  "updatedBy": "hermes-init",
-  "reason": "Paper trading initialization \u2014 BASELINE mode",
+  "updatedAt": "2026-03-23T20:02:28Z",
+  "updatedBy": "hermes-regime",
+  "reason": "BTC 4H slope +0.61% (below 1.5% RISK_ON threshold), 24h range 6.2% but 1H ATR controlled at 1.1%. Mixed signals \u2014 no clear aligned trend, no active liquidation cascade. BASELINE confirmed.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
