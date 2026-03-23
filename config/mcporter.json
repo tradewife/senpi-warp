@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "senpi": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.prod.senpi.ai/mcp",
+        "--header",
+        "Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InNlbnBpLWF1dGgta2V5LTEifQ.eyJzdWIiOiJkaWQ6cHJpdnk6Y21oaG1tY2kwMDFpMGpzMGM3Z2EzZ2V5bCIsInNlbnBpX3VzZXJfaWQiOiJNMTc5NjQyIiwianRpIjoiZTc2MjZhNGYtMWIyZC00MWZjLWE1NjEtZDEzOTMyNDM2YzI3IiwidHlwZSI6ImJlYXJlciIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJpYXQiOjE3NzQyOTAzNDYsImV4cCI6MTgwNTgyNjM0NiwiaXNzIjoic2VucGktYXV0aC1zZXJ2aWNlIiwiYXVkIjoic2VucGlfbWNwIn0.MzeCONRHXKTk3bH3dUGB9z5Juxb5SveBjiabs_pEkBiGf2JusccroFyGrSi0OTkQKGFb8osJROd8ZLZ5npndmQYzd4BUjpj2r4TT4XF6n41w2GN34AoeLFdgbdxUtDwuB0NL9qbMoF8g5NEkMPrR3V7A4VyVKbtWyGr6XL_g3Yl7IHpMSflovvXuLRW5INMQjC9DnzPK2Ih4P5i8QUPzC6W9JwqhJ3ilKTsk-a7Vw_gRlsLSMSSjyVJdZHEO-CBjfUNFnzGm4o5qdBSQTsirN0FEb8ZEueatzzllapK6zm5vq6l2C_OVs0dzvyZKC68RdAJ6nmDmZpypoXeBt9J_6A"
+      ],
+      "env": {
+        "SENPI_AUTH_TOKEN": "eyJhbGciOiJSUzI1NiIsImtpZCI6InNlbnBpLWF1dGgta2V5LTEifQ.eyJzdWIiOiJkaWQ6cHJpdnk6Y21oaG1tY2kwMDFpMGpzMGM3Z2EzZ2V5bCIsInNlbnBpX3VzZXJfaWQiOiJNMTc5NjQyIiwianRpIjoiZTc2MjZhNGYtMWIyZC00MWZjLWE1NjEtZDEzOTMyNDM2YzI3IiwidHlwZSI6ImJlYXJlciIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJpYXQiOjE3NzQyOTAzNDYsImV4cCI6MTgwNTgyNjM0NiwiaXNzIjoic2VucGktYXV0aC1zZXJ2aWNlIiwiYXVkIjoic2VucGlfbWNwIn0.MzeCONRHXKTk3bH3dUGB9z5Juxb5SveBjiabs_pEkBiGf2JusccroFyGrSi0OTkQKGFb8osJROd8ZLZ5npndmQYzd4BUjpj2r4TT4XF6n41w2GN34AoeLFdgbdxUtDwuB0NL9qbMoF8g5NEkMPrR3V7A4VyVKbtWyGr6XL_g3Yl7IHpMSflovvXuLRW5INMQjC9DnzPK2Ih4P5i8QUPzC6W9JwqhJ3ilKTsk-a7Vw_gRlsLSMSSjyVJdZHEO-CBjfUNFnzGm4o5qdBSQTsirN0FEb8ZEueatzzllapK6zm5vq6l2C_OVs0dzvyZKC68RdAJ6nmDmZpypoXeBt9J_6A"
+      }
+    }
+  },
+  "imports": []
+}
