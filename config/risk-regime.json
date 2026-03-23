@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-23T20:02:28Z",
+  "riskMode": "RISK_ON",
+  "updatedAt": "2026-03-24T08:00:00Z",
   "updatedBy": "hermes-regime",
-  "reason": "BTC 4H slope +0.61% (below 1.5% RISK_ON threshold), 24h range 6.2% but 1H ATR controlled at 1.1%. Mixed signals \u2014 no clear aligned trend, no active liquidation cascade. BASELINE confirmed.",
+  "reason": "BTC 4H slope +2.35%, ETH +2.37% (both above 1.5% RISK_ON threshold). 1H ATR controlled: BTC 1.34%, ETH 1.49%. Strong V-recovery with aligned bullish momentum across both assets and timeframes — 24h BTC +4.5%, ETH +5.9%. RISK_ON activated.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
