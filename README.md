@@ -1,6 +1,6 @@
 # senpi-waifu
 
-Autonomous hybrid trading agent for crypto perpetual futures. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
+testinb fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
 
 ## How It Works
 
