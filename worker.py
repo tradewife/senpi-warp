@@ -72,22 +72,9 @@ def setup_git():
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
     if SENPI_TOKEN:
-    print("[startup] Senpi auth token found — using direct MCP HTTP calls")
+        print("[startup] Senpi auth token found — using direct MCP HTTP calls")
     else:
-        print(\"[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail\")
-
-
-def update_skills():
-    """Pull latest senpi-skills (called periodically by health check)."""
-    if SKILLS_DIR.exists():
-        subprocess.run(
-            ["git", "pull", "--rebase", "--quiet"],
-            cwd=SKILLS_DIR, capture_output=True, timeout=30,
-        )
-
-
-# ---------------------------------------------------------------------------
-# Job runner helpers
+        print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
 # ---------------------------------------------------------------------------
 
 def run_py(script: str):
