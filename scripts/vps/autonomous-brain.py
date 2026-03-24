@@ -42,19 +42,25 @@ from senpi_common import (
 
 
 SCANNERS = [
+    "polar",
+    "fox",
+    "mantis",
     "orca",
     "komodo",
     "condor",
+    "sentinel",
+    "rhino",
     "barracuda",
     "bison",
     "shark",
-    "sentinel",
-    "rhino",
 ]
 
-CORE_CRONS = {"risk-arbiter", "dsl-runner", "health", "orca"}
+CORE_CRONS = {"risk-arbiter", "dsl-runner", "health", "orca", "polar", "fox", "mantis"}
 
 SCANNER_CONFIG_FILES = {
+    "polar": "polar-config.json",
+    "fox": "fox-config.json",
+    "mantis": "mantis-config.json",
     "orca": "scanner-config.json",
     "komodo": "scanner-config.json",
     "condor": "condor-config.json",
@@ -191,7 +197,11 @@ def build_codebase_index() -> dict:
         if not path.is_file():
             continue
         rel = path.relative_to(STATE_DIR).as_posix()
-        if rel.startswith(".git/") or "/__pycache__/" in rel or rel.startswith("__pycache__/"):
+        if (
+            rel.startswith(".git/")
+            or "/__pycache__/" in rel
+            or rel.startswith("__pycache__/")
+        ):
             continue
 
         item = {
@@ -255,7 +265,9 @@ def normalize_source(raw: str) -> str:
 def trade_stats() -> tuple[dict, dict]:
     journal = load_trade_journal()
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    stats = defaultdict(lambda: {"opens": 0, "closes": 0, "wins": 0, "losses": 0, "pnl": 0.0})
+    stats = defaultdict(
+        lambda: {"opens": 0, "closes": 0, "wins": 0, "losses": 0, "pnl": 0.0}
+    )
 
     recent_loss_streak = 0
     for trade in reversed(journal):
@@ -305,14 +317,18 @@ def trade_stats() -> tuple[dict, dict]:
     global_stats = {
         "dailyPnl": round(daily_pnl, 2),
         "dailyCloses": closes_today,
-        "dailyWinRate": round(wins_today / closes_today * 100, 1) if closes_today else 0.0,
+        "dailyWinRate": round(wins_today / closes_today * 100, 1)
+        if closes_today
+        else 0.0,
         "recentLossStreak": recent_loss_streak,
         "journalSize": len(journal),
     }
     return performance, global_stats
 
 
-def extract_learning_signals(arena_state: dict, arena_learnings: dict, latest_report: dict) -> dict:
+def extract_learning_signals(
+    arena_state: dict, arena_learnings: dict, latest_report: dict
+) -> dict:
     winning_traits = arena_state.get("insights", {}).get("winningTraits", [])
     losing_traits = arena_state.get("insights", {}).get("losingTraits", [])
     recommendations = arena_state.get("insights", {}).get("recommendations", [])
@@ -328,9 +344,11 @@ def extract_learning_signals(arena_state: dict, arena_learnings: dict, latest_re
     ).lower()
 
     signals = {
-        "preferSelectivity": "fewer trades" in learning_text or "selectivity" in learning_text,
+        "preferSelectivity": "fewer trades" in learning_text
+        or "selectivity" in learning_text,
         "feeDrag": "fee drag" in learning_text,
-        "highConviction": "higher conviction" in learning_text or "conviction" in learning_text,
+        "highConviction": "higher conviction" in learning_text
+        or "conviction" in learning_text,
         "useDsl": "dsl" in learning_text or "high water" in learning_text,
     }
     signals["topRecommendations"] = recommendations[:3]
@@ -341,7 +359,9 @@ def pending_summary() -> dict:
     pending = load_pending_entries()
     by_scanner = defaultdict(int)
     for entry in pending:
-        scanner = normalize_source(entry.get("scanner", entry.get("source", entry.get("entryMode", ""))))
+        scanner = normalize_source(
+            entry.get("scanner", entry.get("source", entry.get("entryMode", "")))
+        )
         by_scanner[scanner] += 1
     return {
         "total": len(pending),
@@ -368,17 +388,16 @@ def build_scanner_profiles(perf: dict) -> dict:
         confidence = clamp(closes / 12.0, 0.0, 1.0)
 
         edge_score = (
-            (win_rate - 50.0) * 0.7
-            + avg_pnl * 1.2
-            + (wins - losses) * 2.0
-            + pnl * 0.08
+            (win_rate - 50.0) * 0.7 + avg_pnl * 1.2 + (wins - losses) * 2.0 + pnl * 0.08
         )
         if closes == 0:
             edge_score = 0.0
         edge_score = clamp(edge_score, -35.0, 35.0)
         weighted_edge = edge_score * confidence
 
-        priority = int(round(clamp(base.get("basePriority", 55) + weighted_edge, 5, 99)))
+        priority = int(
+            round(clamp(base.get("basePriority", 55) + weighted_edge, 5, 99))
+        )
         dead_weight_min = float(base.get("deadWeightMin", 30))
         min_high_water = float(base.get("minHighWaterRoe", 3.0))
         rotation_gap = int(base.get("rotationPriorityGap", 8))
@@ -431,7 +450,9 @@ def build_scanner_profiles(perf: dict) -> dict:
     return profiles
 
 
-def determine_execution_policy(regime: dict, perf: dict, trade_meta: dict, pending: dict, arena_signals: dict) -> dict:
+def determine_execution_policy(
+    regime: dict, perf: dict, trade_meta: dict, pending: dict, arena_signals: dict
+) -> dict:
     health = load_json(OUTPUTS_DIR / "health-state.json", default={})
     arbiter = load_json(OUTPUTS_DIR / "arbiter-state.json", default={})
     heartbeats = load_json(OUTPUTS_DIR / "cron-heartbeats.json", default={})
@@ -439,7 +460,9 @@ def determine_execution_policy(regime: dict, perf: dict, trade_meta: dict, pendi
     core_stale = sorted(c for c in stale_crons if c in CORE_CRONS)
 
     regime_mode = regime.get("riskMode", "BASELINE")
-    raw_params = regime.get("regimes", {}).get(regime_mode) or regime.get("regimes", {}).get("BASELINE", {})
+    raw_params = regime.get("regimes", {}).get(regime_mode) or regime.get(
+        "regimes", {}
+    ).get("BASELINE", {})
     base = raw_params or current_regime_params()
     peak = float(arbiter.get("peakEquity", 0) or 0)
     equity = float(arbiter.get("lastEquity", 0) or 0)
@@ -497,16 +520,25 @@ def determine_execution_policy(regime: dict, perf: dict, trade_meta: dict, pendi
 
     scanner_profiles = build_scanner_profiles(perf)
     scanner_ranked = sorted(
-        ((name, profile.get("priority", 50), profile) for name, profile in scanner_profiles.items()),
+        (
+            (name, profile.get("priority", 50), profile)
+            for name, profile in scanner_profiles.items()
+        ),
         key=lambda item: item[1],
         reverse=True,
     )
     blocked_scanners = [
-        name for name, _, profile in scanner_ranked
-        if profile.get("sampleCloses", 0) >= 6 and profile.get("weightedEdgeScore", 0) <= -10
+        name
+        for name, _, profile in scanner_ranked
+        if profile.get("sampleCloses", 0) >= 6
+        and profile.get("weightedEdgeScore", 0) <= -10
     ]
-    preferred_scanners = [name for name, _, profile in scanner_ranked if name not in blocked_scanners][:3]
-    priority_by_scanner = {name: profile.get("priority", 50) for name, _, profile in scanner_ranked}
+    preferred_scanners = [
+        name for name, _, profile in scanner_ranked if name not in blocked_scanners
+    ][:3]
+    priority_by_scanner = {
+        name: profile.get("priority", 50) for name, _, profile in scanner_ranked
+    }
 
     mode = "PROTECT" if block_new_entries else "CAUTION" if reasons else "ACTIVE"
     return {
@@ -541,7 +573,8 @@ def determine_execution_policy(regime: dict, perf: dict, trade_meta: dict, pendi
 def latest_howl_report() -> dict:
     files = sorted(
         (
-            path for path in MEMORY_DIR.glob("howl-*.md")
+            path
+            for path in MEMORY_DIR.glob("howl-*.md")
             if re.fullmatch(r"howl-\d{4}-\d{2}-\d{2}\.md", path.name)
         ),
         reverse=True,
@@ -564,7 +597,9 @@ def latest_howl_report() -> dict:
 
     return {
         "file": path.name,
-        "updatedAt": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "updatedAt": datetime.fromtimestamp(
+            path.stat().st_mtime, timezone.utc
+        ).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "highlights": highlights,
     }
 
@@ -590,22 +625,32 @@ def build_playbook_state(regime: dict, execution_policy: dict) -> dict:
     positions = []
     for pos in get_all_open_positions():
         playbook = pos.get("playbook", {})
-        positions.append({
-            "asset": pos.get("asset"),
-            "direction": pos.get("direction"),
-            "strategyKey": pos.get("strategyKey"),
-            "scanner": pos.get("scanner", playbook.get("scanner")),
-            "entryScore": pos.get("entryScore", playbook.get("entry", {}).get("score")),
-            "marginUsd": pos.get("margin", playbook.get("entry", {}).get("marginUsd", 0)),
-            "leverage": pos.get("leverage", playbook.get("entry", {}).get("leverage", 0)),
-            "priority": playbook.get("priority"),
-            "createdAt": pos.get("createdAt"),
-            "highWaterRoe": pos.get("highWaterRoe", 0),
-            "phase": pos.get("phase"),
-        })
+        positions.append(
+            {
+                "asset": pos.get("asset"),
+                "direction": pos.get("direction"),
+                "strategyKey": pos.get("strategyKey"),
+                "scanner": pos.get("scanner", playbook.get("scanner")),
+                "entryScore": pos.get(
+                    "entryScore", playbook.get("entry", {}).get("score")
+                ),
+                "marginUsd": pos.get(
+                    "margin", playbook.get("entry", {}).get("marginUsd", 0)
+                ),
+                "leverage": pos.get(
+                    "leverage", playbook.get("entry", {}).get("leverage", 0)
+                ),
+                "priority": playbook.get("priority"),
+                "createdAt": pos.get("createdAt"),
+                "highWaterRoe": pos.get("highWaterRoe", 0),
+                "phase": pos.get("phase"),
+            }
+        )
 
     regime_mode = regime.get("riskMode", "BASELINE")
-    raw_params = regime.get("regimes", {}).get(regime_mode) or regime.get("regimes", {}).get("BASELINE", {})
+    raw_params = regime.get("regimes", {}).get(regime_mode) or regime.get(
+        "regimes", {}
+    ).get("BASELINE", {})
     return {
         "schemaVersion": "1.0",
         "generatedAt": now_iso(),
@@ -624,7 +669,9 @@ def build_playbook_state(regime: dict, execution_policy: dict) -> dict:
             "guardrails": regime.get("globalGuardrails", {}),
         },
         "scoreThresholds": score_thresholds(),
-        "scannerProfiles": execution_policy.get("signalPolicy", {}).get("scannerProfiles", {}),
+        "scannerProfiles": execution_policy.get("signalPolicy", {}).get(
+            "scannerProfiles", {}
+        ),
         "portfolio": {
             "directionalExposure": directional_exposure_snapshot(),
             "activePositions": positions,
@@ -655,8 +702,12 @@ def main():
         arena_state = load_json(OUTPUTS_DIR / "arena-state.json", default={})
         arena_learnings = load_json(OUTPUTS_DIR / "arena-learnings.json", default={})
         latest_report = load_json(OUTPUTS_DIR / "latest-report.json", default={})
-        learning_signals = extract_learning_signals(arena_state, arena_learnings, latest_report)
-        execution_policy = determine_execution_policy(regime, perf, trade_meta, pending, learning_signals)
+        learning_signals = extract_learning_signals(
+            arena_state, arena_learnings, latest_report
+        )
+        execution_policy = determine_execution_policy(
+            regime, perf, trade_meta, pending, learning_signals
+        )
 
         brain_state = {
             "generatedAt": now_iso(),
@@ -682,8 +733,12 @@ def main():
             },
             "summary": {
                 "status": execution_policy.get("mode"),
-                "preferredScanners": execution_policy.get("signalPolicy", {}).get("preferredScanners", []),
-                "blockedScanners": execution_policy.get("signalPolicy", {}).get("blockedScanners", []),
+                "preferredScanners": execution_policy.get("signalPolicy", {}).get(
+                    "preferredScanners", []
+                ),
+                "blockedScanners": execution_policy.get("signalPolicy", {}).get(
+                    "blockedScanners", []
+                ),
                 "reasons": execution_policy.get("reasons", []),
             },
         }
