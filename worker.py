@@ -54,18 +54,28 @@ CHILD_ENV = {
 # Startup: git + mcporter
 # ---------------------------------------------------------------------------
 
+
 def setup_git():
     """Configure git for HTTPS push/pull using a GitHub token."""
     if not GITHUB_TOKEN:
         print("[startup] WARNING: GITHUB_TOKEN not set — git push/pull will fail")
         return
     remote_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
-    subprocess.run(["git", "remote", "set-url", "origin", remote_url],
-                   cwd=STATE_DIR, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "senpi-bot@railway"],
-                   cwd=STATE_DIR, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Senpi Railway Bot"],
-                   cwd=STATE_DIR, capture_output=True)
+    subprocess.run(
+        ["git", "remote", "set-url", "origin", remote_url],
+        cwd=STATE_DIR,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "senpi-bot@railway"],
+        cwd=STATE_DIR,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Senpi Railway Bot"],
+        cwd=STATE_DIR,
+        capture_output=True,
+    )
     print(f"[startup] git configured for {GITHUB_REPO}")
 
 
@@ -75,11 +85,15 @@ def setup_mcporter():
         print("[startup] Senpi auth token found — using direct MCP HTTP calls")
     else:
         print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
+
+
 def run_py(script: str):
     """Run a Python script from the repo, printing stderr."""
     result = subprocess.run(
         ["python3", str(STATE_DIR / script)],
-        capture_output=True, text=True, env=CHILD_ENV,
+        capture_output=True,
+        text=True,
+        env=CHILD_ENV,
     )
     if result.stderr.strip():
         # Print only non-empty stderr (scripts log to stderr)
@@ -90,7 +104,9 @@ def run_sh(script: str):
     """Run a bash script from the repo."""
     result = subprocess.run(
         ["bash", str(STATE_DIR / script)],
-        capture_output=True, text=True, env=CHILD_ENV,
+        capture_output=True,
+        text=True,
+        env=CHILD_ENV,
     )
     if result.stderr.strip():
         print(result.stderr.rstrip())
@@ -99,6 +115,7 @@ def run_sh(script: str):
 # ---------------------------------------------------------------------------
 # Scheduled jobs
 # ---------------------------------------------------------------------------
+
 
 def job_orca():
     run_py("scripts/vps/orca-scanner-cron.py")
@@ -173,6 +190,7 @@ def job_reconcile():
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     print("=== Senpi Railway Worker starting ===")
     print(f"  STATE_DIR:  {STATE_DIR}")
@@ -211,8 +229,7 @@ def main():
     scheduler.add_job(job_fox, "interval", seconds=90, id="fox")
 
     # KOMODO Momentum Scanner — every 5min (offset 1min to avoid pile-up)
-    scheduler.add_job(job_komodo, "interval", minutes=5, id="komodo",
-                      seconds=60)
+    scheduler.add_job(job_komodo, "interval", minutes=5, id="komodo", seconds=60)
 
     # DSL High Water Runner — every 3min
     scheduler.add_job(job_dsl, "interval", minutes=3, id="dsl")
@@ -237,8 +254,7 @@ def main():
     scheduler.add_job(job_smflip, "interval", minutes=5, id="smflip")
 
     # Watchdog (margin/liq) — every 5min, offset 2min
-    scheduler.add_job(job_watchdog, "interval", minutes=5, id="watchdog",
-                      seconds=120)
+    scheduler.add_job(job_watchdog, "interval", minutes=5, id="watchdog", seconds=120)
 
     # Health Check + git sync — every 10min
     scheduler.add_job(job_health, "interval", minutes=10, id="health")
@@ -253,8 +269,7 @@ def main():
     scheduler.add_job(job_arbiter, "interval", seconds=30, id="arbiter")
 
     # Reconcile closes — every 15min
-    scheduler.add_job(job_reconcile, "interval", minutes=15, id="reconcile",
-                      seconds=30)
+    scheduler.add_job(job_reconcile, "interval", minutes=15, id="reconcile", seconds=30)
 
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
@@ -273,12 +288,35 @@ def main():
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
     print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
-    print("\nWorker running. Ctrl+C to stop.\n")
+    print("\nWorker running. Ctrl+C to stop.\n", flush=True)
+
+    # Debug: immediate test job
+    import datetime as _dt
+
+    def _heartbeat():
+        print(
+            f"[{_dt.datetime.utcnow().strftime('%H:%M:%S')}] scheduler alive",
+            flush=True,
+        )
+
+    scheduler.add_job(
+        _heartbeat,
+        "interval",
+        seconds=60,
+        id="heartbeat",
+        next_run_time=_dt.datetime.utcnow(),
+    )
 
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
         print("Worker stopped.")
+    except Exception as e:
+        import traceback
+
+        print(f"[FATAL] Scheduler crashed: {e}", flush=True)
+        traceback.print_exc()
+        raise
 
 
 if __name__ == "__main__":
@@ -286,6 +324,7 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         import traceback
+
         print(f"[FATAL] Worker crashed: {e}")
         traceback.print_exc()
         raise
