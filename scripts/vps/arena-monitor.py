@@ -94,7 +94,7 @@ def compute_insights(leaderboard: list, top_performers: list) -> dict:
     winners = []
     losers = []
     for entry in leaderboard:
-        roi = float(entry.get("roi", entry.get("roiPct", 0)))
+        roi = _safe_float(entry.get("roi", entry.get("roiPct", 0)))
         if roi > 0:
             winners.append(entry)
         else:
@@ -102,8 +102,8 @@ def compute_insights(leaderboard: list, top_performers: list) -> dict:
 
     # Calculate trade frequencies
     def trades_per_day(entry: dict) -> float:
-        trades = float(entry.get("totalTrades", entry.get("trades", 0)))
-        days = float(entry.get("activeDays", entry.get("days", 1))) or 1
+        trades = _safe_float(entry.get("totalTrades", entry.get("trades", 0)))
+        days = _safe_float(entry.get("activeDays", entry.get("days", 1))) or 1
         return trades / days
 
     winner_tpd = [trades_per_day(w) for w in winners] if winners else [0]
@@ -112,7 +112,7 @@ def compute_insights(leaderboard: list, top_performers: list) -> dict:
     avg_loser_tpd = sum(loser_tpd) / len(loser_tpd)
 
     # Average trades across all
-    all_trades = [float(e.get("totalTrades", e.get("trades", 0))) for e in leaderboard]
+    all_trades = [_safe_float(e.get("totalTrades", e.get("trades", 0))) for e in leaderboard]
     avg_trades = sum(all_trades) / len(all_trades) if all_trades else 0
 
     # Winning / losing traits
@@ -125,16 +125,16 @@ def compute_insights(leaderboard: list, top_performers: list) -> dict:
 
     # Check for high-conviction pattern among winners
     if winners:
-        avg_winner_trades = sum(float(w.get("totalTrades", w.get("trades", 0))) for w in winners) / len(winners)
-        avg_loser_trades = sum(float(l.get("totalTrades", l.get("trades", 0))) for l in losers) / len(losers) if losers else avg_winner_trades
+        avg_winner_trades = sum(_safe_float(w.get("totalTrades", w.get("trades", 0))) for w in winners) / len(winners)
+        avg_loser_trades = sum(_safe_float(l.get("totalTrades", l.get("trades", 0))) for l in losers) / len(losers) if losers else avg_winner_trades
         if avg_winner_trades < avg_loser_trades:
             winning_traits.append("higher conviction")
 
     # Fee drag detection
     fee_drag_strategies = []
     for entry in leaderboard:
-        trades = float(entry.get("totalTrades", entry.get("trades", 0)))
-        pnl = float(entry.get("pnl", entry.get("totalPnl", 0)))
+        trades = _safe_float(entry.get("totalTrades", entry.get("trades", 0)))
+        pnl = _safe_float(entry.get("pnl", entry.get("totalPnl", 0)))
         if trades > avg_trades and pnl < 0:
             fee_drag_strategies.append(entry.get("slug", entry.get("name", "unknown")))
             if "fee drag" not in losing_traits:
