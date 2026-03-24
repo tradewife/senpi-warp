@@ -588,7 +588,6 @@ if __name__ == "__main__":
         sys.exit(0)
     try:
         record_heartbeat("mantis")
-        log("mantis: main() called")
         run()
     finally:
         release_lock("mantis-scanner")

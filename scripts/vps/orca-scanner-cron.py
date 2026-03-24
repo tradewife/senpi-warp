@@ -682,12 +682,9 @@ def main():
 
         raw = fetch_markets()
         if raw is None:
-            log("ORCA: fetch_markets returned None — skipping")
             return
 
-        log(f"ORCA: fetched {len(raw)} markets")
         current_scan = parse_scan(raw)
-        log(f"ORCA: parsed {len(current_scan['markets'])} markets after filters")
         history_data = load_json(SCAN_HISTORY_FILE, default={"scans": []})
         if isinstance(history_data, list):
             history = history_data

@@ -590,7 +590,6 @@ if __name__ == "__main__":
         sys.exit(0)
     try:
         record_heartbeat("fox")
-        log("fox: main() called")
         run()
     finally:
         release_lock("fox-scanner")

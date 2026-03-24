@@ -242,7 +242,6 @@ def process_strategy_guard_rails():
 
 
 def main():
-    log("arbiter: main() called")
     if not acquire_lock("risk-arbiter"):
         return
 

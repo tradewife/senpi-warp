@@ -780,7 +780,6 @@ def main():
 
     try:
         record_heartbeat("komodo")
-        log("komodo: main() called")
         git_pull()
         scan()
         git_sync("auto: KOMODO scan")
