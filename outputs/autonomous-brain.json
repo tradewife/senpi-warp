@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-03-24T18:02:00.000000Z",
-  "codebaseIndexAt": "2026-03-24T02:16:06Z",
-  "riskMode": "RISK_OFF",
+  "generatedAt": "2026-03-24T20:26:00.000000Z",
+  "codebaseIndexAt": "2026-03-24T20:26:00.000000Z",
+  "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T18:02:00.000000Z",
-    "mode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
+    "generatedAt": "2026-03-24T20:26:00.000000Z",
+    "mode": "ACTIVE",
+    "blockNewEntries": false,
+    "allowAutoEntry": true,
     "maxSlotsCap": 2,
     "maxLeverageCap": 10.0,
     "allocPctCap": 30.0,
@@ -607,22 +607,28 @@
     }
   },
   "summary": {
-    "status": "RISK_OFF",
+    "status": "ACTIVE",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "budget": 100,
+    "regime": "BASELINE",
+    "clearinghouseBalance": 98.98,
+    "openPositions": 0,
     "preferredScanners": [
       "polar",
+      "fox",
       "mantis",
       "komodo",
-      "orca",
-      "sentinel"
+      "orca"
     ],
     "blockedScanners": [
       "shark"
     ],
     "reasons": [
-      "BTC -8.8% and ETH -9.2% multi-day downtrend",
-      "Liquidation cascade detected via volume spikes",
-      "No 4H trend reversal signal",
-      "Arena data confirms: over-traders lose in RISK_OFF"
+      "GO LIVE — liquidation cascade cleared",
+      "BTC $69,868 range-bound, recovery phase",
+      "BASELINE: 2 max slots, 7-10x leverage",
+      "Bias: fewer trades, higher conviction"
     ]
   }
 }

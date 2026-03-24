@@ -62,3 +62,21 @@
 - Fox: minReasons=3 for STALKER — forces signal confirmation breadth, prevents single-source entries
 - Polar: 5-tier DSL with consecutiveBreachesRequired, stagnation TP at 12% ROE after 90min stale
 - All three use DSL High Water Mode with conviction-scaled Phase 1 floors
+
+## [2026-03-24 20:26 UTC] GO LIVE — SYSTEM ACTIVE
+
+**Strategy:** c070acba-bea9-457c-977e-b0ddb3dcc9ce
+**Wallet:** 0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1
+**Account:** M179642 (agent stub via CreateAgentStubAccount)
+**Budget:** $100 | **Clearinghouse:** $98.98 | **Positions:** 0
+
+**Regime:** BASELINE
+- BTC $69,868 range-bound (67k-71k), recovery from liquidation lows
+- ETH $2,141 stabilizing
+- 2 max slots, 7-10x leverage, conservative entries
+
+**Auth resolved:** Old token was browser account (M179642 web). Agent onboarding via `CreateAgentStubAccount` with `from: WALLET` linked existing funded account to proper agent API key.
+
+**Config files updated:** All 8 scanner configs + wolf-strategies.json wired to strategy ID + wallet.
+
+**Next actions:** Begin autonomous trade evaluation cycle. Monitor pending entries, execute high-conviction signals only.
