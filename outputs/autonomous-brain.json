@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-24T00:59:36Z",
-  "codebaseIndexAt": "2026-03-24T00:59:36Z",
+  "generatedAt": "2026-03-24T01:08:06Z",
+  "codebaseIndexAt": "2026-03-24T01:08:06Z",
   "riskMode": "RISK_ON",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T00:59:36Z",
+    "generatedAt": "2026-03-24T01:08:06Z",
     "mode": "ACTIVE",
     "blockNewEntries": false,
     "allowAutoEntry": true,
@@ -21,7 +21,7 @@
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [],
-      "coreHeartbeatCount": 7
+      "coreHeartbeatCount": 2
     },
     "signalPolicy": {
       "preferredScanners": [
@@ -434,7 +434,7 @@
   },
   "systemHealth": {
     "health": {
-      "lastRunAt": "2026-03-24T00:54:06Z",
+      "lastRunAt": "2026-03-24T01:04:06Z",
       "mcporterOk": true,
       "configIssues": [],
       "reconcileRan": true,
@@ -444,7 +444,7 @@
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T00:59:07Z"
+      "lastCheckAt": "2026-03-24T01:07:37Z"
     }
   },
   "pending": {
