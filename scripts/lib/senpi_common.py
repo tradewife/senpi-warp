@@ -710,9 +710,9 @@ def check_stale_heartbeats(max_stale_minutes: dict[str, int] | None = None) -> l
         "orca": 3,       # runs every 60s, stale after 3 min
         "komodo": 12,    # runs every 5min, stale after 12 min
         "condor": 8,     # runs every 3min, stale after 8 min
-        "barracuda": 35, # runs every 15min, stale after 35 min
-        "bison": 65,     # runs every 30min, stale after 65 min
-        "shark": 5,      # runs every 2min, stale after 5 min
+        # PAUSED: barracuda — removed from schedule
+        # PAUSED: bison     — removed from schedule
+        # PAUSED: shark     — Senpi paused (v1.0, -4.3% ROI)
         "rhino": 8,      # runs every 3min, stale after 8 min
         "sentinel": 8,   # runs every 3min, stale after 8 min
         "dsl-runner": 8, # runs every 3min, stale after 8 min

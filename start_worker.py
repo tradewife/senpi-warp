@@ -34,7 +34,7 @@ if __name__ == '__main__':
         whale_index_job,
         arena_learner_job,
         health_check_job,
-        update_skills,
+        # update_skills,  # REMOVED: function no longer exists in worker.py (NameError fix)
     )
     # Schedule jobs as in worker.py
     scheduler.add_job(trade_evaluator_job, 'cron', minute='*/15', id='trade_evaluator', replace_existing=True)
@@ -44,6 +44,6 @@ if __name__ == '__main__':
     scheduler.add_job(whale_index_job, 'cron', hour='1', id='whale_index', replace_existing=True)
     scheduler.add_job(arena_learner_job, 'cron', hour='*/4', id='arena_learner', replace_existing=True)
     scheduler.add_job(health_check_job, 'cron', minute='*/5', id='health_check', replace_existing=True)
-    scheduler.add_job(update_skills, 'cron', hour='*/3', id='update_skills', replace_existing=True)
+    # scheduler.add_job(update_skills, 'cron', hour='*/3', id='update_skills', replace_existing=True)  # REMOVED
     print("[scheduler] Starting APScheduler...")
     scheduler.start()

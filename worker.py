@@ -120,16 +120,9 @@ def job_condor():
     run_py("scripts/vps/condor-scanner-cron.py")
 
 
-def job_barracuda():
-    run_py("scripts/vps/barracuda-scanner-cron.py")
-
-
-def job_bison():
-    run_py("scripts/vps/bison-scanner-cron.py")
-
-
-def job_shark():
-    run_py("scripts/vps/shark-scanner-cron.py")
+# PAUSED: job_barracuda — BARRACUDA removed per user request (check if Senpi-paused)
+# PAUSED: job_bison     — BISON removed per user request (check if Senpi-paused)
+# PAUSED: job_shark     — SHARK paused by Senpi (v1.0, -4.3% ROI)
 
 
 def job_sentinel():
@@ -209,14 +202,9 @@ def main():
     # CONDOR Multi-Asset Hunter — every 3min, offset 1min
     scheduler.add_job(job_condor, "interval", minutes=3, id="condor", seconds=60)
 
-    # BARRACUDA Funding Decay Collector — every 15min
-    scheduler.add_job(job_barracuda, "interval", minutes=15, id="barracuda", seconds=120)
-
-    # BISON Conviction Trend Holder — every 30min
-    scheduler.add_job(job_bison, "interval", minutes=30, id="bison", seconds=180)
-
-    # SHARK Liquidation Cascade — every 2min, offset 30s
-    scheduler.add_job(job_shark, "interval", minutes=2, id="shark", seconds=30)
+    # PAUSED: BARRACUDA — removed (check vs Senpi paused list)
+    # PAUSED: BISON      — removed (check vs Senpi paused list)
+    # PAUSED: SHARK      — removed (Senpi paused, v1.0, -4.3% ROI)
 
     # SENTINEL Quality Trader Convergence — every 3min, offset 90s
     scheduler.add_job(job_sentinel, "interval", minutes=3, id="sentinel", seconds=90)
@@ -251,9 +239,6 @@ def main():
     print("  🐋 ORCA Scanner:    every 60s")
     print("  🦎 KOMODO Scanner:  every 5min")
     print("  🦅 CONDOR Scanner:  every 3min")
-    print("  🎣 BARRACUDA Scan:  every 15min")
-    print("  🦬 BISON Scanner:   every 30min")
-    print("  🦈 SHARK Scanner:   every 2min")
     print("  🛡 SENTINEL Scan:   every 3min")
     print("  🦏 RHINO Scan:      every 3min")
     print("  🔒 DSL HW Runner:   every 3min")
@@ -263,6 +248,7 @@ def main():
     print("  📊 Arena Monitor:   every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
+    print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
 
     try:

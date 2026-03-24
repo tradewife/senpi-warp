@@ -27,7 +27,7 @@ from senpi_common import (
 )
 
 HEALTH_STATE_FILE = OUTPUTS_DIR / "health-state.json"
-SHARK_CONFIG_FILE = CONFIG_DIR / "shark-config.json"
+# SHARK_CONFIG_FILE removed — SHARK paused by Senpi (v1.0, -4.3% ROI)
 SENTINEL_CONFIG_FILE = CONFIG_DIR / "sentinel-config.json"
 RHINO_CONFIG_FILE = CONFIG_DIR / "rhino-config.json"
 
@@ -45,7 +45,7 @@ def check_config_files() -> list[str]:
     """Validate all config JSON files are parseable."""
     issues = []
     for config_file in [STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
-                        SHARK_CONFIG_FILE, SENTINEL_CONFIG_FILE, RHINO_CONFIG_FILE]:
+                        SENTINEL_CONFIG_FILE, RHINO_CONFIG_FILE]:
         if not config_file.exists():
             issues.append(f"Missing: {config_file.name}")
             continue
