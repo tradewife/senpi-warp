@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T02:45:45.692688+00:00",
-  "updatedBy": "hermes-strategic",
-  "reason": "Applied risk-reducing execution policy from autonomous-brain: block new entries (allowAutoEntry remains true)",
+  "updatedAt": "2026-03-24T02:50:43.849534+00:00",
+  "updatedBy": "hermes-regime",
+  "reason": "Regime unchanged: insufficient clear trend for RISK_ON, volatility moderate.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
