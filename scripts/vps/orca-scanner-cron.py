@@ -629,16 +629,15 @@ def main():
             return
 
         current_scan = parse_scan(raw)
-        raw = load_json(SCAN_HISTORY_FILE, default={"scans": []})
-        if isinstance(raw, list):
-            history = raw
+        history_data = load_json(SCAN_HISTORY_FILE, default={"scans": []})
+        if isinstance(history_data, list):
+            history = history_data
         else:
-            history = raw.get("scans", [])
+            history = history_data.get("scans", [])
+        stalker_signals = detect_stalker_signals(current_scan, history)
+        striker_signals = detect_striker_signals(current_scan, history)
 
-        # Save scan to history
-        history.append(current_scan)
-        if len(history) > MAX_SCAN_HISTORY:
-            history = history[-MAX_SCAN_HISTORY:]
+
         save_json(SCAN_HISTORY_FILE, {"scans": history})
 
         # Combine — STRIKER takes priority for same asset
