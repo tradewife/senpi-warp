@@ -65,9 +65,9 @@ def setup_git():
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
     if SENPI_API_KEY:
-        print(f"[startup] SENPI_API_KEY found — using direct MCP HTTP calls (mcporter bypassed)")
+        print(f"[startup] SENPIAUTHTOKEN/SENPI_API_KEY found — using direct MCP HTTP calls (mcporter bypassed)")
     else:
-        print("[startup] WARNING: SENPI_API_KEY not set — Senpi MCP calls will fail")
+        print("[startup] WARNING: SENPIAUTHTOKEN/SENPI_API_KEY not set — Senpi MCP calls will fail")
 
 
 def update_skills():
@@ -182,6 +182,10 @@ def main():
     print(f"  STATE_DIR:  {STATE_DIR}")
     print(f"  SKILLS_DIR: {SKILLS_DIR}")
     print(f"  GITHUB_REPO: {GITHUB_REPO}")
+    # Ensure required directories exist
+    for subdir in ("outputs", "state", "memory"):
+        (STATE_DIR / subdir).mkdir(parents=True, exist_ok=True)
+    print(f"[startup] Ensured directories: outputs, state, memory under {STATE_DIR}")
 
     setup_git()
     setup_mcporter()
