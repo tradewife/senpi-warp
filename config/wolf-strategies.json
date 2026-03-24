@@ -7,10 +7,10 @@
       "strategyId": "48c83cfa-d51c-4875-9740-72bed9894d29",
       "budget": 100,
       "maxSlots": 2,
-      "defaultLeverage": 10,
+      "defaultLeverage": 8,
       "dslPreset": "high_water",
       "telegramChatId": "6167365059",
-      "_note": "Live strategy — ACTIVE as of 2026-03-24"
+      "_note": "Live strategy \u2014 ACTIVE as of 2026-03-24"
     }
   },
   "global": {
