@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-24T13:13:28.215662Z",
+  "timestamp": "2026-03-24T17:03:54.450716Z",
   "type": "ARENA_LEARNINGS",
   "recommendations": [
     {
@@ -45,5 +45,5 @@
       "reason": "Over-trading identified as losing trait - reduce frequency of position adjustments"
     }
   ],
-  "note": "Generated from analysis of 15 strategies at 2026-03-24 13:13:28 UTC"
+  "note": "Generated from analysis of 15 strategies at 2026-03-24 17:03:54 UTC"
 }
