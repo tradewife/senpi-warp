@@ -629,11 +629,11 @@ def main():
             return
 
         current_scan = parse_scan(raw)
-        history_data = load_json(SCAN_HISTORY_FILE, default={"scans": []})
-        history = history_data.get("scans", [])
-
-        stalker_signals = detect_stalker_signals(current_scan, history)
-        striker_signals = detect_striker_signals(current_scan, history)
+        raw = load_json(SCAN_HISTORY_FILE, default={"scans": []})
+        if isinstance(raw, list):
+            history = raw
+        else:
+            history = raw.get("scans", [])
 
         # Save scan to history
         history.append(current_scan)
