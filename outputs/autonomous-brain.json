@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-03-24T03:50:01.131655+00:00",
+  "generatedAt": "2026-03-24T18:02:00.000000Z",
   "codebaseIndexAt": "2026-03-24T02:16:06Z",
-  "riskMode": "BASELINE",
+  "riskMode": "RISK_OFF",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T03:50:01.131655+00:00",
-    "mode": "ACTIVE",
+    "generatedAt": "2026-03-24T18:02:00.000000Z",
+    "mode": "RISK_OFF",
     "blockNewEntries": true,
     "allowAutoEntry": false,
     "maxSlotsCap": 2,
@@ -468,13 +468,20 @@
       "bestRoi": 28.09,
       "avgTrades": 86,
       "winningTraits": [
-        "higher conviction"
+        "higher conviction",
+        "fewer trades (<2/day)",
+        "wide stops",
+        "volume-efficient entries"
       ],
       "losingTraits": [
-        "over-trading"
+        "over-trading (>10/day)",
+        "fee drag (Orca v1.1 fees 2.84x profit)"
       ],
       "recommendations": [
-        "Continue current approach"
+        "Favor STALKER mode over STRIKER",
+        "Cap trades at 1-3/day",
+        "Wait for RISK_ON before starting",
+        "Target $4+ PnL per $1K volume (Polar benchmark)"
       ]
     },
     "arenaLearnings": {
@@ -552,13 +559,22 @@
     }
   },
   "summary": {
-    "status": "ACTIVE",
+    "status": "RISK_OFF",
     "preferredScanners": [
+      "polar",
+      "mantis",
       "komodo",
       "orca",
       "sentinel"
     ],
-    "blockedScanners": [],
-    "reasons": []
+    "blockedScanners": [
+      "shark"
+    ],
+    "reasons": [
+      "BTC -8.8% and ETH -9.2% multi-day downtrend",
+      "Liquidation cascade detected via volume spikes",
+      "No 4H trend reversal signal",
+      "Arena data confirms: over-traders lose in RISK_OFF"
+    ]
   }
 }

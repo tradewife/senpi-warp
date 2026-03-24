@@ -1,6 +1,6 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T17:00:32.124663Z",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-24T18:00:00.000000Z",
   "updatedBy": "hermes-regime",
-  "reason": "Demo: Outside active trading hours"
+  "reason": "BTC -8.8% (74700->69200) and ETH -9.2% (2325->2109) multi-day downtrend. Volume spikes suggest liquidation cascades. No clear reversal signal on 4H. Protect capital — no new entries until trend stabilizes."
 }

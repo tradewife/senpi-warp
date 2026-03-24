@@ -1,49 +1,116 @@
 {
-  "timestamp": "2026-03-24T17:03:54.450716Z",
-  "type": "ARENA_LEARNINGS",
-  "recommendations": [
+  "generatedAt": "2026-03-24T18:01:00.000000Z",
+  "generatedBy": "hermes-arena-learner",
+  "ourStats": {
+    "strategyId": "48c83cfa-d51c-4875-9740-72bed9894d29",
+    "wallet": "0xdf0edb2516c71095a7250592062796d71bbf12aa",
+    "totalTrades": 0,
+    "winningTrades": 0,
+    "winRate": 0,
+    "totalPnl": 0.0,
+    "roi": 0.0,
+    "currentRegime": "RISK_OFF"
+  },
+  "arenaTop5": [
     {
-      "scanner": "POLAR",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "HIGH",
-      "reason": "Polar showing strongest performance with 280.94822 PnL (28.09% ROI)"
+      "strategy": "Polar",
+      "roi": 28.09,
+      "totalTrades": 29,
+      "estimatedWinRate": 75,
+      "tradesPerDay": 0.83,
+      "totalVolume": 60474.56,
+      "totalFeesPaid": 48.33
     },
     {
-      "scanner": "VOLUME_ANALYSIS",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "High volume strategies showing positive correlation with performance"
+      "strategy": "Orca v1.1",
+      "roi": 9.49,
+      "totalTrades": 737,
+      "estimatedWinRate": 55,
+      "tradesPerDay": 21.1,
+      "totalVolume": 301693.79,
+      "totalFeesPaid": 269.61
     },
     {
-      "scanner": "FREQUENCY_ANALYSIS",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "Frequent trading showing mixed results - maintain current approach"
+      "strategy": "Roach",
+      "roi": 9.42,
+      "totalTrades": 57,
+      "estimatedWinRate": 65,
+      "tradesPerDay": 1.63,
+      "totalVolume": 55620.97
     },
     {
-      "scanner": "ORCA",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "HIGH",
-      "reason": "Orca family showing strong performance - Orca v1.1 with 94.90513399 PnL"
+      "strategy": "Mantis",
+      "roi": 5.56,
+      "totalTrades": 460,
+      "estimatedWinRate": 52,
+      "tradesPerDay": 13.1,
+      "totalVolume": 260337.79
     },
     {
-      "scanner": "POLAR",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "HIGH",
-      "reason": "Polar strategy dominating with 280.94822 PnL (28.09% ROI) - exceptional conviction approach"
-    },
-    {
-      "scanner": "CONVICTION_ANALYSIS",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "Analysis shows higher conviction strategies winning - favor fewer, larger positions over diversification"
-    },
-    {
-      "scanner": "TRADING_FREQUENCY",
-      "action": "DECREASE_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "Over-trading identified as losing trait - reduce frequency of position adjustments"
+      "strategy": "Orca v1.2",
+      "roi": 0.70,
+      "totalTrades": 9,
+      "estimatedWinRate": 55,
+      "tradesPerDay": 0.26,
+      "totalVolume": 2742.32
     }
   ],
-  "note": "Generated from analysis of 15 strategies at 2026-03-24 17:03:54 UTC"
+  "analysis": {
+    "winningPattern": "Polar (28.09% ROI, 29 trades) vs Orca v1.1 (9.49%, 737 trades) — 3x return with 25x fewer trades. The edge is selectivity, not activity.",
+    "volumeEfficiency": "Polar: $60K volume / $281 PnL = $4.65 PnL per $1K volume. Orca v1.1: $302K volume / $95 PnL = $0.31 PnL per $1K volume. Polar is 15x more volume-efficient.",
+    "feeImpact": "Orca v1.1 paid $269.61 in fees on $94.91 PnL — fees consumed 2.84x the profit. Polar paid $48.33 on $280.95 — fees were only 17% of profit.",
+    "frequencyCorrelation": "Trades/day vs ROI: Polar 0.83->28.09%, Roach 1.63->9.42%, Orca v1.1 21.1->9.49%. Higher frequency does NOT improve returns — it erodes them via fees and poor entries.",
+    "marketContext": "BTC -8.8% and ETH -9.2% over 4 days. Liquidation cascade detected. RISK_OFF regime — this is when most over-traders blow up."
+  },
+  "recommendations": [
+    {
+      "action": "maintain_risk_off",
+      "confidence": "high",
+      "reason": "BTC and ETH in clear multi-day downtrend. No 4H trend reversal signal. Protect capital until trend stabilizes.",
+      "risk": "low",
+      "autoApplied": true
+    },
+    {
+      "action": "favor_stalker_mode",
+      "confidence": "high",
+      "reason": "Polar (STALKER-like, single asset, wide stops) dominates arena at 28.09%. STRIKER-like scanners (Orca v1.1) underperform despite 25x more trades.",
+      "risk": "low",
+      "autoApplied": false
+    },
+    {
+      "action": "cap_trades_per_day",
+      "confidence": "high",
+      "reason": "Top 3 arena performers average <2 trades/day. Our system should target 1-3 trades/day maximum to match winning pattern.",
+      "risk": "low",
+      "autoApplied": false
+    },
+    {
+      "action": "tighten_entry_scores",
+      "confidence": "high",
+      "reason": "0 trades recorded means we haven't started. When we do, enforce minimum score >=8 for all scanners. Polar-type selectivity is the proven edge.",
+      "risk": "low",
+      "autoApplied": false
+    },
+    {
+      "action": "wait_for_risk_on",
+      "confidence": "high",
+      "reason": "Current RISK_OFF regime. Arena data shows top performers succeed in trending markets. Start trading only when regime returns to BASELINE or RISK_ON.",
+      "risk": "low",
+      "autoApplied": true
+    }
+  ],
+  "scannerPriorities": {
+    "polar": 85,
+    "mantis": 70,
+    "komodo": 70,
+    "orca": 68,
+    "sentinel": 66,
+    "rhino": 60,
+    "condor": 58,
+    "bison": 55,
+    "barracuda": 52,
+    "shark": 0
+  },
+  "confidence": "high",
+  "nextReview": "2026-03-24T22:01:00Z"
 }
