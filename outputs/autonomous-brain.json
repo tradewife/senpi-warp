@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-24T20:26:00.000000Z",
+  "generatedAt": "2026-03-24T22:26:04.000000Z",
   "codebaseIndexAt": "2026-03-24T20:26:00.000000Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T20:26:00.000000Z",
+    "generatedAt": "2026-03-24T22:26:04.000000Z",
     "mode": "ACTIVE",
     "blockNewEntries": false,
     "allowAutoEntry": true,
@@ -64,9 +64,13 @@
           "status": "active",
           "priority": 85,
           "basePriority": 85,
-          "edgeType": "ETH alpha hunter — single asset, wide stops, high conviction",
+          "edgeType": "ETH alpha hunter \u2014 single asset, wide stops, high conviction",
           "interval": "3min",
-          "arenaBenchmark": {"roi": 28.09, "trades": 29, "tradesPerDay": 0.83},
+          "arenaBenchmark": {
+            "roi": 28.09,
+            "trades": 29,
+            "tradesPerDay": 0.83
+          },
           "realizedEdgeScore": 0.0,
           "weightedEdgeScore": 0.0,
           "sampleConfidence": 0.0,
@@ -90,12 +94,19 @@
           "status": "active",
           "priority": 76,
           "basePriority": 76,
-          "edgeType": "Dual-mode emerging movers — hardened contribution velocity threshold",
+          "edgeType": "Dual-mode emerging movers \u2014 hardened contribution velocity threshold",
           "interval": "90s",
-          "modes": ["STALKER", "STRIKER"],
+          "modes": [
+            "STALKER",
+            "STRIKER"
+          ],
           "stalkerMinScore": 7,
           "strikerMinScore": 9,
-          "arenaBenchmark": {"roi": 5.56, "trades": 460, "tradesPerDay": 13.1},
+          "arenaBenchmark": {
+            "roi": 5.56,
+            "trades": 460,
+            "tradesPerDay": 13.1
+          },
           "realizedEdgeScore": 0.0,
           "weightedEdgeScore": 0.0,
           "sampleConfidence": 0.0,
@@ -119,12 +130,18 @@
           "status": "active",
           "priority": 78,
           "basePriority": 78,
-          "edgeType": "Dual-mode emerging movers — minReasons=3 for STALKER signal confirmation breadth",
+          "edgeType": "Dual-mode emerging movers \u2014 minReasons=3 for STALKER signal confirmation breadth",
           "interval": "90s",
-          "modes": ["STALKER", "STRIKER"],
+          "modes": [
+            "STALKER",
+            "STRIKER"
+          ],
           "stalkerMinScore": 7,
           "strikerMinScore": 9,
-          "arenaBenchmark": {"roi": 13.93, "trades": 436},
+          "arenaBenchmark": {
+            "roi": 13.93,
+            "trades": 436
+          },
           "realizedEdgeScore": 0.0,
           "weightedEdgeScore": 0.0,
           "sampleConfidence": 0.0,
@@ -384,7 +401,11 @@
         "edgeType": "ETH alpha hunter",
         "interval": "3min",
         "minEntryScore": 10,
-        "arenaBenchmark": {"roi": 28.09, "trades": 29, "tradesPerDay": 0.83}
+        "arenaBenchmark": {
+          "roi": 28.09,
+          "trades": 29,
+          "tradesPerDay": 0.83
+        }
       },
       "mantis": {
         "version": "1.2",
@@ -394,7 +415,10 @@
         "basePriority": 76,
         "edgeType": "Hardened dual-mode emerging movers",
         "interval": "90s",
-        "modes": ["STALKER", "STRIKER"],
+        "modes": [
+          "STALKER",
+          "STRIKER"
+        ],
         "stalkerMinScore": 7,
         "strikerMinScore": 9
       },
@@ -406,10 +430,16 @@
         "basePriority": 78,
         "edgeType": "Dual-mode emerging movers (minReasons=3 STALKER)",
         "interval": "90s",
-        "modes": ["STALKER", "STRIKER"],
+        "modes": [
+          "STALKER",
+          "STRIKER"
+        ],
         "stalkerMinScore": 7,
         "strikerMinScore": 9,
-        "arenaBenchmark": {"roi": 13.93, "trades": 436}
+        "arenaBenchmark": {
+          "roi": 13.93,
+          "trades": 436
+        }
       },
       "orca": {
         "version": "1.1",
@@ -482,7 +512,7 @@
   },
   "systemHealth": {
     "health": {
-      "lastRunAt": "2026-03-24T02:14:06Z",
+      "lastRunAt": "2026-03-24T22:26:04.000000Z",
       "mcporterOk": true,
       "configIssues": [],
       "reconcileRan": true,
@@ -492,7 +522,7 @@
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T02:15:37Z"
+      "lastCheckAt": "2026-03-24T22:26:04.000000Z"
     }
   },
   "pending": {
@@ -612,7 +642,7 @@
     "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
     "budget": 100,
     "regime": "BASELINE",
-    "clearinghouseBalance": 98.98,
+    "clearinghouseBalance": 99.5,
     "openPositions": 0,
     "preferredScanners": [
       "polar",
@@ -625,7 +655,7 @@
       "shark"
     ],
     "reasons": [
-      "GO LIVE — liquidation cascade cleared",
+      "GO LIVE \u2014 liquidation cascade cleared",
       "BTC $69,868 range-bound, recovery phase",
       "BASELINE: 2 max slots, 7-10x leverage",
       "Bias: fewer trades, higher conviction"
