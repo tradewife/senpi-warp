@@ -1,4 +1,293 @@
 {
-  "predators": [],
-  "insights": {}
+  "updatedAt": "2026-03-24T01:34:09Z",
+  "leaderboard": [
+    {
+      "rank": 1,
+      "name": "Polar",
+      "slug": "polar",
+      "emoji": "\ud83d\udc3b\u200d\u2744\ufe0f",
+      "totalPnl": 280.94822,
+      "roi": "28.09%",
+      "equity": "1280.95",
+      "totalVolume": 60474.56241,
+      "totalTrades": 29
+    },
+    {
+      "rank": 2,
+      "name": "Roach",
+      "slug": "roach",
+      "emoji": "\ud83d\udc0e",
+      "totalPnl": 94.209762,
+      "roi": "9.42%",
+      "equity": "1094.21",
+      "totalVolume": 55620.965879,
+      "totalTrades": 57
+    },
+    {
+      "rank": 3,
+      "name": "Orca v1.1",
+      "slug": "orca-v1-1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 79.77362099,
+      "roi": "7.98%",
+      "equity": "1079.77",
+      "totalVolume": 301693.790355,
+      "totalTrades": 737
+    },
+    {
+      "rank": 4,
+      "name": "Mantis",
+      "slug": "mantis",
+      "emoji": "\ud83e\udd97",
+      "totalPnl": 55.576785,
+      "roi": "5.56%",
+      "equity": "1055.58",
+      "totalVolume": 260337.78773,
+      "totalTrades": 460
+    },
+    {
+      "rank": 5,
+      "name": "Orca v1.2",
+      "slug": "orca-v1-2",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 7.761433,
+      "roi": "0.78%",
+      "equity": "1007.76",
+      "totalVolume": 2742.32405,
+      "totalTrades": 9
+    },
+    {
+      "rank": 6,
+      "name": "Wolverine v2.0",
+      "slug": "wolverine-v2-0",
+      "emoji": "\ud83e\udda1",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 7,
+      "name": "Cheetah",
+      "slug": "cheetah",
+      "emoji": "\ud83d\udc06",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 8,
+      "name": "Barracuda",
+      "slug": "barracuda",
+      "emoji": "\ud83d\udc1f",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 9,
+      "name": "Raptor",
+      "slug": "raptor",
+      "emoji": "\ud83e\udd85",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 10,
+      "name": "Sentinel",
+      "slug": "sentinel",
+      "emoji": "\ud83d\udee1\ufe0f",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 11,
+      "name": "Bison v1.2",
+      "slug": "bison-v1-2",
+      "emoji": "\ud83e\uddac",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 12,
+      "name": "Roach-B",
+      "slug": "roach-b",
+      "emoji": "\ud83d\udc0e",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 13,
+      "name": "Condor v2.0",
+      "slug": "condor-v2-0",
+      "emoji": "\ud83e\udd85",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0
+    },
+    {
+      "rank": 14,
+      "name": "Feral Fox",
+      "slug": "feral-fox",
+      "emoji": "\ud83e\udd8a",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0,
+      "note": "No cached data yet \u2014 awaiting first snapshot."
+    },
+    {
+      "rank": 15,
+      "name": "Fox",
+      "slug": "fox",
+      "emoji": "\ud83e\udd8a",
+      "totalPnl": 0,
+      "roi": "0.00%",
+      "equity": "1000.00",
+      "totalVolume": 0,
+      "totalTrades": 0,
+      "note": "No cached data yet \u2014 awaiting first snapshot."
+    }
+  ],
+  "topPerformers": [
+    {
+      "strategy": "Polar",
+      "slug": "polar",
+      "emoji": "\ud83d\udc3b\u200d\u2744\ufe0f",
+      "totalPnl": 280.94822,
+      "roi": "28.09%",
+      "equity": "1280.95",
+      "totalVolume": 60474.56241,
+      "volume24h": 0,
+      "totalTrades": 29,
+      "realizedPnl": 280.94822,
+      "unrealizedPnl": 0,
+      "totalFeesPaid": 48.33471,
+      "totalFundedActive": 1000,
+      "lastUpdated": "2026-03-24T01:30:07.843+00:00"
+    },
+    {
+      "strategy": "Roach",
+      "slug": "roach",
+      "emoji": "\ud83d\udc0e",
+      "totalPnl": 94.209762,
+      "roi": "9.42%",
+      "equity": "1094.21",
+      "totalVolume": 55620.965879,
+      "volume24h": 13336.817037,
+      "totalTrades": 57,
+      "realizedPnl": 94.209762,
+      "unrealizedPnl": 0,
+      "totalFeesPaid": 51.838685,
+      "totalFundedActive": 1004.99,
+      "lastUpdated": "2026-03-24T01:30:07.843+00:00"
+    },
+    {
+      "strategy": "Orca v1.1",
+      "slug": "orca-v1-1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 79.77362099,
+      "roi": "7.98%",
+      "equity": "1079.77",
+      "totalVolume": 301693.790355,
+      "volume24h": 72951.953768,
+      "totalTrades": 737,
+      "realizedPnl": 16.998784,
+      "unrealizedPnl": 62.77483699,
+      "totalFeesPaid": 269.613589,
+      "totalFundedActive": 1104.3,
+      "lastUpdated": "2026-03-24T01:30:07.843+00:00"
+    }
+  ],
+  "comparison": [
+    {
+      "slug": "polar",
+      "name": "Polar",
+      "emoji": "\ud83d\udc3b\u200d\u2744\ufe0f",
+      "totalPnl": 280.94822,
+      "roi": "28.09%",
+      "equity": "1280.95",
+      "totalVolume": 60474.56241,
+      "totalTrades": 29,
+      "volume24h": 0
+    },
+    {
+      "slug": "roach",
+      "name": "Roach",
+      "emoji": "\ud83d\udc0e",
+      "totalPnl": 94.209762,
+      "roi": "9.42%",
+      "equity": "1094.21",
+      "totalVolume": 55620.965879,
+      "totalTrades": 57,
+      "volume24h": 13336.817037
+    },
+    {
+      "slug": "orca-v1-1",
+      "name": "Orca v1.1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 79.77362099,
+      "roi": "7.98%",
+      "equity": "1079.77",
+      "totalVolume": 301693.790355,
+      "totalTrades": 737,
+      "volume24h": 72951.953768
+    },
+    {
+      "slug": "mantis",
+      "name": "Mantis",
+      "emoji": "\ud83e\udd97",
+      "totalPnl": 55.576785,
+      "roi": "5.56%",
+      "equity": "1055.58",
+      "totalVolume": 260337.78773,
+      "totalTrades": 460,
+      "volume24h": 0
+    },
+    {
+      "slug": "orca-v1-2",
+      "name": "Orca v1.2",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 7.761433,
+      "roi": "0.78%",
+      "equity": "1007.76",
+      "totalVolume": 2742.32405,
+      "totalTrades": 9,
+      "volume24h": 0
+    }
+  ],
+  "insights": {
+    "bestStrategy": "polar",
+    "bestRoi": 28.09,
+    "avgTrades": 86,
+    "winningTraits": [
+      "higher conviction"
+    ],
+    "losingTraits": [
+      "over-trading"
+    ],
+    "recommendations": [
+      "Continue current approach"
+    ]
+  }
 }
