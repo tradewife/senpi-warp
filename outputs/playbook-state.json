@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-03-24T00:51:06Z",
+  "generatedAt": "2026-03-24T00:59:36Z",
   "profile": {
     "mode": "RISK_ON",
     "hybrid": "deterministic-mechanical + oz-supervisory"
