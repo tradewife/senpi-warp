@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install mcporter globally
-RUN npm install -g @senpi/mcporter
+RUN npm install -g mcporter
 
 # Clone senpi-skills (DSL runner, watchdog, SM flip scripts live here)
 RUN git clone --depth 1 https://github.com/Senpi-ai/senpi-skills.git /opt/senpi/senpi-skills
