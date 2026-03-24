@@ -65,7 +65,9 @@ def save_arbiter_state(state: dict):
 def get_account_equity() -> float | None:
     """Fetch current account equity via Senpi MCP."""
     result = mcporter_call("account_get_portfolio", {}, timeout=15)
+    log(f"DEBUG portfolio result: {str(result)[:500]}")
     if "error" in result:
+        log(f"DEBUG portfolio error: {result['error']}")
         return None
     # Direct top-level keys (legacy)
     equity = result.get(
