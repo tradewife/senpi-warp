@@ -65,34 +65,27 @@ def save_arbiter_state(state: dict):
 def get_account_equity() -> float | None:
     """Fetch current account equity via Senpi MCP."""
     result = mcporter_call("account_get_portfolio", {}, timeout=15)
-    log(f"DEBUG portfolio result: {str(result)[:500]}")
     if "error" in result:
-        log(f"DEBUG portfolio error: {result['error']}")
         return None
-    # Direct top-level keys (legacy)
+    # Current MCP shape: data.portfolio.total_balance_usd
+    data = result.get("data", {})
+    if isinstance(data, dict):
+        portfolio = data.get("portfolio", {})
+        if isinstance(portfolio, dict):
+            equity = portfolio.get("total_balance_usd")
+            if equity is not None:
+                return float(equity)
+    # Legacy shapes
     equity = result.get(
         "accountEquity", result.get("equity", result.get("totalEquity"))
     )
     if equity is not None:
         return float(equity)
-    # Nested under portfolio (current MCP shape)
-    portfolio = result.get("portfolio", result.get("data", {}))
+    portfolio = result.get("portfolio", {})
     if isinstance(portfolio, dict):
         equity = portfolio.get("accountEquity", portfolio.get("equity"))
         if equity is not None:
             return float(equity)
-        # Current MCP: total_balance_usd
-        equity = portfolio.get("total_balance_usd")
-        if equity is not None:
-            return float(equity)
-        # Clearinghouse shape: main.marginSummary.accountValue
-        main = portfolio.get("main", {})
-        if isinstance(main, dict):
-            margin = main.get("marginSummary", {})
-            if isinstance(margin, dict):
-                equity = margin.get("accountValue")
-                if equity is not None:
-                    return float(equity)
     return None
 
 
