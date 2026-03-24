@@ -8,7 +8,8 @@ Runs all VPS cron jobs via APScheduler. On startup:
   3. Schedules all jobs at their original intervals
 
 Environment variables (set in Railway dashboard):
-  SENPI_API_KEY        — Senpi MCP authentication token
+  SENPIAUTHTOKEN       — Senpi MCP authentication token (preferred)
+  SENPI_API_KEY        — Senpi MCP authentication token (fallback)
   GITHUB_TOKEN         — GitHub personal access token (repo read/write)
   GITHUB_REPO          — e.g. tradewife/senpi-waifu
   TELEGRAM_BOT_TOKEN   — optional, for trade alerts
