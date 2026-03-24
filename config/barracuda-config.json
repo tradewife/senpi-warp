@@ -48,5 +48,7 @@
   },
   "execution": {
     "entryOrderType": "FEE_OPTIMIZED_LIMIT"
-  }
+  },
+  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1"
 }

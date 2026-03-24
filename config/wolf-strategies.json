@@ -3,8 +3,8 @@
     "wolf-primary": {
       "enabled": true,
       "name": "WOLF-Primary",
-      "wallet": "0xdf0edb2516c71095a7250592062796d71bbf12aa",
-      "strategyId": "48c83cfa-d51c-4875-9740-72bed9894d29",
+      "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+      "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
       "budget": 100,
       "maxSlots": 2,
       "defaultLeverage": 8,

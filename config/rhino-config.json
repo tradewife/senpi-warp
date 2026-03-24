@@ -1,6 +1,6 @@
 {
-  "strategyId": "",
-  "wallet": "",
+  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
   "chatId": "",
   "topAssets": 10,
   "maxPositions": 3,
@@ -11,7 +11,7 @@
   },
   "entry": {
     "minScore": 10,
-    "marginPctMax": 0.30,
+    "marginPctMax": 0.3,
     "rsiMaxLong": 74,
     "rsiMinShort": 26,
     "pyramid": {
