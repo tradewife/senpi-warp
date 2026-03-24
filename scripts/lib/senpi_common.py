@@ -52,13 +52,23 @@ def load_json(path: Path, default=None):
 
 
 def save_json(path: Path, data, *, indent=2):
-    """Atomically write JSON (write to .tmp then rename)."""
+    """Atomically write JSON (write to unique .tmp then rename)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    with open(tmp, "w") as f:
-        json.dump(data, f, indent=indent, default=str)
-        f.write("\n")
-    tmp.rename(path)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        with open(tmp, "w") as f:
+            json.dump(data, f, indent=indent, default=str)
+            f.write("\n")
+        tmp.rename(path)
+    except OSError:
+        # Fallback: direct write if atomic rename fails
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        with open(path, "w") as f:
+            json.dump(data, f, indent=indent, default=str)
+            f.write("\n")
 
 
 def now_iso() -> str:
@@ -524,7 +534,10 @@ def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
 # ---------------------------------------------------------------------------
 
 _SENPI_MCP_URL = "https://mcp.prod.senpi.ai/mcp"
-_SENPI_AUTH_TOKEN = os.environ.get("SENPI_API_KEY", "").strip()
+_SENPI_AUTH_TOKEN = (
+    os.environ.get("SENPI_API_KEY", "").strip()
+    or os.environ.get("SENPI_AUTH_TOKEN", "").strip()
+)
 
 
 def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:

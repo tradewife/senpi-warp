@@ -377,7 +377,8 @@ Key tools:
 ### Environment Variables Required
 
 ```bash
-SENPI_API_KEY=***          # Senpi MCP auth token
+SENPI_API_KEY=***          # Senpi MCP auth token (same value as SENPI_AUTH_TOKEN)
+SENPI_AUTH_TOKEN=***       # Alternative name — code accepts either
 GITHUB_TOKEN=***           # GitHub fine-grained token (Contents read/write)
 GITHUB_REPO=tradewife/senpi-waifu
 SENPI_WAIFU_DIR=/home/kt/senpi-waifu

@@ -34,13 +34,18 @@ STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 SKILLS_DIR = Path(os.environ.get("SENPI_SKILLS_DIR", "/opt/senpi/senpi-skills"))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-waifu")
-SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "")
+SENPI_API_KEY = (
+    os.environ.get("SENPI_API_KEY", "").strip()
+    or os.environ.get("SENPI_AUTH_TOKEN", "").strip()
+)
 
-# Propagate key env vars to child processes
+# Propagate key env vars to child processes — ensure both env var names are set
 CHILD_ENV = {
     **os.environ,
     "SENPI_WAIFU_DIR": str(STATE_DIR),
     "SENPI_SKILLS_DIR": str(SKILLS_DIR),
+    "SENPI_API_KEY": SENPI_API_KEY,
+    "SENPI_AUTH_TOKEN": SENPI_API_KEY,
 }
 
 
@@ -66,9 +71,9 @@ def setup_git():
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
     if SENPI_API_KEY:
-        print(f"[startup] SENPIAUTHTOKEN/SENPI_API_KEY found — using direct MCP HTTP calls (mcporter bypassed)")
+        print(f"[startup] Senpi auth token found — using direct MCP HTTP calls")
     else:
-        print("[startup] WARNING: SENPIAUTHTOKEN/SENPI_API_KEY not set — Senpi MCP calls will fail")
+        print("[startup] WARNING: SENPI_API_KEY / SENPI_AUTH_TOKEN not set — Senpi MCP calls will fail")
 
 
 def update_skills():
