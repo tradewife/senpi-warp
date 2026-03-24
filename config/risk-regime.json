@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T14:00:00Z",
-  "updatedBy": "hermes-strategic",
-  "reason": "Applied risk-reducing execution policy from autonomous-brain: block new entries and disable auto entry",
+  "riskMode": "RISK_ON",
+  "updatedAt": "2026-03-24T15:20:00Z",
+  "updatedBy": "hermes-regime",
+  "reason": "Clear directional trend (BTC slope: 4.92%, ETH slope: 5.13%) with controlled volatility (BTC ATR: 1.34%, ETH ATR: 2.00%) and both assets aligned upward",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
