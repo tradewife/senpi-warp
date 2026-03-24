@@ -1,6 +1,6 @@
 {
-  "riskMode": "RISK_ON",
-  "updatedAt": "2026-03-24T09:00:19.290911Z",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-24T10:00:36.613204Z",
   "updatedBy": "hermes-regime",
-  "reason": "Demo: Active trading hours (9-16 UTC)"
+  "reason": "Conservative override: forcing BASELINE for risk management"
 }
