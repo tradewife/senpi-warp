@@ -7,7 +7,7 @@
   "leverage": {
     "default": 10,
     "min": 7,
-    "max": 15
+    "max": 10
   },
   "entry": {
     "minScore": 10,

@@ -15,12 +15,9 @@ echo "[regime-classifier] $(date -u +%Y-%m-%dT%H:%M:%SZ) starting"
 git pull --rebase --quiet 2>/dev/null || true
 
 python3 -c "
-import json, subprocess, sys
-
-def mcporter_call(tool, args):
-    cmd = ['mcporter', 'call', 'senpi', tool, '--json', json.dumps(args)]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
-    return json.loads(r.stdout) if r.stdout else {}
+import json, sys
+sys.path.insert(0, '$WAIFU_DIR/scripts/lib')
+from senpi_common import mcporter_call
 
 def regime_classify():
     # Fetch candles

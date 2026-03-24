@@ -1,9 +1,9 @@
 # senpi-waifu
-Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with optional Oz cloud agents for high-intelligence supervision. Fully controllable from Telegram.
+Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with Hermes (local cron jobs) for strategic supervision. Fully controllable from Telegram.
 
 ## How It Works
 
-Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Oz strategic layer** runs LLM agents on longer intervals for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
+Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Hermes strategic layer** runs LLM agents locally via scheduled cron jobs for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -13,7 +13,7 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 │  ┌────────────────────┐         ┌──────────────────┐    │
 │  │ 60s  🐋 ORCA       │         │ FastAPI dashboard │    │
 │  │ 5min 🦎 KOMODO     │         │ Telegram bot      │    │
-│  │ 3min 🦅 CONDOR     │         │ Oz dispatch       │    │
+│  │ 3min 🦅 CONDOR     │         │ Hermes dispatch   │    │
 │  │ 15m  🎣 BARRACUDA  │         └──────────────────┘    │
 │  │ 30m  🦬 BISON      │                                 │
 │  │ 2min 🦈 SHARK      │                                 │
@@ -33,7 +33,7 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
                      │  senpi-waifu repo (this repo)
                      │  git pull ↔ git push
 ┌────────────────────┴────────────────────────────────────┐
-│              Oz Cloud Agents (Warp)                      │
+│          Hermes Strategic Layer (Local Cron)              │
 │                                                         │
 │  15min  Trade Evaluator    → validate scanner signals   │
 │  1hr    Regime Classifier  → RISK_ON/BASELINE/RISK_OFF  │
@@ -50,14 +50,14 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 
 - **Deterministic hot path.** Entries, exits, risk checks, exposure caps, and position supervision run locally in Python with no LLM dependency.
 - **In-container autonomous brain.** `scripts/vps/autonomous-brain.py` runs inside the Railway worker/runtime, synthesizes a policy layer from runtime state, and writes `outputs/autonomous-brain.json`, `outputs/playbook-state.json`, and `outputs/codebase-index.json`.
-- **Oz as supervisory intelligence.** Oz is used for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
+- **Hermes as supervisory intelligence.** Hermes runs locally as scheduled cron jobs for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
 - **Git as state bus.** Mechanical state, playbook state, reports, and config changes remain auditable and easy to inspect.
 
-## Railway ↔ Oz Connection
+## Railway ↔ Hermes Connection
 
 - **Your laptop is not in the runtime path.** Once deployed, Railway runs the mechanical layer and the in-container brain whether or not your local machine is online.
-- **State sync happens through the repo and API calls.** Railway writes state and can push it to GitHub. Oz agents read that state, update config/reports, and push back. Railway pulls the latest changes during health checks and on scanner cycles.
-- **Direct cloud dispatch is optional.** The dashboard/Telegram service can also call Oz directly via `WARP_API_KEY` and `OZ_ENVIRONMENT_ID` when you send free-text prompts or run `/flatten`.
+- **State sync happens through the repo and API calls.** Railway writes state and can push it to GitHub. Hermes agents read that state, update config/reports, and push back. Railway pulls the latest changes during health checks and on scanner cycles.
+- **Hermes runs locally on your machine.** The 6 strategic agent roles run as Hermes cron jobs on the local machine, reading/writing state via git pull/push.
 
 ## Telegram Bot
 
@@ -80,7 +80,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/risk_on` | Max 3 slots, 7-10x leverage, 35% allocation. Use when trend is clear |
 | `/risk_off` | Block all new entries. Existing positions managed by DSL trailing stops |
 | `/baseline` | Default balanced regime: 2 slots, 30% allocation, 60s loss cooldown |
-| `/flatten` | Emergency close ALL positions (sets RISK_OFF locally + optionally dispatches Oz agent) |
+| `/flatten` | Emergency close ALL positions (sets RISK_OFF locally + optionally dispatches Hermes) |
 
 **Manual Triggers**
 | Command | What it does |
@@ -104,7 +104,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/journal` | Lifetime stats: total PnL, win rate, profit factor, breakdown by entry source |
 | `/arena_insights` | Top 5 predator strategies, winning/losing traits, recommendations |
 
-Any non-command text is dispatched to an Oz cloud agent as a free-text prompt.
+Any non-command text is dispatched to Hermes as a free-text prompt.
 
 ## Scanners
 
@@ -276,7 +276,7 @@ senpi-waifu/
 │   ├── sentinel-config.json   # SENTINEL quality-convergence thresholds
 │   ├── rhino-config.json      # RHINO pyramid stages and trend filters
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
-├── state/                     # Runtime state (mechanical layer writes, brain/Oz read)
+├── state/                     # Runtime state (mechanical layer writes, brain/Hermes read)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
 │   │   └── dsl-{ASSET}.json   # Position state (High Water Mode)
 │   ├── pending-entries.json   # Signals queued with brain priority context
@@ -298,7 +298,7 @@ senpi-waifu/
 │   └── codebase-index.json    # Indexed runtime map of this repo
 ├── dashboard/
 │   ├── server.py              # FastAPI dashboard + Telegram bot
-│   ├── telegram_bot.py        # Telegram command handlers + Oz dispatch
+│   ├── telegram_bot.py        # Telegram command handlers
 │   └── templates/index.html   # Mobile-first web dashboard
 ├── scripts/
 │   ├── lib/senpi_common.py    # Shared Python library
@@ -320,9 +320,10 @@ senpi-waifu/
 │   │   ├── arena-monitor.py         # 📊 Arena performance tracker
 │   │   ├── reconcile-closes.py      # Trade journal close reconciler
 │   │   └── provision-vps.sh         # One-shot VPS setup (alt deploy)
-│   └── oz/
-│       ├── setup-oz-agents.sh       # Creates Oz environment + schedules
-│       └── agent-init.sh            # Runtime init for each Oz agent
+│   ├── oz/                          # Legacy Oz scripts (replaced by Hermes)
+│   │   ├── setup-oz-agents.sh       # Creates Oz environment + schedules
+│   │   └── agent-init.sh            # Runtime init for each Oz agent
+│   └── hermes-*.sh                  # Hermes strategic layer cron scripts
 ├── worker.py              # APScheduler — replaces crontab for Railway
 ├── Dockerfile             # Python 3.11 + Node + git + mcporter
 ├── railway.toml           # Railway deployment config
@@ -352,7 +353,7 @@ Create two services from the same GitHub repo in Railway dashboard:
 
 Both services:
 ```
-SENPI_API_KEY        = <Senpi MCP authentication token>
+SENPI_API_KEY        = <Senpi MCP auth token (same as SENPI_AUTH_TOKEN)>
 GITHUB_TOKEN         = <GitHub fine-grained token, Contents read/write>
 GITHUB_REPO          = YOUR_USER/senpi-waifu
 SENPI_STATE_DIR      = /app
@@ -363,8 +364,8 @@ TELEGRAM_CHAT_ID     = <your chat ID>
 
 Dashboard service only:
 ```
-WARP_API_KEY         = <Warp API key for Oz dispatch>
-OZ_ENVIRONMENT_ID    = <from setup-oz-agents.sh>
+WARP_API_KEY         = <legacy, optional — Warp API key for Oz dispatch>
+OZ_ENVIRONMENT_ID    = <legacy, optional — from setup-oz-agents.sh>
 DASH_TOKEN           = <secret for web dashboard auth>
 ```
 
@@ -376,21 +377,26 @@ mcporter call senpi strategy_create_custom_strategy --json '{"budgetUsd": 2000}'
 
 Register the returned strategy in `config/wolf-strategies.json`, fund the wallet with USDC, and the scanners start hunting immediately.
 
-### 5. Set up Oz cloud agents (optional)
+### 5. Set up Hermes strategic agents
 
-> **Requires Warp Build plan or higher ($18/mo).** Scheduled ambient agents are not available on the Free plan.
-> Upgrade at: https://www.warp.dev/pricing
->
-> Without the Build plan, all scheduling is handled by the Railway worker (APScheduler). Oz agents can still be triggered manually via the Telegram bot or `oz agent run-cloud`.
+The strategic layer runs locally as Hermes cron jobs — no cloud subscription required.
 
 ```bash
+# Set required env vars
 export SENPI_API_KEY="..."
 export GITHUB_TOKEN="..."
-export SENPI_WAIFU_REPO="github.com/YOUR_USER/senpi-waifu"
-bash scripts/oz/setup-oz-agents.sh
+export SENPI_WAIFU_DIR="/home/kt/senpi-waifu"
+
+# Enable the 6 agent roles as cron jobs:
+#   */15 * * * *   Trade Evaluator
+#   0 * * * *      Regime Classifier
+#   0 */6 * * *    Portfolio Review
+#   55 23 * * *    HOWL Nightly
+#   0 1 * * *      Whale Index
+#   0 */4 * * *    Arena Learner
 ```
 
-The script will automatically detect if your plan supports scheduled agents and skip schedule creation if not (while still creating the environment and secrets).
+Start with Regime Classifier and Portfolio Review first (read-only). Add Trade Evaluator after 1-2 hours of stable operation. See `AGENTS.md` for full bootstrap procedure.
 
 ## Alternative Deployment (VPS)
 
@@ -416,26 +422,14 @@ Create `/opt/senpi/.env` with your secrets, then verify: `crontab -l && tail -f 
 
 Fits within the $5 included credit. Worst case under heavy manual triggering: ~$6-7/mo.
 
-### Oz Cloud Agents (optional, Warp Build plan required)
+### Hermes Strategic Layer
 
-Scheduled agents require the **Warp Build plan ($18/mo)** or higher. See https://www.warp.dev/pricing.
-
-| Agent | Frequency | Est. Credits/Run | Monthly |
-|---|---|---|---|
-| Trade Evaluator | 96/day | 15 | ~1,440 |
-| Regime Classifier | 24/day | 10 | ~240 |
-| Arena Learner | 6/day | 15 | ~90 |
-| Portfolio Review | 4/day | 20 | ~80 |
-| HOWL | 1/day | 30 | ~30 |
-| Whale Index | 1/day | 25 | ~25 |
-| **Total** | | | **~1,905** |
-
-Build plan includes 1,500 credits/month. Additional credits are available via Reload. All 6 agents together use ~1,905 credits/month at full schedule.
+Hermes runs locally as scheduled cron jobs — **zero additional cost** beyond your machine's compute. No cloud subscription or credit system required.
 
 ## Key Design Decisions
 
-- **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Oz handles slower, higher-intelligence supervisory work.
-- **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Oz or embedding LLM logic in the hot path.
+- **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Hermes handles slower, higher-intelligence supervisory work via local cron jobs.
+- **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Hermes or embedding LLM logic in the hot path.
 - **Eight-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends), SHARK (liquidation cascades), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, different timeframes, one shared DSL exit engine.
 - **Scanner-specific supervision.** Conviction collapse and dead-weight rotation are tuned per scanner rather than handled by one generic kill rule.
 - **CONDOR correlation confirmation.** Cross-validates signals against paired assets (e.g. ETH↔BTC) to filter false breakouts on correlated pairs.
@@ -450,8 +444,8 @@ Build plan includes 1,500 credits/month. Additional credits are available via Re
 - **Risk Arbiter is not an LLM.** Mechanical safety should never depend on a language model or cloud credits.
 - **Directional exposure enforcement.** New entries are blocked when projected long/short concentration would breach the portfolio cap.
 - **Git as state bus.** Simple, auditable, works offline. Both layers read/write independently.
-- **Telegram-first control.** Full monitoring and manual override from your phone. Free-text messages dispatch to Oz.
-- **Arena-informed learning.** Oz studies 24 competing predator strategies and auto-applies risk-reducing improvements.
+- **Telegram-first control.** Full monitoring and manual override from your phone. Free-text messages dispatch to Hermes.
+- **Arena-informed learning.** Hermes studies 24 competing predator strategies and auto-applies risk-reducing improvements.
 - **HOWL only auto-applies risk-reducing changes.** Risk increases require manual approval.
 
 ## Emergency Stop

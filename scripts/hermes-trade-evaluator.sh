@@ -36,7 +36,9 @@ echo "[trade-evaluator] reading brain policy and pending entries"
 
 # 4. Process pending entries via Python (full logic is too complex for bash)
 python3 -c "
-import json, subprocess, sys, os
+import json, sys, os
+sys.path.insert(0, '$WAIFU_DIR/scripts/lib')
+from senpi_common import mcporter_call
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -169,21 +171,16 @@ for i, entry in enumerate(pending):
 
     print(f'  APPROVE {asset} {direction} @ {leverage}x (score={score}, scanner={scanner})')
 
-    # Execute via mcporter
+    # Execute via senpi_common.mcporter_call (direct HTTP)
     try:
-        cmd = [
-            'mcporter', 'call', 'senpi', 'strategy_open_position',
-            '--json', json.dumps({
-                'strategyId': strategy_id,
-                'asset': asset,
-                'direction': direction,
-                'leverage': int(leverage),
-                'marginUsd': entry.get('marginUsd', 0) or int(alloc_pct),
-                'lockMode': 'pct_of_high_water',
-            })
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        resp = json.loads(result.stdout) if result.stdout else {}
+        resp = mcporter_call('strategy_open_position', {
+            'strategyId': strategy_id,
+            'asset': asset,
+            'direction': direction,
+            'leverage': int(leverage),
+            'marginUsd': entry.get('marginUsd', 0) or int(alloc_pct),
+            'lockMode': 'pct_of_high_water',
+        })
 
         if resp.get('success', False):
             print(f'    OPENED: {resp}')

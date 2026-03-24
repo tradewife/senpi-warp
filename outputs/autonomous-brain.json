@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-24T01:33:36Z",
-  "codebaseIndexAt": "2026-03-24T01:33:36Z",
+  "generatedAt": "2026-03-24T01:42:06Z",
+  "codebaseIndexAt": "2026-03-24T01:42:06Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T01:33:36Z",
+    "generatedAt": "2026-03-24T01:42:06Z",
     "mode": "ACTIVE",
     "blockNewEntries": false,
     "allowAutoEntry": true,
@@ -20,8 +20,11 @@
       "drawdownPctFromPeak": 0.0,
       "recentLossStreak": 0,
       "pendingSignals": 0,
-      "staleCrons": [],
-      "coreHeartbeatCount": 13
+      "staleCrons": [
+        "rhino",
+        "sm-flip"
+      ],
+      "coreHeartbeatCount": 14
     },
     "signalPolicy": {
       "preferredScanners": [
@@ -434,17 +437,20 @@
   },
   "systemHealth": {
     "health": {
-      "lastRunAt": "2026-03-24T01:24:06Z",
+      "lastRunAt": "2026-03-24T01:34:06Z",
       "mcporterOk": true,
       "configIssues": [],
       "reconcileRan": true,
-      "staleCrons": []
+      "staleCrons": [
+        "rhino",
+        "sm-flip"
+      ]
     },
     "arbiter": {
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T01:33:07Z"
+      "lastCheckAt": "2026-03-24T01:41:37Z"
     }
   },
   "pending": {
@@ -463,7 +469,20 @@
     }
   },
   "selfLearning": {
-    "arenaInsights": {},
+    "arenaInsights": {
+      "bestStrategy": "polar",
+      "bestRoi": 28.09,
+      "avgTrades": 86,
+      "winningTraits": [
+        "higher conviction"
+      ],
+      "losingTraits": [
+        "over-trading"
+      ],
+      "recommendations": [
+        "Continue current approach"
+      ]
+    },
     "arenaLearnings": {
       "generatedAt": "2026-03-23T21:05:13Z",
       "ourStats": {
@@ -549,7 +568,9 @@
       "feeDrag": false,
       "highConviction": true,
       "useDsl": false,
-      "topRecommendations": []
+      "topRecommendations": [
+        "Continue current approach"
+      ]
     }
   },
   "summary": {
