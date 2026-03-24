@@ -3,7 +3,7 @@ Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on
 
 ## How It Works
 
-Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — eight scanners (ORCA, KOMODO, CONDOR, BARRACUDA, BISON, SHARK, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Hermes strategic layer** runs LLM agents locally via scheduled cron jobs for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
+Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — five active scanners (ORCA, KOMODO, CONDOR, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Hermes strategic layer** runs LLM agents locally via scheduled cron jobs for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -14,11 +14,9 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 │  │ 60s  🐋 ORCA       │         │ FastAPI dashboard │    │
 │  │ 5min 🦎 KOMODO     │         │ Telegram bot      │    │
 │  │ 3min 🦅 CONDOR     │         │ Hermes dispatch   │    │
-│  │ 15m  🎣 BARRACUDA  │         └──────────────────┘    │
-│  │ 30m  🦬 BISON      │                                 │
-│  │ 2min 🦈 SHARK      │                                 │
-│  │ 3min 🛡 SENTINEL   │                                 │
+│  │ 3min 🛡 SENTINEL   │         └──────────────────┘    │
 │  │ 3min 🦏 RHINO      │                                 │
+│  │ [PAUSED] 🎣 BARRACUDA / 🦬 BISON / 🦈 SHARK         │
 │  │ 3min 🔒 DSL HW     │         All /commands from       │
 │  │ 5min 🧠 Brain      │         Telegram land here       │
 │  │ 5min 🔄 Supervisor │                                 │
@@ -88,11 +86,11 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/scan` | Run ORCA dual-mode scanner now (STALKER + STRIKER) |
 | `/komodo` | Run KOMODO momentum event consensus scanner now |
 | `/condor` | Run CONDOR multi-asset alpha hunter now |
-| `/barracuda` | Run BARRACUDA funding decay collector now |
-| `/bison` | Run BISON conviction trend holder now |
-| `/shark` | Run SHARK liquidation cascade scanner now |
 | `/sentinel` | Run SENTINEL quality trader convergence scanner now |
 | `/rhino` | Run RHINO momentum pyramider now |
+| `/barracuda` | ⚠️ PAUSED — BARRACUDA removed from schedule |
+| `/bison` | ⚠️ PAUSED — BISON removed from schedule |
+| `/shark` | ⚠️ PAUSED — SHARK removed (Senpi paused, -4.3% ROI) |
 | `/arbiter` | Run Risk Arbiter safety checks now |
 | `/health` | Run health check + git sync now |
 | `/arena` | Run arena monitor now (polls Senpi Predators leaderboard) |
@@ -138,40 +136,7 @@ Follows a 3-mode lifecycle across BTC, ETH, SOL, HYPE:
 
 Gates: SM direction alignment, funding extreme filter, volume ratio spike, multi-timeframe trend structure. Uses fee-optimized limit orders. Conviction-scaled Phase 1 timeouts (30-60 min based on score).
 
-### 🎣 BARRACUDA — Funding Decay Collector (every 15min)
-
-Counter-trend strategy that fades extreme funding rates:
-
-1. **Funding persistence** → annualized rate ≥30% sustained for 6+ hours
-2. **SM alignment** → smart money must agree with the fade direction
-3. **4H trend confirmation** → SMA(20) slope must support entry
-4. **RSI filter** → avoids entering at extremes that haven't started reverting
-
-Score ≥8 to enter. Conservative DSL tiers (Phase 2 at +5% ROE). Stagnation TP at 120 min. Max 3 entries per day.
-
-### 🦬 BISON — Conviction Trend Holder (every 30min)
-
-Scans Top 10 assets by volume for 4H/1H trend alignment, optimized for longer holds:
-
-1. **Multi-timeframe trend** → both 4H and 1H must show aligned trend structure
-2. **Momentum confirmation** → 1H momentum ≥0.5%
-3. **Volume trend** → rising volume confirms conviction
-4. **RSI guard** → blocks long entries above RSI 72, shorts below RSI 28
-5. **SM hard block** → won't enter against smart money consensus
-
-Score ≥8 to enter. Wider DSL tiers (Phase 2 at +10% ROE) designed for trend-following holds. 6-tier high-water lock up to +100% ROE. Conviction-scaled timeouts from 60 to 120 min.
-
-### 🦈 SHARK — Liquidation Cascade Front-Runner (every 2min)
-
-Tracks open interest buildup across the top perp markets, estimates likely liquidation zones from funding-skewed leverage, then stalks assets moving into those zones:
-
-1. **OI tracker** → snapshots rolling OI / price / funding history for the top markets
-2. **Liq mapper** → estimates long and short liquidation zones from weighted OI buildup
-3. **Proximity scoring** → promotes assets approaching a crowded liquidation zone with momentum, OI crack, and volume confirmation
-4. **Cascade entry** → enters only when multiple triggers fire and anti-patterns clear
-5. **Risk guard** → invalidates the thesis if OI rebuilds after entry
-
-Designed as a fast front-runner rather than a trend follower. Uses rotation cooldowns and BTC-correlation caps to avoid churn and cluster risk.
+> **⚠️ PAUSED:** BARRACUDA (funding decay), BISON (conviction trend), and SHARK (liquidation cascade, Senpi paused v1.0 -4.3% ROI) have been removed from the active schedule. Code is preserved. Re-enable by uncommenting in `worker.py`.
 
 ### 🛡 SENTINEL — Quality Trader Convergence (every 3min)
 
@@ -270,11 +235,11 @@ senpi-waifu/
 │   ├── risk-regime.json       # RISK_ON / BASELINE / RISK_OFF + guardrails
 │   ├── scanner-config.json    # ORCA + KOMODO thresholds (gates are in code)
 │   ├── condor-config.json     # CONDOR assets, correlation map, DSL tiers
-│   ├── barracuda-config.json  # BARRACUDA funding thresholds, persistence
-│   ├── bison-config.json      # BISON trend/momentum params, DSL tiers
-│   ├── shark-config.json      # SHARK OI/liquidation/proximity thresholds
 │   ├── sentinel-config.json   # SENTINEL quality-convergence thresholds
 │   ├── rhino-config.json      # RHINO pyramid stages and trend filters
+│   ├── barracuda-config.json  # [PAUSED] BARRACUDA funding thresholds
+│   ├── bison-config.json      # [PAUSED] BISON trend/momentum params
+│   ├── shark-config.json      # [PAUSED] SHARK OI/liquidation thresholds
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
 ├── state/                     # Runtime state (mechanical layer writes, brain/Hermes read)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
@@ -306,11 +271,11 @@ senpi-waifu/
 │   │   ├── orca-scanner-cron.py     # 🐋 ORCA dual-mode scanner
 │   │   ├── komodo-scanner-cron.py   # 🦎 KOMODO momentum events
 │   │   ├── condor-scanner-cron.py   # 🦅 CONDOR multi-asset hunter
-│   │   ├── barracuda-scanner-cron.py # 🎣 BARRACUDA funding decay
-│   │   ├── bison-scanner-cron.py    # 🦬 BISON conviction trend
-│   │   ├── shark-scanner-cron.py    # 🦈 SHARK liquidation cascade
 │   │   ├── sentinel-scanner-cron.py # 🛡 SENTINEL quality convergence
 │   │   ├── rhino-scanner-cron.py    # 🦏 RHINO momentum pyramider
+│   │   ├── barracuda-scanner-cron.py # [PAUSED] BARRACUDA funding decay
+│   │   ├── bison-scanner-cron.py    # [PAUSED] BISON conviction trend
+│   │   ├── shark-scanner-cron.py    # [PAUSED] SHARK liquidation cascade
 │   │   ├── dsl-runner.py            # 🔒 DSL High Water runner
 │   │   ├── autonomous-brain.py      # 🧠 Local policy/playbook builder
 │   │   ├── sm-flip-cron.py          # 🔄 Position supervisor (flip/collapse/rotation)
@@ -430,12 +395,10 @@ Hermes runs locally as scheduled cron jobs — **zero additional cost** beyond y
 
 - **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Hermes handles slower, higher-intelligence supervisory work via local cron jobs.
 - **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Hermes or embedding LLM logic in the hot path.
-- **Eight-scanner suite.** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), BARRACUDA (funding decay), BISON (conviction trends), SHARK (liquidation cascades), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, different timeframes, one shared DSL exit engine.
+- **Active scanner suite (5).** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, one shared DSL exit engine.
+- **Paused scanners (3).** SHARK (Senpi paused, v1.0 -4.3% ROI), BARRACUDA and BISON removed pending performance review. Code preserved in `scripts/vps/` for reactivation.
 - **Scanner-specific supervision.** Conviction collapse and dead-weight rotation are tuned per scanner rather than handled by one generic kill rule.
 - **CONDOR correlation confirmation.** Cross-validates signals against paired assets (e.g. ETH↔BTC) to filter false breakouts on correlated pairs.
-- **BARRACUDA counter-trend.** Fades extreme funding rates only after 6+ hours of persistence with SM alignment — avoids the classic "knife catch" failure mode.
-- **BISON wide trailing.** Wider DSL tiers and longer conviction timeouts (up to 120 min) optimized for multi-hour trend rides.
-- **SHARK cascade logic.** Uses OI buildup + funding-implied leverage to estimate liquidation zones, then waits for zone pressure plus trigger confirmation before striking.
 - **SENTINEL inverted discovery.** Finds assets where smart money is building first, then verifies that quality traders are the ones profiting from the move before entering.
 - **RHINO staged deployment.** Risks only 30% of max size at scout entry, then adds to confirmed winners instead of going all-in at the least certain moment.
 - **DSL High Water Mode.** No ceiling on trailing stops. The geometry that lets positions hold +200% winners.

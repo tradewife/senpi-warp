@@ -12,7 +12,7 @@ senpi-waifu has three cooperating surfaces:
 ┌─────────────────────────────────────────────────────────────┐
 │  MECHANICAL LAYER (Railway worker.py — APScheduler)         │
 │                                                             │
-│  8 scanners hunt entries every 30s–30min (zero LLM cost)    │
+│  5 active scanners hunt entries every 60s–5min (zero LLM)   │
 │  DSL trailing stops manage exits every 3min                 │
 │  Risk Arbiter enforces safety every 30s                     │
 │  Autonomous Brain synthesizes local policy every 5min       │
@@ -40,7 +40,7 @@ same mcporter interface. It cannot bypass hardcoded safety gates.
 ### Role
 
 Hermes is the strategic supervisor for a Hyperliquid perps trading system running on
-Railway. It prioritises, blocks, or boosts the 8 mechanical scanners via
+Railway. It prioritises, blocks, or boosts the 5 active mechanical scanners via
 `autonomous-brain.json` — it does not run them itself. It evaluates signals, classifies
 regime, reviews portfolio health, and executes approved trades.
 
@@ -100,16 +100,16 @@ attempt to override them:
 
 ### Scanner Suite (managed, not run)
 
-| Scanner | Edge Type | Interval |
-|---------|-----------|----------|
-| ORCA | Emerging movers (STALKER + STRIKER) | 60s |
-| KOMODO | Momentum event consensus | 5min |
-| SHARK | Liquidation cascade front-runner | 2min |
-| SENTINEL | Quality trader convergence | 3min |
-| CONDOR | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 3min |
-| RHINO | Momentum pyramiding (30/40/30 staged) | 3min |
-| BARRACUDA | Funding decay / fade (counter-trend) | 15min |
-| BISON | Conviction trend holder | 30min |
+| Scanner | Edge Type | Interval | Status |
+|---------|-----------|----------|--------|
+| ORCA | Emerging movers (STALKER + STRIKER) | 60s | ✅ Active |
+| KOMODO | Momentum event consensus | 5min | ✅ Active |
+| CONDOR | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 3min | ✅ Active |
+| SENTINEL | Quality trader convergence | 3min | ✅ Active |
+| RHINO | Momentum pyramiding (30/40/30 staged) | 3min | ✅ Active |
+| SHARK | Liquidation cascade front-runner | — | ⏸ Paused (Senpi v1.0, -4.3% ROI) |
+| BARRACUDA | Funding decay / fade (counter-trend) | — | ⏸ Paused (performance review) |
+| BISON | Conviction trend holder | — | ⏸ Paused (performance review) |
 
 ### System Prompt
 
@@ -165,11 +165,11 @@ Terse. Production system. No preamble. Actionable outputs only.
 | `config/risk-regime.json` | Current RISK_ON/BASELINE/RISK_OFF + guardrails | All agents |
 | `config/scanner-config.json` | ORCA + KOMODO entry thresholds | Trade Evaluator |
 | `config/condor-config.json` | CONDOR multi-asset params | Trade Evaluator |
-| `config/barracuda-config.json` | BARRACUDA funding thresholds | Trade Evaluator |
-| `config/bison-config.json` | BISON trend/momentum params | Trade Evaluator |
-| `config/shark-config.json` | SHARK OI/liquidation params | Trade Evaluator |
 | `config/sentinel-config.json` | SENTINEL quality-convergence params | Trade Evaluator |
 | `config/rhino-config.json` | RHINO pyramid stage params | Trade Evaluator |
+| `config/barracuda-config.json` | [PAUSED] BARRACUDA funding thresholds | — |
+| `config/bison-config.json` | [PAUSED] BISON trend/momentum params | — |
+| `config/shark-config.json` | [PAUSED] SHARK OI/liquidation params | — |
 | `config/wolf-strategies.json` | Strategy registry (wallets, budgets, slots) | All agents |
 | `state/pending-entries.json` | Queued scanner signals with brain context | Trade Evaluator |
 | `state/*/dsl-*.json` | Open position DSL state files | Portfolio Review |
@@ -213,7 +213,7 @@ Terse. Production system. No preamble. Actionable outputs only.
 3. Read `outputs/autonomous-brain.json` for current brain policy
 4. Read `config/risk-regime.json` — if RISK_OFF, skip all entries
 5. For each pending signal:
-   a. Check scanner source (orca/komodo/condor/barracuda/bison/shark/sentinel/rhino)
+   a. Check scanner source (orca/komodo/condor/sentinel/rhino) — SHARK/BARRACUDA/BISON are paused and will not appear in queue
    b. For ORCA signals: validate STALKER (score >=6, 3+ consecutive scans) or STRIKER (score >=9, 15+ rank jump, 1.5x volume)
    c. For KOMODO signals: verify 2+ quality traders on same asset/direction
    d. Read scanner-specific config for thresholds
@@ -424,16 +424,16 @@ Score 6-7 → 15min timeout, -20% floor. Stagnation TP at 10% ROE if high water 
 
 ## Scanner Reference
 
-| Scanner | Emoji | Interval | Edge Type | Entry Score |
-|---------|-------|----------|-----------|-------------|
-| ORCA | 🐋 | 60s | Emerging movers (STALKER + STRIKER) | 6-9+ |
-| KOMODO | 🦎 | 5min | Momentum event consensus | 10+ |
-| CONDOR | 🦅 | 3min | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 10+ |
-| BARRACUDA | 🎣 | 15min | Funding decay collector (counter-trend) | 8+ |
-| BISON | 🦬 | 30min | Conviction trend holder | 8+ |
-| SHARK | 🦈 | 2min | Liquidation cascade front-runner | varies |
-| SENTINEL | 🛡 | 3min | Quality trader convergence | varies |
-| RHINO | 🦏 | 3min | Momentum pyramider (30/40/30 staged) | varies |
+| Scanner | Emoji | Interval | Edge Type | Entry Score | Status |
+|---------|-------|----------|-----------|-------------|--------|
+| ORCA | 🐋 | 60s | Emerging movers (STALKER + STRIKER) | 6-9+ | ✅ Active |
+| KOMODO | 🦎 | 5min | Momentum event consensus | 10+ | ✅ Active |
+| CONDOR | 🦅 | 3min | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 10+ | ✅ Active |
+| SENTINEL | 🛡 | 3min | Quality trader convergence | varies | ✅ Active |
+| RHINO | 🦏 | 3min | Momentum pyramider (30/40/30 staged) | varies | ✅ Active |
+| SHARK | 🦈 | — | Liquidation cascade front-runner | varies | ⏸ Paused |
+| BARRACUDA | 🎣 | — | Funding decay collector (counter-trend) | 8+ | ⏸ Paused |
+| BISON | 🦬 | — | Conviction trend holder | 8+ | ⏸ Paused |
 
 ## Paper Trading Preparation
 

@@ -103,13 +103,11 @@ print(f'  Using strategy: {strat_key} ({strategy_id[:12]}...)')
 BANNED_ASSETS = set()  # XYZ equities banned
 MIN_LEVERAGE = 7.0
 MAX_LEVERAGE = 10.0
+# Active scanners only — SHARK/BARRACUDA/BISON paused (removed from worker.py schedule)
 MIN_SCORE_BY_SCANNER = {
     'orca': 6,
     'komodo': 10,
     'condor': 10,
-    'barracuda': 8,
-    'bison': 8,
-    'shark': 5,
     'sentinel': 5,
     'rhino': 5,
 }
