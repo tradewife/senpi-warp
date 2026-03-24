@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-03-24T07:24:00Z",
-  "ourStats": {
-    "total_trades": 0,
-    "winning_trades": 0,
-    "win_rate": 0.0,
-    "avg_pnl": 0.0,
-    "total_pnl": 0.0
-  },
-  "arenaTop5AvgWinRate": 0.8,
+  "timestamp": "2026-03-24T09:05:05.093535Z",
+  "type": "ARENA_LEARNINGS",
   "recommendations": [
     {
-      "action": "tighten_entry_scores",
-      "confidence": "high",
-      "reason": "Our win rate (0.0%) is below 50%",
-      "risk": "reduced"
+      "scanner": "ORCA",
+      "action": "INCREASE_WEIGHT",
+      "confidence": "MEDIUM",
+      "reason": "Placeholder: ORCA showing strong performance in recent arena data"
+    },
+    {
+      "scanner": "BISON",
+      "action": "DECREASE_WEIGHT",
+      "confidence": "LOW",
+      "reason": "Placeholder: Bison needs more validation"
     }
-  ]
+  ],
+  "note": "Placeholder learnings - real implementation would analyze actual arena-state.json"
 }
