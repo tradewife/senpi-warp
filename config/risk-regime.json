@@ -1,6 +1,6 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T01:09:38.321786Z",
+  "updatedAt": "2026-03-24T01:16:13.895321Z",
   "updatedBy": "hermes-regime",
   "reason": "BTC 4H slope -0.57%, ETH +0.35% (below 1.5% threshold). 1H ATR low: BTC ~0.55%, ETH ~0.74%. No clear trend alignment.",
   "regimes": {
