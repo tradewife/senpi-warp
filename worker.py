@@ -72,7 +72,7 @@ def setup_git():
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
     if SENPI_TOKEN:
-        print(f\"[startup] Senpi auth token found — using direct MCP HTTP calls\")
+        print(f"[startup] Senpi auth token found — using direct MCP HTTP calls")
     else:
         print(\"[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail\")
 
