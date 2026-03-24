@@ -12,9 +12,12 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 │  worker.py (APScheduler)        dashboard/server.py     │
 │  ┌────────────────────┐         ┌──────────────────┐    │
 │  │ 60s  🐋 ORCA       │         │ FastAPI dashboard │    │
-│  │ 5min 🦎 KOMODO     │         │ Telegram bot      │    │
-│  │ 3min 🦅 CONDOR     │         │ Hermes dispatch   │    │
-│  │ 3min 🛡 SENTINEL   │         └──────────────────┘    │
+│  │ 90s  🦗 MANTIS     │         │ Telegram bot      │    │
+│  │ 90s  🦊 FOX        │         │ Hermes dispatch   │    │
+│  │ 5min 🦎 KOMODO     │         └──────────────────┘    │
+│  │ 3min 🦅 CONDOR     │                                 │
+│  │ 3min 🐻‍❄️ POLAR      │                                 │
+│  │ 3min 🛡 SENTINEL   │                                 │
 │  │ 3min 🦏 RHINO      │                                 │
 │  │ [PAUSED] 🎣 BARRACUDA / 🦬 BISON / 🦈 SHARK         │
 │  │ 3min 🔒 DSL HW     │         All /commands from       │
@@ -84,8 +87,11 @@ The bot runs inside the dashboard service and gives you full control from your p
 | Command | What it does |
 |---|---|
 | `/scan` | Run ORCA dual-mode scanner now (STALKER + STRIKER) |
+| `/mantis` | Run MANTIS dual-mode scanner now |
+| `/fox` | Run FOX dual-mode scanner now |
 | `/komodo` | Run KOMODO momentum event consensus scanner now |
 | `/condor` | Run CONDOR multi-asset alpha hunter now |
+| `/polar` | Run POLAR ETH alpha hunter now |
 | `/sentinel` | Run SENTINEL quality trader convergence scanner now |
 | `/rhino` | Run RHINO momentum pyramider now |
 | `/barracuda` | ⚠️ PAUSED — BARRACUDA removed from schedule |
@@ -114,6 +120,14 @@ Two entry modes, both with hardcoded safety gates:
 
 **STRIKER mode** — catches violent first-jump breakouts. Requires 15+ rank jump with 1.5x volume confirmation. Score ≥9 to enter. Uses MARKET orders for speed.
 
+### 🦗 MANTIS — Dual-Mode Emerging Movers (every 90s)
+
+A hardened variant of dual-mode scanning. Requires higher contribution velocity (+0.003%/scan) compared to ORCA, acting as a higher-confidence filter.
+
+### 🦊 FOX — Dual-Mode Emerging Movers (every 90s)
+
+A further refined variant utilizing a `minReasons=3` filter for STALKER entries. It demands breadth of signal confirmation, significantly reducing chop while retaining high-quality setups.
+
 ### 🦎 KOMODO — Momentum Event Consensus (every 5min)
 
 Five-gate entry model using real-time momentum threshold crossings ($2M+/$5.5M+/$10M+ delta PnL):
@@ -135,6 +149,10 @@ Follows a 3-mode lifecycle across BTC, ETH, SOL, HYPE:
 3. **STRIKE** — enters when score ≥10, with correlation confirmation across paired assets
 
 Gates: SM direction alignment, funding extreme filter, volume ratio spike, multi-timeframe trend structure. Uses fee-optimized limit orders. Conviction-scaled Phase 1 timeouts (30-60 min based on score).
+
+### 🐻‍❄️ POLAR — ETH Alpha Hunter (every 3min)
+
+Specializes in tracking ETH relative to BTC and SOL. Exploits specific structural setups where ETH alpha breaks its usual correlation and dictates market shifts independently.
 
 > **⚠️ PAUSED:** BARRACUDA (funding decay), BISON (conviction trend), and SHARK (liquidation cascade, Senpi paused v1.0 -4.3% ROI) have been removed from the active schedule. Code is preserved. Re-enable by uncommenting in `worker.py`.
 
@@ -269,8 +287,11 @@ senpi-waifu/
 │   ├── lib/senpi_common.py    # Shared Python library
 │   ├── vps/                   # Cron job scripts (run by worker.py)
 │   │   ├── orca-scanner-cron.py     # 🐋 ORCA dual-mode scanner
+│   │   ├── mantis-scanner-cron.py   # 🦗 MANTIS dual-mode scanner
+│   │   ├── fox-scanner-cron.py      # 🦊 FOX dual-mode scanner
 │   │   ├── komodo-scanner-cron.py   # 🦎 KOMODO momentum events
 │   │   ├── condor-scanner-cron.py   # 🦅 CONDOR multi-asset hunter
+│   │   ├── polar-scanner-cron.py    # 🐻‍❄️ POLAR ETH alpha hunter
 │   │   ├── sentinel-scanner-cron.py # 🛡 SENTINEL quality convergence
 │   │   ├── rhino-scanner-cron.py    # 🦏 RHINO momentum pyramider
 │   │   ├── barracuda-scanner-cron.py # [PAUSED] BARRACUDA funding decay

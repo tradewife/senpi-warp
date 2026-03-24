@@ -34,11 +34,10 @@ STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 SKILLS_DIR = Path(os.environ.get("SENPI_SKILLS_DIR", "/opt/senpi/senpi-skills"))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-waifu")
-# Read Senpi auth token: prefer SENPIAUTHTOKEN, then SENPI_API_KEY, then SENPI_AUTH_TOKEN
-SENPIAUTHTOKEN = os.environ.get("SENPIAUTHTOKEN", "").strip()
-SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "").strip()
-SENPI_AUTH_TOKEN = os.environ.get("SENPI_AUTH_TOKEN", "").strip()
-SENPI_TOKEN = SENPIAUTHTOKEN or SENPI_API_KEY or SENPI_AUTH_TOKEN
+SENPI_API_KEY = (
+    os.environ.get("SENPI_API_KEY", "").strip()
+    or os.environ.get("SENPI_AUTH_TOKEN", "").strip()
+)
 
 # Propagate key env vars to child processes — ensure both env var names are set
 CHILD_ENV = {
@@ -71,10 +70,25 @@ def setup_git():
 
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
-    if SENPI_TOKEN:
-        print("[startup] Senpi auth token found — using direct MCP HTTP calls")
+    if SENPI_API_KEY:
+        print(f"[startup] Senpi auth token found — using direct MCP HTTP calls")
     else:
-        print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
+        print("[startup] WARNING: SENPI_API_KEY / SENPI_AUTH_TOKEN not set — Senpi MCP calls will fail")
+
+
+def update_skills():
+    """Pull latest senpi-skills (called periodically by health check)."""
+    if SKILLS_DIR.exists():
+        subprocess.run(
+            ["git", "pull", "--rebase", "--quiet"],
+            cwd=SKILLS_DIR, capture_output=True, timeout=30,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Job runner helpers
+# ---------------------------------------------------------------------------
+
 def run_py(script: str):
     """Run a Python script from the repo, printing stderr."""
     result = subprocess.run(
@@ -112,18 +126,6 @@ def job_dsl():
     run_py("scripts/vps/dsl-runner.py")
 
 
-def job_polar():
-    run_py("scripts/vps/polar-scanner-cron.py")
-
-
-def job_mantis():
-    run_py("scripts/vps/mantis-scanner-cron.py")
-
-
-def job_fox():
-    run_py("scripts/vps/fox-scanner-cron.py")
-
-
 def job_smflip():
     run_py("scripts/vps/sm-flip-cron.py")
 
@@ -132,9 +134,16 @@ def job_condor():
     run_py("scripts/vps/condor-scanner-cron.py")
 
 
-# PAUSED: job_barracuda — BARRACUDA removed per user request (check if Senpi-paused)
-# PAUSED: job_bison     — BISON removed per user request (check if Senpi-paused)
-# PAUSED: job_shark     — SHARK paused by Senpi (v1.0, -4.3% ROI)
+def job_barracuda():
+    run_py("scripts/vps/barracuda-scanner-cron.py")
+
+
+def job_bison():
+    run_py("scripts/vps/bison-scanner-cron.py")
+
+
+def job_shark():
+    run_py("scripts/vps/shark-scanner-cron.py")
 
 
 def job_sentinel():
@@ -151,6 +160,7 @@ def job_watchdog():
 
 def job_health():
     run_py("scripts/vps/health-check-cron.py")
+    update_skills()
 
 
 def job_arena():
@@ -204,12 +214,6 @@ def main():
     # ORCA Dual-Mode Scanner — every 60s
     scheduler.add_job(job_orca, "interval", seconds=60, id="orca")
 
-    # MANTIS Dual-Mode Scanner — every 90s
-    scheduler.add_job(job_mantis, "interval", seconds=90, id="mantis")
-
-    # FOX Dual-Mode Scanner — every 90s
-    scheduler.add_job(job_fox, "interval", seconds=90, id="fox")
-
     # KOMODO Momentum Scanner — every 5min (offset 1min to avoid pile-up)
     scheduler.add_job(job_komodo, "interval", minutes=5, id="komodo",
                       seconds=60)
@@ -220,12 +224,14 @@ def main():
     # CONDOR Multi-Asset Hunter — every 3min, offset 1min
     scheduler.add_job(job_condor, "interval", minutes=3, id="condor", seconds=60)
 
-    # POLAR ETH Alpha Hunter — every 3min, offset 45s
-    scheduler.add_job(job_polar, "interval", minutes=3, id="polar", seconds=45)
+    # BARRACUDA Funding Decay Collector — every 15min
+    scheduler.add_job(job_barracuda, "interval", minutes=15, id="barracuda", seconds=120)
 
-    # PAUSED: BARRACUDA — removed (check vs Senpi paused list)
-    # PAUSED: BISON      — removed (check vs Senpi paused list)
-    # PAUSED: SHARK      — removed (Senpi paused, v1.0, -4.3% ROI)
+    # BISON Conviction Trend Holder — every 30min
+    scheduler.add_job(job_bison, "interval", minutes=30, id="bison", seconds=180)
+
+    # SHARK Liquidation Cascade — every 2min, offset 30s
+    scheduler.add_job(job_shark, "interval", minutes=2, id="shark", seconds=30)
 
     # SENTINEL Quality Trader Convergence — every 3min, offset 90s
     scheduler.add_job(job_sentinel, "interval", minutes=3, id="sentinel", seconds=90)
@@ -258,11 +264,11 @@ def main():
 
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
-    print("  🦗 MANTIS Scanner:  every 90s")
-    print("  🦊 FOX Scanner:     every 90s")
     print("  🦎 KOMODO Scanner:  every 5min")
     print("  🦅 CONDOR Scanner:  every 3min")
-    print("  🐻‍❄️ POLAR Scanner:   every 3min")
+    print("  🎣 BARRACUDA Scan:  every 15min")
+    print("  🦬 BISON Scanner:   every 30min")
+    print("  🦈 SHARK Scanner:   every 2min")
     print("  🛡 SENTINEL Scan:   every 3min")
     print("  🦏 RHINO Scan:      every 3min")
     print("  🔒 DSL HW Runner:   every 3min")
@@ -272,7 +278,6 @@ def main():
     print("  📊 Arena Monitor:   every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
-    print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
 
     try:

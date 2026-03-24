@@ -30,6 +30,9 @@ HEALTH_STATE_FILE = OUTPUTS_DIR / "health-state.json"
 # SHARK_CONFIG_FILE removed — SHARK paused by Senpi (v1.0, -4.3% ROI)
 SENTINEL_CONFIG_FILE = CONFIG_DIR / "sentinel-config.json"
 RHINO_CONFIG_FILE = CONFIG_DIR / "rhino-config.json"
+POLAR_CONFIG_FILE = CONFIG_DIR / "polar-config.json"
+MANTIS_CONFIG_FILE = CONFIG_DIR / "mantis-config.json"
+FOX_CONFIG_FILE = CONFIG_DIR / "fox-config.json"
 
 
 def check_mcporter() -> bool:
@@ -45,7 +48,8 @@ def check_config_files() -> list[str]:
     """Validate all config JSON files are parseable."""
     issues = []
     for config_file in [STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
-                        SENTINEL_CONFIG_FILE, RHINO_CONFIG_FILE]:
+                        SENTINEL_CONFIG_FILE, RHINO_CONFIG_FILE,
+                        POLAR_CONFIG_FILE, MANTIS_CONFIG_FILE, FOX_CONFIG_FILE]:
         if not config_file.exists():
             issues.append(f"Missing: {config_file.name}")
             continue

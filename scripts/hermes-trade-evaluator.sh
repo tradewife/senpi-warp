@@ -106,8 +106,11 @@ MAX_LEVERAGE = 10.0
 # Active scanners only — SHARK/BARRACUDA/BISON paused (removed from worker.py schedule)
 MIN_SCORE_BY_SCANNER = {
     'orca': 6,
+    'mantis': 7,
+    'fox': 7,
     'komodo': 10,
     'condor': 10,
+    'polar': 10,
     'sentinel': 5,
     'rhino': 5,
 }

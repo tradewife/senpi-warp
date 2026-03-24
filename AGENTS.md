@@ -103,8 +103,11 @@ attempt to override them:
 | Scanner | Edge Type | Interval | Status |
 |---------|-----------|----------|--------|
 | ORCA | Emerging movers (STALKER + STRIKER) | 60s | ✅ Active |
+| MANTIS | Dual-mode emerging movers | 90s | ✅ Active |
+| FOX | Dual-mode emerging movers | 90s | ✅ Active |
 | KOMODO | Momentum event consensus | 5min | ✅ Active |
 | CONDOR | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 3min | ✅ Active |
+| POLAR | ETH Alpha Hunter | 3min | ✅ Active |
 | SENTINEL | Quality trader convergence | 3min | ✅ Active |
 | RHINO | Momentum pyramiding (30/40/30 staged) | 3min | ✅ Active |
 | SHARK | Liquidation cascade front-runner | — | ⏸ Paused (Senpi v1.0, -4.3% ROI) |
