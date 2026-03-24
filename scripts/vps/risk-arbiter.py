@@ -19,11 +19,24 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, log, now_iso,
-    load_regime, set_risk_mode, load_json, save_json,
-    load_strategies, get_open_positions, get_enabled_strategies, STRATEGIES_FILE,
-    mcporter_call, send_telegram, git_sync,
-    MEMORY_DIR, POSITION_STATE_DIR, OUTPUTS_DIR,
+    acquire_lock,
+    release_lock,
+    log,
+    now_iso,
+    load_regime,
+    set_risk_mode,
+    load_json,
+    save_json,
+    load_strategies,
+    get_open_positions,
+    get_enabled_strategies,
+    STRATEGIES_FILE,
+    mcporter_call,
+    send_telegram,
+    git_sync,
+    MEMORY_DIR,
+    POSITION_STATE_DIR,
+    OUTPUTS_DIR,
     record_heartbeat,
 )
 
@@ -31,14 +44,17 @@ ARBITER_STATE_FILE = OUTPUTS_DIR / "arbiter-state.json"
 
 
 def load_arbiter_state() -> dict:
-    return load_json(ARBITER_STATE_FILE, default={
-        "peakEquity": 0,
-        "dayStartEquity": 0,
-        "dayStartDate": None,
-        "consecutiveStopOuts": 0,
-        "lastCheckAt": None,
-        "flattenedAt": None,
-    })
+    return load_json(
+        ARBITER_STATE_FILE,
+        default={
+            "peakEquity": 0,
+            "dayStartEquity": 0,
+            "dayStartDate": None,
+            "consecutiveStopOuts": 0,
+            "lastCheckAt": None,
+            "flattenedAt": None,
+        },
+    )
 
 
 def save_arbiter_state(state: dict):
@@ -51,16 +67,30 @@ def get_account_equity() -> float | None:
     result = mcporter_call("account_get_portfolio", {}, timeout=15)
     if "error" in result:
         return None
-    # Try common response shapes
-    equity = result.get("accountEquity", result.get("equity", result.get("totalEquity")))
+    # Direct top-level keys (legacy)
+    equity = result.get(
+        "accountEquity", result.get("equity", result.get("totalEquity"))
+    )
     if equity is not None:
         return float(equity)
-    # Nested under portfolio
+    # Nested under portfolio (current MCP shape)
     portfolio = result.get("portfolio", result.get("data", {}))
     if isinstance(portfolio, dict):
         equity = portfolio.get("accountEquity", portfolio.get("equity"))
         if equity is not None:
             return float(equity)
+        # Current MCP: total_balance_usd
+        equity = portfolio.get("total_balance_usd")
+        if equity is not None:
+            return float(equity)
+        # Clearinghouse shape: main.marginSummary.accountValue
+        main = portfolio.get("main", {})
+        if isinstance(main, dict):
+            margin = main.get("marginSummary", {})
+            if isinstance(margin, dict):
+                equity = margin.get("accountValue")
+                if equity is not None:
+                    return float(equity)
     return None
 
 
@@ -73,7 +103,9 @@ def count_recent_stop_outs() -> int:
         if trade.get("recordedAt", "") < cutoff:
             break
         if trade.get("action") == "CLOSE" and trade.get("closeReason") in (
-            "dsl_breach", "phase1_autocut", "stagnation"
+            "dsl_breach",
+            "phase1_autocut",
+            "stagnation",
         ):
             pnl = float(trade.get("realizedPnl", 0))
             if pnl < 0:
@@ -88,10 +120,14 @@ def flatten_all():
         positions = get_open_positions(strat["_key"])
         for pos in positions:
             log(f"FLATTEN: closing {pos['asset']} in {strat['_key']}")
-            mcporter_call("strategy_close_position", {
-                "strategyId": strat.get("strategyId", pos.get("strategyId")),
-                "asset": pos["asset"],
-            }, timeout=15)
+            mcporter_call(
+                "strategy_close_position",
+                {
+                    "strategyId": strat.get("strategyId", pos.get("strategyId")),
+                    "asset": pos["asset"],
+                },
+                timeout=15,
+            )
             # Deactivate DSL state
             if "_file" in pos:
                 state = load_json(Path(pos["_file"]))
@@ -122,20 +158,20 @@ def process_strategy_guard_rails():
         key = trade.get("strategyKey")
         if not key or key not in stats:
             continue
-            
+
         recorded_at = trade.get("recordedAt", "")
         # Break out of consecutive loss counter if we hit a profit
         if trade.get("action") == "CLOSE":
             pnl = float(trade.get("realizedPnl", 0))
             if recorded_at.startswith(today):
                 stats[key]["daily_pnl"] += pnl
-                
+
             # If we haven't broken the consecutive loss streak yet
             if pnl > 0 and "broken_streak" not in stats[key]:
                 stats[key]["broken_streak"] = True
             elif pnl < 0 and "broken_streak" not in stats[key]:
                 stats[key]["consecutive_losses"] += 1
-                
+
         elif trade.get("action") == "OPEN":
             if recorded_at.startswith(today):
                 stats[key]["daily_entries"] += 1
@@ -183,20 +219,22 @@ def process_strategy_guard_rails():
         # 2. Check rules to close gate
         strat_stats = stats[key]
         new_gate = "OPEN"
-        
+
         # Rule G4: Consecutive Losses
         if strat_stats["consecutive_losses"] >= max_losses:
             new_gate = "COOLDOWN"
             reason = f"{strat_stats['consecutive_losses']} consecutive losses"
             exp_time = datetime.now(timezone.utc) + timedelta(minutes=cooldown_min)
             strat["gateStateExpiresAt"] = exp_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-        
+
         # Rule G3: Max Entries
         elif strat_stats["daily_entries"] >= max_entries:
             if not (bypass_on_profit and strat_stats["daily_pnl"] > 0):
                 new_gate = "CLOSED"
-                reason = f"Max entries hit ({strat_stats['daily_entries']}/{max_entries})"
-        
+                reason = (
+                    f"Max entries hit ({strat_stats['daily_entries']}/{max_entries})"
+                )
+
         if new_gate != "OPEN":
             strat["gateState"] = new_gate
             strat["gateStateUpdatedAt"] = now_iso()
@@ -247,10 +285,14 @@ def main():
             daily_drawdown = (day_start - equity) / day_start * 100
             if daily_drawdown >= daily_loss_pct:
                 if regime.get("riskMode") != "RISK_OFF":
-                    log(f"RISK ARBITER: Daily loss {daily_drawdown:.1f}% >= {daily_loss_pct}% → RISK_OFF")
-                    set_risk_mode("RISK_OFF",
-                                  f"Daily loss limit hit: {daily_drawdown:.1f}% (limit {daily_loss_pct}%)",
-                                  "risk-arbiter")
+                    log(
+                        f"RISK ARBITER: Daily loss {daily_drawdown:.1f}% >= {daily_loss_pct}% → RISK_OFF"
+                    )
+                    set_risk_mode(
+                        "RISK_OFF",
+                        f"Daily loss limit hit: {daily_drawdown:.1f}% (limit {daily_loss_pct}%)",
+                        "risk-arbiter",
+                    )
                     send_telegram(
                         f"🚨 RISK OFF — Daily loss limit hit\n"
                         f"Drawdown: {daily_drawdown:.1f}% | Limit: {daily_loss_pct}%\n"
@@ -262,11 +304,15 @@ def main():
         if peak > 0:
             peak_drawdown = (peak - equity) / peak * 100
             if peak_drawdown >= catastrophic_pct:
-                log(f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL")
+                log(
+                    f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL"
+                )
                 flatten_all()
-                set_risk_mode("RISK_OFF",
-                              f"CATASTROPHIC: {peak_drawdown:.1f}% drawdown from peak. ALL POSITIONS CLOSED.",
-                              "risk-arbiter")
+                set_risk_mode(
+                    "RISK_OFF",
+                    f"CATASTROPHIC: {peak_drawdown:.1f}% drawdown from peak. ALL POSITIONS CLOSED.",
+                    "risk-arbiter",
+                )
                 arb_state["flattenedAt"] = now_iso()
                 send_telegram(
                     f"🚨🚨 CATASTROPHIC FLATTEN 🚨🚨\n"
@@ -281,9 +327,11 @@ def main():
         if recent_stops >= max_stop_outs:
             if regime.get("riskMode") != "RISK_OFF":
                 log(f"RISK ARBITER: {recent_stops} consecutive stop-outs → RISK_OFF")
-                set_risk_mode("RISK_OFF",
-                              f"{recent_stops} stop-outs in 2h window (limit {max_stop_outs})",
-                              "risk-arbiter")
+                set_risk_mode(
+                    "RISK_OFF",
+                    f"{recent_stops} stop-outs in 2h window (limit {max_stop_outs})",
+                    "risk-arbiter",
+                )
                 send_telegram(
                     f"⚠️ RISK OFF — {recent_stops} consecutive stop-outs\n"
                     f"Cooling down. No new entries until manual reset or next regime check."
@@ -309,11 +357,19 @@ def main():
                             pos_pnl = margin * float(current_roe) / 100
                     if pos_pnl < 0 and abs(pos_pnl) > equity * single_loss_pct / 100:
                         asset = pos.get("asset", "?")
-                        log(f"RISK ARBITER: Single trade loss ${abs(pos_pnl):.0f} > {single_loss_pct}% of equity — closing {asset}")
-                        mcporter_call("strategy_close_position", {
-                            "strategyId": strat.get("strategyId", pos.get("strategyId")),
-                            "asset": asset,
-                        }, timeout=15)
+                        log(
+                            f"RISK ARBITER: Single trade loss ${abs(pos_pnl):.0f} > {single_loss_pct}% of equity — closing {asset}"
+                        )
+                        mcporter_call(
+                            "strategy_close_position",
+                            {
+                                "strategyId": strat.get(
+                                    "strategyId", pos.get("strategyId")
+                                ),
+                                "asset": asset,
+                            },
+                            timeout=15,
+                        )
                         if "_file" in pos:
                             state = load_json(Path(pos["_file"]))
                             state["active"] = False
@@ -322,7 +378,7 @@ def main():
                             save_json(Path(pos["_file"]), state)
                         send_telegram(
                             f"🛡 Single trade loss guard: Closed {asset}\n"
-                            f"Loss: ${abs(pos_pnl):.0f} ({abs(pos_pnl)/equity*100:.1f}% of equity)\n"
+                            f"Loss: ${abs(pos_pnl):.0f} ({abs(pos_pnl) / equity * 100:.1f}% of equity)\n"
                             f"Limit: {single_loss_pct}%"
                         )
 
