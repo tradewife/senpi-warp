@@ -204,6 +204,20 @@ def main():
     setup_git()
     setup_mcporter()
 
+    # Debug: test orca scanner at startup
+    print("[startup] Testing orca scanner...", flush=True)
+    result = subprocess.run(
+        ["python3", str(STATE_DIR / "scripts/vps/orca-scanner-cron.py")],
+        capture_output=True,
+        text=True,
+        env=CHILD_ENV,
+    )
+    print(f"[startup] ORCA exit={result.returncode}", flush=True)
+    if result.stdout.strip():
+        print(f"[startup] ORCA stdout: {result.stdout.strip()[:500]}", flush=True)
+    if result.stderr.strip():
+        print(f"[startup] ORCA stderr: {result.stderr.strip()[:500]}", flush=True)
+
     # Startup regime bootstrap — run arena monitor once to initialize regime
     # before the scheduler fires any trading jobs
     print("[startup] Running initial regime classification...")
