@@ -24,14 +24,30 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, git_pull, git_sync, log,
-    load_json, save_json, now_iso,
-    POSITION_STATE_DIR, SCANNER_CONFIG_FILE,
-    load_regime, current_regime_params, is_entries_allowed, is_auto_entry_enabled,
-    get_enabled_strategies, count_open_slots, get_strategy_state_dir,
-    check_directional_exposure_limit, attach_position_playbook,
-    add_pending_entry, record_trade, send_telegram,
-    mcporter_call, record_heartbeat,
+    acquire_lock,
+    release_lock,
+    git_pull,
+    git_sync,
+    log,
+    load_json,
+    save_json,
+    now_iso,
+    POSITION_STATE_DIR,
+    SCANNER_CONFIG_FILE,
+    load_regime,
+    current_regime_params,
+    is_entries_allowed,
+    is_auto_entry_enabled,
+    get_enabled_strategies,
+    count_open_slots,
+    get_strategy_state_dir,
+    check_directional_exposure_limit,
+    attach_position_playbook,
+    add_pending_entry,
+    record_trade,
+    send_telegram,
+    mcporter_call,
+    record_heartbeat,
 )
 
 # --- State files ---
@@ -63,6 +79,7 @@ MIN_VOL_RATIO = 0.5
 # ============================================================================
 # Gate 1 — Momentum Events
 # ============================================================================
+
 
 def fetch_momentum_events() -> list[dict]:
     """Fetch real-time momentum threshold crossing events."""
@@ -98,12 +115,16 @@ def group_events_by_consensus(events: list[dict]) -> dict[str, list[dict]]:
                 for e in groups[key]
             )
             if not already:
-                groups[key].append({
-                    **event,
-                    "_asset": asset,
-                    "_direction": direction,
-                    "_delta_pnl": float(pos.get("delta_pnl", pos.get("deltaPnl", 0))),
-                })
+                groups[key].append(
+                    {
+                        **event,
+                        "_asset": asset,
+                        "_direction": direction,
+                        "_delta_pnl": float(
+                            pos.get("delta_pnl", pos.get("deltaPnl", 0))
+                        ),
+                    }
+                )
 
     # Only keep consensus groups (2+ unique traders)
     return {k: v for k, v in groups.items() if len(v) >= MIN_CONSENSUS_TRADERS}
@@ -112,6 +133,7 @@ def group_events_by_consensus(events: list[dict]) -> dict[str, list[dict]]:
 # ============================================================================
 # Gate 2 — Trader Quality Filter
 # ============================================================================
+
 
 def filter_by_quality(events: list[dict]) -> list[dict]:
     """Filter events by TCS, TAS, and concentration thresholds."""
@@ -137,6 +159,7 @@ def filter_by_quality(events: list[dict]) -> list[dict]:
 # Gate 3 — Market Confirmation
 # ============================================================================
 
+
 def check_market_confirmation(asset: str) -> tuple[bool, int]:
     """
     Check aggregate SM concentration on the asset.
@@ -161,6 +184,7 @@ def check_market_confirmation(asset: str) -> tuple[bool, int]:
 # ============================================================================
 # Gate 4 — Volume Confirmation
 # ============================================================================
+
 
 def check_volume_confirmation(asset: str) -> tuple[bool, float]:
     """
@@ -193,6 +217,7 @@ def check_volume_confirmation(asset: str) -> tuple[bool, float]:
 # Gate 5 — Regime Filter
 # ============================================================================
 
+
 def get_regime_adjustment(direction: str) -> int:
     """
     Check BTC regime alignment. Returns score adjustment.
@@ -222,6 +247,7 @@ def get_regime_adjustment(direction: str) -> int:
 # Scoring
 # ============================================================================
 
+
 def score_consensus(
     events: list[dict],
     market_confirmed: bool,
@@ -234,7 +260,9 @@ def score_consensus(
     """
     trader_count = len(events)
     avg_tier = sum(int(e.get("tier", 1)) for e in events) / max(trader_count, 1)
-    avg_conc = sum(float(e.get("concentration", 0)) for e in events) / max(trader_count, 1)
+    avg_conc = sum(float(e.get("concentration", 0)) for e in events) / max(
+        trader_count, 1
+    )
 
     # Trader count: 2 per trader
     trader_pts = trader_count * 2
@@ -282,6 +310,7 @@ def score_consensus(
 # Risk management
 # ============================================================================
 
+
 def load_cooldowns() -> dict:
     return load_json(KOMODO_COOLDOWNS_FILE, default={})
 
@@ -291,12 +320,15 @@ def save_cooldowns(data: dict):
 
 
 def load_entries() -> dict:
-    return load_json(KOMODO_ENTRIES_FILE, default={
-        "date": "",
-        "count": 0,
-        "consecutiveLosses": 0,
-        "dailyPnl": 0.0,
-    })
+    return load_json(
+        KOMODO_ENTRIES_FILE,
+        default={
+            "date": "",
+            "count": 0,
+            "consecutiveLosses": 0,
+            "dailyPnl": 0.0,
+        },
+    )
 
 
 def save_entries(data: dict):
@@ -356,7 +388,9 @@ def check_asset_cooldown(asset: str) -> bool:
         return False
     try:
         last_time = datetime.fromisoformat(last_entry.replace("Z", "+00:00"))
-        return datetime.now(timezone.utc) < last_time + timedelta(minutes=PER_ASSET_COOLDOWN_MIN)
+        return datetime.now(timezone.utc) < last_time + timedelta(
+            minutes=PER_ASSET_COOLDOWN_MIN
+        )
     except ValueError:
         return False
 
@@ -375,7 +409,11 @@ def count_komodo_open_positions() -> int:
         state_dir = get_strategy_state_dir(strat["_key"])
         for f in state_dir.glob("dsl-*.json"):
             state = load_json(f)
-            if state and state.get("active") and state.get("entrySource", "").startswith("auto-komodo"):
+            if (
+                state
+                and state.get("active")
+                and state.get("entrySource", "").startswith("auto-komodo")
+            ):
                 count += 1
     return count
 
@@ -393,8 +431,19 @@ def increment_entry_count():
 # DSL High Water Mode state
 # ============================================================================
 
-def create_dsl_state(*, asset, direction, leverage, entry_price, size,
-                     wallet, strategy_id, strategy_key, score) -> dict:
+
+def create_dsl_state(
+    *,
+    asset,
+    direction,
+    leverage,
+    entry_price,
+    size,
+    wallet,
+    strategy_id,
+    strategy_key,
+    score,
+) -> dict:
     """Create a DSL High Water Mode state file for KOMODO."""
     # Conviction-scaled Phase 1 floor
     if score >= 10:
@@ -430,7 +479,7 @@ def create_dsl_state(*, asset, direction, leverage, entry_price, size,
         "phase2TriggerRoe": 8,
         "lockMode": "pct_of_high_water",
         "tiers": [
-            {"triggerPct": 8,  "lockHwPct": 25, "consecutiveBreachesRequired": 3},
+            {"triggerPct": 8, "lockHwPct": 25, "consecutiveBreachesRequired": 3},
             {"triggerPct": 15, "lockHwPct": 45, "consecutiveBreachesRequired": 2},
             {"triggerPct": 25, "lockHwPct": 65, "consecutiveBreachesRequired": 2},
             {"triggerPct": 40, "lockHwPct": 80, "consecutiveBreachesRequired": 1},
@@ -457,8 +506,10 @@ def create_dsl_state(*, asset, direction, leverage, entry_price, size,
 # Auto-entry
 # ============================================================================
 
-def try_auto_entry(asset: str, direction: str, events: list[dict],
-                   score: int, breakdown: dict):
+
+def try_auto_entry(
+    asset: str, direction: str, events: list[dict], score: int, breakdown: dict
+):
     """Attempt entry on a consensus signal that passed all five gates."""
     if not is_auto_entry_enabled():
         log(f"KOMODO: Auto-entry disabled by regime — skipping {asset}")
@@ -508,7 +559,9 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
     )
     margin = budget * alloc_pct
 
-    allowed_exposure, exposure = check_directional_exposure_limit(direction, margin, leverage)
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        direction, margin, leverage
+    )
     if not allowed_exposure:
         log(
             f"KOMODO: directional cap blocked {asset} {direction} "
@@ -517,18 +570,23 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
         return
 
     # KOMODO: ALO (maker) orders for fee savings — patient ambush, not speed-critical
-    log(f"🦎 KOMODO AUTO-ENTRY: {direction} {asset} | "
+    log(
+        f"🦎 KOMODO AUTO-ENTRY: {direction} {asset} | "
         f"margin=${margin:.0f} lev={leverage}x order=ALO | "
-        f"score={score} traders={breakdown['traderCount']}")
+        f"score={score} traders={breakdown['traderCount']}"
+    )
 
-    entry_result = mcporter_call("strategy_create_position", {
-        "strategyId": target_strategy.get("strategyId"),
-        "asset": asset,
-        "direction": direction,
-        "marginUsd": margin,
-        "leverage": leverage,
-        "orderType": "ALO",
-    })
+    entry_result = mcporter_call(
+        "strategy_create_position",
+        {
+            "strategyId": target_strategy.get("strategyId"),
+            "asset": asset,
+            "direction": direction,
+            "marginUsd": margin,
+            "leverage": leverage,
+            "orderType": "ALO",
+        },
+    )
 
     if "error" in entry_result:
         log(f"KOMODO: Entry FAILED for {asset}: {entry_result['error']}")
@@ -570,36 +628,40 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
     save_json(state_dir / f"dsl-{asset}.json", dsl_state)
 
     # Record trade
-    record_trade({
-        "action": "OPEN",
-        "asset": asset,
-        "direction": direction,
-        "entryPrice": entry_price,
-        "size": size,
-        "margin": margin,
-        "leverage": leverage,
-        "strategyKey": target_strategy["_key"],
-        "entrySource": "auto-komodo",
-        "entryMode": "KOMODO",
-        "entryScore": score,
-        "orderType": "ALO",
-        "scoreBreakdown": breakdown,
-        "traderCount": breakdown["traderCount"],
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": asset,
+            "direction": direction,
+            "entryPrice": entry_price,
+            "size": size,
+            "margin": margin,
+            "leverage": leverage,
+            "strategyKey": target_strategy["_key"],
+            "entrySource": "auto-komodo",
+            "entryMode": "KOMODO",
+            "entryScore": score,
+            "orderType": "ALO",
+            "scoreBreakdown": breakdown,
+            "traderCount": breakdown["traderCount"],
+        }
+    )
 
     # Queue for Oz review
-    add_pending_entry({
-        "asset": asset,
-        "direction": direction,
-        "autoEntered": True,
-        "strategyKey": target_strategy["_key"],
-        "entryPrice": entry_price,
-        "margin": margin,
-        "leverage": leverage,
-        "score": score,
-        "scoreBreakdown": breakdown,
-        "source": "komodo",
-    })
+    add_pending_entry(
+        {
+            "asset": asset,
+            "direction": direction,
+            "autoEntered": True,
+            "strategyKey": target_strategy["_key"],
+            "entryPrice": entry_price,
+            "margin": margin,
+            "leverage": leverage,
+            "score": score,
+            "scoreBreakdown": breakdown,
+            "source": "komodo",
+        }
+    )
 
     # Update tracking
     increment_entry_count()
@@ -621,6 +683,7 @@ def try_auto_entry(asset: str, direction: str, events: list[dict],
 # ============================================================================
 # Main scan loop
 # ============================================================================
+
 
 def scan():
     """Run the full five-gate scan."""
@@ -688,14 +751,19 @@ def scan():
 
         # Score
         score, breakdown = score_consensus(
-            group_events, market_confirmed, market_trader_count,
-            volume_ratio, regime_adj,
+            group_events,
+            market_confirmed,
+            market_trader_count,
+            volume_ratio,
+            regime_adj,
         )
 
-        log(f"KOMODO: {direction} {asset} scored {score} "
+        log(
+            f"KOMODO: {direction} {asset} scored {score} "
             f"(traders={breakdown['traderCount']} tier={breakdown['avgTier']} "
             f"conc={breakdown['avgConcentration']} mkt={market_trader_count} "
-            f"vol={volume_ratio} regime={regime_adj})")
+            f"vol={volume_ratio} regime={regime_adj})"
+        )
 
         if score < MIN_SCORE:
             continue
@@ -712,6 +780,7 @@ def main():
 
     try:
         record_heartbeat("komodo")
+        log("komodo: main() called")
         git_pull()
         scan()
         git_sync("auto: KOMODO scan")
