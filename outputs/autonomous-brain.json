@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-03-24T00:34:05Z",
-  "codebaseIndexAt": "2026-03-24T00:34:05Z",
+  "generatedAt": "2026-03-24T00:42:36Z",
+  "codebaseIndexAt": "2026-03-24T00:42:36Z",
   "riskMode": "RISK_ON",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T00:34:05Z",
-    "mode": "ACTIVE",
-    "blockNewEntries": false,
-    "allowAutoEntry": true,
+    "generatedAt": "2026-03-24T00:42:36Z",
+    "mode": "PROTECT",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
     "maxSlotsCap": 3,
     "maxLeverageCap": 10.0,
     "allocPctCap": 35.0,
@@ -15,13 +15,15 @@
         "maxSlotsCap": 3
       }
     },
-    "reasons": [],
+    "reasons": [
+      "mcporter health check failed"
+    ],
     "risk": {
       "drawdownPctFromPeak": 0.0,
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [],
-      "coreHeartbeatCount": 4
+      "coreHeartbeatCount": 11
     },
     "signalPolicy": {
       "preferredScanners": [
@@ -433,12 +435,18 @@
     }
   },
   "systemHealth": {
-    "health": {},
+    "health": {
+      "lastRunAt": "2026-03-24T00:36:09Z",
+      "mcporterOk": false,
+      "configIssues": [],
+      "reconcileRan": true,
+      "staleCrons": []
+    },
     "arbiter": {
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T00:22:07Z"
+      "lastCheckAt": "2026-03-24T00:42:07Z"
     }
   },
   "pending": {
@@ -547,13 +555,15 @@
     }
   },
   "summary": {
-    "status": "ACTIVE",
+    "status": "PROTECT",
     "preferredScanners": [
       "komodo",
       "orca",
       "sentinel"
     ],
     "blockedScanners": [],
-    "reasons": []
+    "reasons": [
+      "mcporter health check failed"
+    ]
   }
 }

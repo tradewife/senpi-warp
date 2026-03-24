@@ -1,325 +1,231 @@
 {
-  "generatedAt": "2026-03-24T00:41:11Z",
+  "generatedAt": "2026-03-24T00:42:36Z",
   "root": "/home/kt/senpi-waifu",
   "counts": {
     "entrypoints": 3,
     "shared_lib": 2,
-    "mechanical_scanners": 8,
-    "mechanical_support": 7,
-    "strategic_hermes": 6,
-    "strategic_legacy": 2,
-    "dashboard": 4,
+    "mechanical": 22,
+    "strategic": 2,
+    "dashboard": 3,
     "config": 10,
-    "memory": 4,
-    "state": 9,
-    "outputs": 11
+    "memory": 4
   },
   "categories": {
     "entrypoints": [
       {
-        "path": "worker.py",
-        "role": "APScheduler-based Railway worker \u2014 runs all mechanical crons"
-      },
-      {
         "path": "dashboard/server.py",
-        "role": "FastAPI dashboard \u2014 mobile monitoring + chat"
+        "summary": "Senpi Dashboard \u2014 mobile-first monitoring + chat interface."
       },
       {
         "path": "dashboard/telegram_bot.py",
-        "role": "Telegram bot \u2014 full control interface"
+        "summary": "Senpi Telegram Bot \u2014 full control interface for the ORCA hybrid trading agent."
+      },
+      {
+        "path": "worker.py",
+        "summary": "Senpi Railway Worker \u2014 replaces the Linux crontab for Railway deployment."
       }
     ],
     "shared_lib": [
       {
-        "path": "scripts/lib/senpi_common.py",
-        "role": "Shared runtime: config loading, MCP calls, git sync, Telegram, position mgmt, locking, heartbeats"
-      },
-      {
         "path": "scripts/lib/__init__.py",
-        "role": "Package marker"
+        "summary": ""
+      },
+      {
+        "path": "scripts/lib/senpi_common.py",
+        "summary": "senpi_common.py \u2014 Shared utilities for all VPS cron scripts."
       }
     ],
-    "mechanical_scanners": [
+    "mechanical": [
       {
-        "path": "scripts/vps/orca-scanner-cron.py",
-        "scanner": "ORCA",
-        "edge": "Emerging movers (STALKER+STRIKER)",
-        "interval": "60s"
-      },
-      {
-        "path": "scripts/vps/komodo-scanner-cron.py",
-        "scanner": "KOMODO",
-        "edge": "Momentum event consensus",
-        "interval": "5min"
-      },
-      {
-        "path": "scripts/vps/shark-scanner-cron.py",
-        "scanner": "SHARK",
-        "edge": "Liquidation cascade front-runner",
-        "interval": "2min"
-      },
-      {
-        "path": "scripts/vps/sentinel-scanner-cron.py",
-        "scanner": "SENTINEL",
-        "edge": "Quality trader convergence",
-        "interval": "3min"
-      },
-      {
-        "path": "scripts/vps/condor-scanner-cron.py",
-        "scanner": "CONDOR",
-        "edge": "Multi-asset alpha (BTC,ETH,SOL,HYPE)",
-        "interval": "3min"
-      },
-      {
-        "path": "scripts/vps/rhino-scanner-cron.py",
-        "scanner": "RHINO",
-        "edge": "Momentum pyramiding (30/40/30)",
-        "interval": "3min"
-      },
-      {
-        "path": "scripts/vps/barracuda-scanner-cron.py",
-        "scanner": "BARRACUDA",
-        "edge": "Funding decay/fade",
-        "interval": "15min"
-      },
-      {
-        "path": "scripts/vps/bison-scanner-cron.py",
-        "scanner": "BISON",
-        "edge": "Conviction trend holder",
-        "interval": "30min"
-      }
-    ],
-    "mechanical_support": [
-      {
-        "path": "scripts/vps/dsl-runner.py",
-        "role": "High-Water trailing stop manager \u2014 every 3min"
-      },
-      {
-        "path": "scripts/vps/sm-flip-cron.py",
-        "role": "Position supervisor \u2014 flip, conviction collapse, dead-weight rotation"
-      },
-      {
-        "path": "scripts/vps/watchdog-cron.py",
-        "role": "Margin/liquidation monitor \u2014 every 5min"
-      },
-      {
-        "path": "scripts/vps/risk-arbiter.py",
-        "role": "Mechanical safety \u2014 every 30s"
+        "path": "scripts/vps/arena-monitor.py",
+        "summary": "Arena Monitor \u2014 runs every 15 minutes via cron."
       },
       {
         "path": "scripts/vps/autonomous-brain.py",
-        "role": "Local brain policy synthesizer \u2014 every 5min"
+        "summary": "Autonomous Brain Orchestrator."
       },
       {
-        "path": "scripts/vps/arena-monitor.py",
-        "role": "Senpi Predators leaderboard \u2014 every 15min"
+        "path": "scripts/vps/barracuda-scanner-cron.py",
+        "summary": "BARRACUDA v1.0 \u2014 Funding Decay Collector."
+      },
+      {
+        "path": "scripts/vps/bison-scanner-cron.py",
+        "summary": "BISON v1.2 \u2014 Conviction Trend Holder."
+      },
+      {
+        "path": "scripts/vps/condor-scanner-cron.py",
+        "summary": "CONDOR v1.0 \u2014 Multi-asset alpha hunter."
+      },
+      {
+        "path": "scripts/vps/dsl-combined-cron.sh",
+        "summary": "Job 2: DSL Combined Runner \u2014 every 3 minutes"
+      },
+      {
+        "path": "scripts/vps/dsl-runner.py",
+        "summary": "DSL Runner \u2014 High-Water Trailing Stop Manager."
+      },
+      {
+        "path": "scripts/vps/emerging-movers-cron.py",
+        "summary": "[LEGACY \u2014 REPLACED BY orca-scanner-cron.py]"
+      },
+      {
+        "path": "scripts/vps/health-check-cron.py",
+        "summary": "Health Check \u2014 System health monitor. Runs every 10 minutes via APScheduler."
+      },
+      {
+        "path": "scripts/vps/health-check-cron.sh",
+        "summary": "Job 5: Health Check + git sync \u2014 every 10 minutes"
+      },
+      {
+        "path": "scripts/vps/komodo-scanner-cron.py",
+        "summary": "KOMODO v1.0 \u2014 Momentum Event Consensus Scanner. Runs every 5 minutes."
+      },
+      {
+        "path": "scripts/vps/orca-scanner-cron.py",
+        "summary": "ORCA Scanner v1.0 \u2014 Dual-Mode Emerging Movers (Hardened)."
+      },
+      {
+        "path": "scripts/vps/provision-vps.sh",
+        "summary": "set -euo pipefail"
       },
       {
         "path": "scripts/vps/reconcile-closes.py",
-        "role": "Detect DSL-closed positions \u2014 every 15min"
+        "summary": "reconcile-closes.py \u2014 Detects DSL positions that were closed (by dsl-combined.py"
+      },
+      {
+        "path": "scripts/vps/rhino-scanner-cron.py",
+        "summary": "RHINO v1.0 \u2014 Momentum pyramider."
+      },
+      {
+        "path": "scripts/vps/risk-arbiter.py",
+        "summary": "Risk Arbiter \u2014 runs every 30 seconds via systemd timer."
+      },
+      {
+        "path": "scripts/vps/sentinel-scanner-cron.py",
+        "summary": "SENTINEL v1.0 \u2014 Quality Trader Convergence Scanner."
+      },
+      {
+        "path": "scripts/vps/shark-scanner-cron.py",
+        "summary": "SHARK v1.0 \u2014 Liquidation Cascade Front-Runner."
+      },
+      {
+        "path": "scripts/vps/sm-flip-cron.py",
+        "summary": "Position Supervisor \u2014 flip, conviction collapse, and dead-weight rotation."
+      },
+      {
+        "path": "scripts/vps/sm-flip-cron.sh",
+        "summary": "Job 3: SM Flip Detector \u2014 every 5 minutes"
+      },
+      {
+        "path": "scripts/vps/watchdog-cron.py",
+        "summary": "Watchdog \u2014 Margin/Liquidation Monitor. Runs every 5 minutes via APScheduler."
+      },
+      {
+        "path": "scripts/vps/watchdog-cron.sh",
+        "summary": "Job 4: Watchdog \u2014 every 5 minutes (offset by 2min from SM flip)"
       }
     ],
-    "strategic_hermes": [
+    "strategic": [
       {
-        "path": "scripts/hermes-trade-evaluator.sh",
-        "agent": "Trade Evaluator",
-        "schedule": "*/15 * * * *"
+        "path": "scripts/oz/agent-init.sh",
+        "summary": "Oz Agent Init \u2014 run once at the start of every agent session."
       },
       {
-        "path": "scripts/hermes-regime-classifier.sh",
-        "agent": "Regime Classifier",
-        "schedule": "0 * * * *"
+        "path": "scripts/oz/setup-oz-agents.sh",
+        "summary": "set -euo pipefail"
+      }
+    ],
+    "dashboard": [
+      {
+        "path": "dashboard/requirements.txt",
+        "summary": "fastapi>=0.115"
       },
       {
-        "path": "scripts/hermes-portfolio-review.sh",
-        "agent": "Portfolio Review",
-        "schedule": "0 */6 * * *"
+        "path": "dashboard/senpi-dashboard.service",
+        "summary": "[Unit]"
       },
       {
-        "path": "scripts/hermes-howl.sh",
-        "agent": "HOWL Nightly",
-        "schedule": "55 23 * * *"
-      },
-      {
-        "path": "scripts/hermes-whale-index.sh",
-        "agent": "Whale Index",
-        "schedule": "0 1 * * *"
-      },
-      {
-        "path": "scripts/hermes-arena-learner.sh",
-        "agent": "Arena Learner",
-        "schedule": "0 */4 * * *"
+        "path": "dashboard/templates/index.html",
+        "summary": "<!DOCTYPE html>"
       }
     ],
     "config": [
       {
-        "path": "config/risk-regime.json",
-        "role": "Active regime + guardrails (RISK_ON/BASELINE/RISK_OFF)"
-      },
-      {
-        "path": "config/wolf-strategies.json",
-        "role": "Strategy registry \u2014 wallet, strategyId, budget, slots"
-      },
-      {
-        "path": "config/scanner-config.json",
-        "role": "ORCA + KOMODO entry thresholds"
-      },
-      {
-        "path": "config/condor-config.json",
-        "role": "CONDOR multi-asset params"
-      },
-      {
         "path": "config/barracuda-config.json",
-        "role": "BARRACUDA funding thresholds"
+        "summary": "\"maxPositions\": 3,"
       },
       {
         "path": "config/bison-config.json",
-        "role": "BISON trend/momentum params"
+        "summary": "\"topAssets\": 10,"
       },
       {
-        "path": "config/shark-config.json",
-        "role": "SHARK OI/liquidation params"
-      },
-      {
-        "path": "config/sentinel-config.json",
-        "role": "SENTINEL quality-convergence params"
-      },
-      {
-        "path": "config/rhino-config.json",
-        "role": "RHINO pyramid stage params"
+        "path": "config/condor-config.json",
+        "summary": "\"assets\": [\"BTC\", \"ETH\", \"SOL\", \"HYPE\"],"
       },
       {
         "path": "config/mcporter.json",
-        "role": "MCP server configuration"
-      }
-    ],
-    "state": [
-      {
-        "path": "state/pending-entries.json",
-        "role": "Live signal queue from scanners"
+        "summary": "\"mcpServers\": {"
       },
       {
-        "path": "state/orca-scan-history.json",
-        "role": "Last 40 ORCA scans"
+        "path": "config/rhino-config.json",
+        "summary": "\"strategyId\": \"\","
       },
       {
-        "path": "state/orca-cooldowns.json",
-        "role": "Per-asset cooldown tracking"
+        "path": "config/risk-regime.json",
+        "summary": "\"riskMode\": \"RISK_ON\","
       },
       {
-        "path": "state/komodo-events.json",
-        "role": "KOMODO momentum event history"
+        "path": "config/scanner-config.json",
+        "summary": "\"minVolume24h\": 500000,"
       },
       {
-        "path": "state/komodo-cooldowns.json",
-        "role": "KOMODO per-asset cooldowns"
+        "path": "config/sentinel-config.json",
+        "summary": "\"strategyId\": \"\","
       },
       {
-        "path": "state/shark-state.json",
-        "role": "SHARK scanner state"
+        "path": "config/shark-config.json",
+        "summary": "\"maxSlots\": 2,"
       },
       {
-        "path": "state/shark-liq-map.json",
-        "role": "SHARK liquidation map"
-      },
-      {
-        "path": "state/shark-oi-history.json",
-        "role": "SHARK OI history"
-      },
-      {
-        "path": "state/wolf-primary/",
-        "role": "DSL state files for wolf-primary strategy (dsl-*.json)"
-      }
-    ],
-    "outputs": [
-      {
-        "path": "outputs/autonomous-brain.json",
-        "role": "Brain policy snapshot \u2014 scanner priorities, risk caps"
-      },
-      {
-        "path": "outputs/playbook-state.json",
-        "role": "Normalized execution playbook"
-      },
-      {
-        "path": "outputs/arbiter-state.json",
-        "role": "Peak equity, drawdown tracking"
-      },
-      {
-        "path": "outputs/arena-state.json",
-        "role": "Senpi Predators leaderboard snapshot"
-      },
-      {
-        "path": "outputs/arena-learnings.json",
-        "role": "Arena-derived recommendations + confidence"
-      },
-      {
-        "path": "outputs/latest-report.json",
-        "role": "Last portfolio review"
-      },
-      {
-        "path": "outputs/health-state.json",
-        "role": "System health + stale crons"
-      },
-      {
-        "path": "outputs/cron-heartbeats.json",
-        "role": "Cron job heartbeat timestamps"
-      },
-      {
-        "path": "outputs/whale-index-state.json",
-        "role": "Copy-trade slot/watch/rebalance state"
-      },
-      {
-        "path": "outputs/codebase-index.json",
-        "role": "This file \u2014 codebase structure index"
-      },
-      {
-        "path": "outputs/.gitkeep",
-        "role": "Directory marker"
+        "path": "config/wolf-strategies.json",
+        "summary": "\"strategies\": {"
       }
     ],
     "memory": [
       {
-        "path": "memory/trade-journal.json",
-        "role": "All trades with entry source tags"
+        "path": "memory/.gitkeep",
+        "summary": ""
       },
       {
         "path": "memory/howl-analysis-prompt.md",
-        "role": "HOWL v2 10-pillar analysis procedure"
+        "summary": "HOWL v2 \u2014 Hunt, Optimize, Win, Learn"
+      },
+      {
+        "path": "memory/trade-journal.json",
+        "summary": "[]"
       },
       {
         "path": "memory/whale-index-prompt.md",
-        "role": "Whale Index daily rebalance procedure"
-      },
-      {
-        "path": "memory/MEMORY.md",
-        "role": "Persistent distilled context (appended by HOWL)"
+        "summary": "Whale Index Manager \u2014 Daily Rebalance Procedure"
       }
     ]
   },
   "controlPlane": {
-    "mechanicalLayer": "worker.py (Railway APScheduler) -> scripts/vps/*.py -> scripts/lib/senpi_common.py",
-    "strategicLayer": "scripts/hermes-*.sh (Hermes cron jobs) -> reads state/outputs, writes config/outputs",
-    "stateBus": "git (shared repo between Railway mechanical + Hermes strategic)",
-    "tradeExecution": "senpi_common.mcporter_call() -> HTTPS JSON-RPC -> mcp.prod.senpi.ai/mcp"
-  },
-  "currentState": {
-    "regime": "RISK_ON",
-    "openPositions": 0,
-    "pendingEntries": 0,
-    "tradeJournalSize": 0,
-    "accountValue": 98.77,
-    "totalPnl": -1.23,
-    "strategyAge": "active since 2026-03-24",
-    "scannerPriority": [
-      "komodo(70)",
-      "orca(68)",
-      "sentinel(66)",
-      "shark(62)",
-      "rhino(60)",
-      "condor(58)",
-      "bison(55)",
-      "barracuda(52)"
+    "mechanicalLayer": [
+      "worker.py schedules the VPS scripts",
+      "scripts/vps/*.py execute entries, exits, safety, monitoring",
+      "scripts/lib/senpi_common.py is the shared runtime surface"
     ],
-    "blockedScanners": []
+    "strategicLayer": [
+      "scripts/oz/setup-oz-agents.sh defines scheduled Oz agents",
+      "memory/howl-analysis-prompt.md and memory/whale-index-prompt.md hold learning procedures",
+      "outputs/autonomous-brain.json is the local strategic snapshot for deterministic consumers"
+    ],
+    "stateBus": [
+      "config/*.json stores policy inputs",
+      "state/*.json stores runtime execution state",
+      "memory/trade-journal.json stores learning history",
+      "outputs/*.json stores analysis and observability artifacts"
+    ]
   }
 }
