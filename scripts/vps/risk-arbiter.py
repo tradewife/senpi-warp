@@ -48,7 +48,7 @@ def save_arbiter_state(state: dict):
 
 def get_account_equity() -> float | None:
     """Fetch current account equity via Senpi MCP."""
-    result = mcporter_call("account_get_portfolio", {"strategyStatus": "ACTIVE"}, timeout=15)
+    result = mcporter_call("account_get_portfolio", {}, timeout=15)
     if "error" in result:
         return None
     # Try common response shapes
