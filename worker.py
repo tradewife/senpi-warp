@@ -146,7 +146,6 @@ def job_watchdog():
 
 def job_health():
     run_py("scripts/vps/health-check-cron.py")
-    update_skills()
 
 
 def job_arena():
