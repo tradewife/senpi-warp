@@ -1,27 +1,27 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-03-18T05:55:09Z",
+  "generatedAt": "2026-03-24T00:34:05Z",
   "profile": {
-    "mode": "BASELINE",
+    "mode": "RISK_ON",
     "hybrid": "deterministic-mechanical + oz-supervisory"
   },
   "limits": {
     "regime": {
-      "maxSlots": 2,
+      "maxSlots": 3,
       "maxLeverageCrypto": 10,
       "maxLeverageXYZ": 0,
-      "allocPctPerSlot": 30,
+      "allocPctPerSlot": 35,
       "newEntriesAllowed": true,
       "autoEntryEnabled": true,
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
-      "cooldownAfterLossSec": 60,
-      "_note": "Default. Leverage capped at 10x (was 15x \u2014 Dire Wolf 25x blowup lesson)."
+      "cooldownAfterLossSec": 0,
+      "_note": "XYZ leverage set to 0 \u2014 XYZ equities banned per ORCA hardened rules"
     },
     "brainCaps": {
-      "maxSlotsCap": 2,
+      "maxSlotsCap": 3,
       "maxLeverageCap": 10.0,
-      "allocPctCap": 30.0,
+      "allocPctCap": 35.0,
       "allowAutoEntry": true
     },
     "guardrails": {

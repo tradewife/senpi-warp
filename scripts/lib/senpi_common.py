@@ -528,11 +528,10 @@ _SENPI_AUTH_TOKEN = os.environ.get("SENPI_API_KEY", "")
 
 
 def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
-    """Call a Senpi MCP tool via direct HTTP JSON-RPC (streaming SSE response).
+    """Call a Senpi MCP tool via direct HTTP JSON-RPC.
 
-    The Senpi MCP endpoint returns a streaming SSE response. We read the
-    full response body, then parse the JSON-RPC result from the last
-    "data:" line (which contains the final tool result).
+    The Senpi MCP endpoint returns a JSON-RPC response with a nested text field.
+    We parse the JSON, extract the result, then parse the inner JSON string from the text field.
     """
     if not _SENPI_AUTH_TOKEN:
         return {"error": "SENPI_API_KEY not set"}
@@ -555,33 +554,31 @@ def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {_SENPI_AUTH_TOKEN}",
-                "Accept": "text/event-stream",
+                "Accept": "application/json, text/event-stream",
             },
             method="POST",
         )
         resp = urllib.request.urlopen(req, timeout=timeout)
         body = resp.read().decode("utf-8")
-
-        # SSE format: lines of "data: {...}" — last one has the result
-        last_json = None
-        for line in body.split("\n"):
-            line = line.strip()
-            if line.startswith("data: "):
-                last_json = line[6:]
-            elif line.startswith("data:"):
-                last_json = line[5:]
-
-        if not last_json:
-            return {"error": "empty MCP response", "raw": body[:500]}
-
-        parsed = json.loads(last_json)
-        return parsed.get("result", parsed)
-
+        parsed = json.loads(body)
+        if "error" in parsed:
+            return {"error": parsed["error"].get("message", str(parsed["error"]))}
+        # JSON-RPC success: extract the result
+        mr = parsed.get("result", {})
+        # The result should have a content array with a text element containing the inner JSON.
+        if isinstance(mr, dict) and "content" in mr and isinstance(mr["content"], list):
+            for item in mr["content"]:
+                if isinstance(item, dict) and item.get("type") == "text" and "text" in item:
+                    try:
+                        inner = json.loads(item["text"])
+                        return inner
+                    except json.JSONDecodeError as e:
+                        return {"error": f"Failed to parse inner JSON: {e}", "raw": item["text"][:200]}
+        # If we didn't find the text element, return the result as is (might be empty)
+        return mr
     except Exception as e:
         log(f"MCP HTTP error ({tool}): {e}")
         return {"error": str(e)}
-
-
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
     Call a Senpi MCP tool via direct HTTP (mcporter bypassed).
