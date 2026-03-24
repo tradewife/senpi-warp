@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-03-24T02:07:36Z",
-  "codebaseIndexAt": "2026-03-24T02:07:36Z",
+  "generatedAt": "2026-03-24T02:16:06Z",
+  "codebaseIndexAt": "2026-03-24T02:16:06Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T02:07:36Z",
-    "mode": "PROTECT",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
+    "generatedAt": "2026-03-24T02:16:06Z",
+    "mode": "ACTIVE",
+    "blockNewEntries": false,
+    "allowAutoEntry": true,
     "maxSlotsCap": 2,
     "maxLeverageCap": 10.0,
     "allocPctCap": 30.0,
@@ -15,17 +15,12 @@
         "maxSlotsCap": 2
       }
     },
-    "reasons": [
-      "core stale crons: dsl-runner"
-    ],
+    "reasons": [],
     "risk": {
       "drawdownPctFromPeak": 0.0,
       "recentLossStreak": 0,
       "pendingSignals": 0,
-      "staleCrons": [
-        "dsl-runner",
-        "sm-flip"
-      ],
+      "staleCrons": [],
       "coreHeartbeatCount": 14
     },
     "signalPolicy": {
@@ -439,20 +434,17 @@
   },
   "systemHealth": {
     "health": {
-      "lastRunAt": "2026-03-24T01:54:06Z",
+      "lastRunAt": "2026-03-24T02:14:06Z",
       "mcporterOk": true,
       "configIssues": [],
       "reconcileRan": true,
-      "staleCrons": [
-        "dsl-runner",
-        "sm-flip"
-      ]
+      "staleCrons": []
     },
     "arbiter": {
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T02:07:07Z"
+      "lastCheckAt": "2026-03-24T02:15:37Z"
     }
   },
   "pending": {
@@ -560,15 +552,13 @@
     }
   },
   "summary": {
-    "status": "PROTECT",
+    "status": "ACTIVE",
     "preferredScanners": [
       "komodo",
       "orca",
       "sentinel"
     ],
     "blockedScanners": [],
-    "reasons": [
-      "core stale crons: dsl-runner"
-    ]
+    "reasons": []
   }
 }

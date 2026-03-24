@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-03-24T02:07:36Z",
+  "generatedAt": "2026-03-24T02:16:06Z",
   "profile": {
     "mode": "BASELINE",
     "hybrid": "deterministic-mechanical + oz-supervisory"
@@ -22,7 +22,7 @@
       "maxSlotsCap": 2,
       "maxLeverageCap": 10.0,
       "allocPctCap": 30.0,
-      "allowAutoEntry": false
+      "allowAutoEntry": true
     },
     "guardrails": {
       "dailyLossLimitPct": 10,

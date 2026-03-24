@@ -1,7 +1,11 @@
 {
-  "lastRunAt": "2026-03-24T02:14:06Z",
+  "lastRunAt": "2026-03-24T02:24:06Z",
   "mcporterOk": true,
   "configIssues": [],
   "reconcileRan": true,
-  "staleCrons": []
+  "staleCrons": [
+    "condor",
+    "sentinel",
+    "brain"
+  ]
 }
