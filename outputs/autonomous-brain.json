@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-03-24T01:59:06Z",
-  "codebaseIndexAt": "2026-03-24T01:59:06Z",
+  "generatedAt": "2026-03-24T02:07:36Z",
+  "codebaseIndexAt": "2026-03-24T02:07:36Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T01:59:06Z",
+    "generatedAt": "2026-03-24T02:07:36Z",
     "mode": "PROTECT",
     "blockNewEntries": true,
     "allowAutoEntry": false,
@@ -452,7 +452,7 @@
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T01:58:37Z"
+      "lastCheckAt": "2026-03-24T02:07:07Z"
     }
   },
   "pending": {
@@ -486,82 +486,66 @@
       ]
     },
     "arenaLearnings": {
-      "generatedAt": "2026-03-23T21:05:13Z",
+      "generatedAt": "2026-03-24T01:59:22.557671Z",
       "ourStats": {
         "strategyId": "48c83cfa-d51c-4875-9740-72bed9894d29",
         "wallet": "0xdf0edb2516c71095a7250592062796d71bbf12aa",
-        "status": "ACTIVE",
-        "type": "CUSTOM",
-        "initialBudget": 100,
-        "currentAccountValue": 98.77,
-        "totalPnl": -1.23,
-        "totalPnlPct": -1.23,
-        "openPositions": 0,
-        "closedTrades": 0,
-        "winRate": null,
-        "avgLeverage": null,
-        "strategySL": 10,
-        "strategyTP": null,
-        "slippage": 0,
-        "mirrorMultiplier": 1,
-        "ageMinutes": 73
+        "totalTrades": 0,
+        "winningTrades": 0,
+        "winRate": 0,
+        "totalPnl": 0.0,
+        "roi": 0.0
       },
-      "arenaTop5AvgWinRate": 100.0,
-      "arenaTop50AvgWinRate": 96.93,
-      "arenaTop5AvgLeverage": 29.6,
-      "keyPatterns": [
-        "Short-biased dominance: 4/5 top5 are short-only",
-        "Low frequency wins: 4/5 top5 trade <1/day",
-        "PATIENT label common: 3/5 top5 are PATIENT",
-        "100% win rates dominate top ranks",
-        "Leverage 20-25x norm for top predators (out of our 7-10x range)",
-        "Best risk-adjusted: #1 at 20x with only -12.4% max DD"
+      "arenaTop5AvgWinRate": 65.0,
+      "arenaTop5": [
+        {
+          "strategy": "Polar",
+          "roi": 28.09,
+          "totalTrades": 29,
+          "estimatedWinRate": 75,
+          "totalVolume": 60474.56241
+        },
+        {
+          "strategy": "Roach",
+          "roi": 9.42,
+          "totalTrades": 57,
+          "estimatedWinRate": 65,
+          "totalVolume": 55620.965879
+        },
+        {
+          "strategy": "Orca v1.1",
+          "roi": 7.98,
+          "totalTrades": 737,
+          "estimatedWinRate": 55,
+          "totalVolume": 301693.790355
+        }
       ],
       "recommendations": [
         {
-          "action": "DEPLOY_INITIAL_POSITIONS",
-          "confidence": 85,
-          "reason": "Strategy is 73min old with $98.77 idle capital and zero trades. Arena predators average 100% WR with short-biased, low-frequency, high-conviction entries. Capital idle = opportunity cost.",
-          "risk": "LOW - no config changes, just trade execution"
+          "action": "tighten_entry_scores",
+          "confidence": "high",
+          "reason": "Our win rate is 0% (< 50%), indicating poor entry timing",
+          "risk": "low"
         },
         {
-          "action": "FAVOR_SHORT_BIAS",
-          "confidence": 90,
-          "reason": "Top 5 arena predators: 4/5 short-only. Top 50: strong short skew. Scanner scripts should overweight short signals.",
-          "risk": "LOW - regime alignment"
+          "action": "widen_phase1_tolerance",
+          "confidence": "medium",
+          "reason": "No trades recorded - may be exiting too quickly or not entering due to tight tolerance",
+          "risk": "low"
         },
         {
-          "action": "PREFER_PATIENT_OVER_ACTIVE",
-          "confidence": 80,
-          "reason": "Top 5: 3/5 PATIENT, 4/5 trade <1/day. High-frequency traders have lower avg ROI. Low-frequency high-conviction wins.",
-          "risk": "LOW - quality over quantity"
+          "action": "favor_stalker_over_striker",
+          "confidence": "high",
+          "reason": "Polar (STALKER-like) shows 28.09% ROI with 29 trades vs Orca v1.1 (STRIKER-like) with 7.98% ROI and 737 trades",
+          "risk": "low"
         },
         {
-          "action": "MAINTAIN_LEVERAGE_7_10X",
-          "confidence": 95,
-          "reason": "Top5 avg 29.6x but their bankrolls are $50K-$1.7M. Our $100 needs tighter risk. Lower lev performers (7.5x, 8.1x) still hit 250-452% ROI.",
-          "risk": "NONE - maintaining status quo"
-        },
-        {
-          "action": "KEEP_STRATEGY_SL_10PCT",
-          "confidence": 85,
-          "reason": "Tight SL protects small bankroll. Top performer has only -12.4% max DD. Tight risk management correlates with outsized returns.",
-          "risk": "NONE - maintaining status quo"
-        },
-        {
-          "action": "SET_STRATEGY_TP_50PCT",
-          "confidence": 60,
-          "reason": "No TP set. A 50% TP locks profits on big moves while allowing significant upside. Below auto-apply threshold (70%).",
-          "risk": "LOW - caps some upside but protects gains"
-        },
-        {
-          "action": "IGNORE_VOLUME_LEADERS",
-          "confidence": 75,
-          "reason": "Highest volume traders (100-400x/day) don't dominate ROI rankings. HFT unprofitable for our size due to fees.",
-          "risk": "INFO only"
+          "action": "set_leverage_to_8x",
+          "confidence": "medium",
+          "reason": "Top performers suggest moderate leverage (7-10x) works well; setting to 8x as balanced approach",
+          "risk": "low"
         }
-      ],
-      "autoAppliedChanges": []
+      ]
     },
     "latestReport": {},
     "howl": {},
