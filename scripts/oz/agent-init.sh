@@ -11,15 +11,17 @@
 set -euo pipefail
 
 # --- mcporter + Senpi MCP ---
-if [ -n "${SENPI_API_KEY:-}" ]; then
+# Read Senpi auth token: prefer SENPIAUTHTOKEN, then SENPI_API_KEY, then SENPI_AUTH_TOKEN
+SENPI_TOKEN="${SENPIAUTHTOKEN:-${SENPI_API_KEY:-${SENPI_AUTH_TOKEN}}}"
+if [ -n "$SENPI_TOKEN" ]; then
     mcporter config add senpi \
         --command npx \
-        --env "SENPI_AUTH_TOKEN=$SENPI_API_KEY" \
+        --env "SENPI_AUTH_TOKEN=$SENPI_TOKEN" \
         -- mcp-remote https://mcp.prod.senpi.ai/mcp \
-        --header "Authorization: Bearer $SENPI_API_KEY" 2>/dev/null || true
+        --header "Authorization: Bearer $SENPI_TOKEN" 2>/dev/null || true
     echo "[init] mcporter configured with Senpi MCP"
 else
-    echo "[init] WARNING: SENPI_API_KEY not set — mcporter will not work"
+    echo "[init] WARNING: No Senpi auth token set — mcporter will not work"
 fi
 
 # --- git push credentials (GitHub token via credential store) ---

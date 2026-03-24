@@ -60,10 +60,23 @@ echo "Using environment: $ENV_ID"
 # --- 2. Create secrets ---
 echo "[2/4] Creating Oz secrets..."
 
-if [ -n "${SENPI_API_KEY:-}" ]; then
+# Read token with priority order
+SENPI_TOKEN="${SENPIAUTHTOKEN:-${SENPI_API_KEY:-${SENPI_AUTH_TOKEN}}}"
+if [ -n "$SENPI_TOKEN" ]; then
+    # Create SENPIAUTHTOKEN secret
+    oz secret create SENPIAUTHTOKEN --team \
+        --value "$SENPI_TOKEN" \
+        --description "Senpi MCP authentication token (preferred)" 2>/dev/null || echo "  (SENPIAUTHTOKEN already exists)"
+    # Create SENPI_API_KEY secret
     oz secret create SENPI_API_KEY --team \
-        --value "$SENPI_API_KEY" \
-        --description "Senpi MCP authentication token" 2>/dev/null || echo "  (SENPI_API_KEY already exists)"
+        --value "$SENPI_TOKEN" \
+        --description "Senpi MCP authentication token (fallback)" 2>/dev/null || echo "  (SENPI_API_KEY already exists)"
+    # Create SENPI_AUTH_TOKEN secret
+    oz secret create SENPI_AUTH_TOKEN --team \
+        --value "$SENPI_TOKEN" \
+        --description "Senpi MCP authentication token (fallback)" 2>/dev/null || echo "  (SENPI_AUTH_TOKEN already exists)"
+else
+    echo "  [2/4] WARNING: No Senpi auth token found — skipping Senpi secret creation"
 fi
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then
