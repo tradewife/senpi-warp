@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T01:16:13.895321Z",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC 4H slope -0.57%, ETH +0.35% (below 1.5% threshold). 1H ATR low: BTC ~0.55%, ETH ~0.74%. No clear trend alignment.",
+  "updatedAt": "2026-03-24T02:45:45.692688+00:00",
+  "updatedBy": "hermes-strategic",
+  "reason": "Applied risk-reducing execution policy from autonomous-brain: block new entries (allowAutoEntry remains true)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
@@ -21,7 +21,7 @@
       "maxLeverageCrypto": 10,
       "maxLeverageXYZ": 0,
       "allocPctPerSlot": 30,
-      "newEntriesAllowed": true,
+      "newEntriesAllowed": false,
       "autoEntryEnabled": true,
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
