@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-03-24T02:16:06Z",
+  "generatedAt": "2026-03-24T03:50:01.131655+00:00",
   "codebaseIndexAt": "2026-03-24T02:16:06Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T02:16:06Z",
+    "generatedAt": "2026-03-24T03:50:01.131655+00:00",
     "mode": "ACTIVE",
-    "blockNewEntries": false,
-    "allowAutoEntry": true,
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
     "maxSlotsCap": 2,
     "maxLeverageCap": 10.0,
     "allocPctCap": 30.0,
