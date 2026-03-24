@@ -25,14 +25,30 @@ from datetime import datetime, timezone, timedelta
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, git_pull, git_sync, log, now_iso,
-    load_json, save_json,
-    POSITION_STATE_DIR, SCANNER_CONFIG_FILE,
-    load_regime, current_regime_params, is_entries_allowed, is_auto_entry_enabled,
-    get_enabled_strategies, count_open_slots, get_strategy_state_dir,
-    check_directional_exposure_limit, attach_position_playbook,
-    add_pending_entry, record_trade, send_telegram,
-    mcporter_call, record_heartbeat,
+    acquire_lock,
+    release_lock,
+    git_pull,
+    git_sync,
+    log,
+    now_iso,
+    load_json,
+    save_json,
+    POSITION_STATE_DIR,
+    SCANNER_CONFIG_FILE,
+    load_regime,
+    current_regime_params,
+    is_entries_allowed,
+    is_auto_entry_enabled,
+    get_enabled_strategies,
+    count_open_slots,
+    get_strategy_state_dir,
+    check_directional_exposure_limit,
+    attach_position_playbook,
+    add_pending_entry,
+    record_trade,
+    send_telegram,
+    mcporter_call,
+    record_heartbeat,
 )
 
 # ---------------------------------------------------------------------------
@@ -58,6 +74,7 @@ COOLDOWN_FILE = POSITION_STATE_DIR / "orca-cooldowns.json"
 # ---------------------------------------------------------------------------
 # Fetch & Parse
 # ---------------------------------------------------------------------------
+
 
 def fetch_markets() -> list[dict] | None:
     result = mcporter_call("leaderboard_get_markets", {})
@@ -85,15 +102,26 @@ def parse_scan(raw_markets: list[dict]) -> dict:
                 continue
             if token.lower().startswith("xyz:"):
                 continue
-        scan["markets"].append({
-            "token": token,
-            "dex": dex,
-            "rank": i + 1,
-            "direction": m.get("direction", m.get("side", "")),
-            "contribution": float(m.get("contribution", m.get("pct_of_top_traders_gain", m.get("pctOfTotal", 0)))),
-            "traders": int(m.get("traderCount", m.get("trader_count", m.get("traders", 0)))),
-            "price_chg_4h": float(m.get("token_price_change_pct_4h", m.get("priceChange4h", 0)) or 0),
-        })
+        scan["markets"].append(
+            {
+                "token": token,
+                "dex": dex,
+                "rank": i + 1,
+                "direction": m.get("direction", m.get("side", "")),
+                "contribution": float(
+                    m.get(
+                        "contribution",
+                        m.get("pct_of_top_traders_gain", m.get("pctOfTotal", 0)),
+                    )
+                ),
+                "traders": int(
+                    m.get("traderCount", m.get("trader_count", m.get("traders", 0)))
+                ),
+                "price_chg_4h": float(
+                    m.get("token_price_change_pct_4h", m.get("priceChange4h", 0)) or 0
+                ),
+            }
+        )
     return scan
 
 
@@ -107,6 +135,7 @@ def get_market_in_scan(scan: dict, token: str, dex: str = "") -> dict | None:
 # ---------------------------------------------------------------------------
 # Shared gates
 # ---------------------------------------------------------------------------
+
 
 def check_4h_alignment(direction: str, price_chg_4h: float) -> bool:
     if direction.upper() == "LONG" and price_chg_4h < 0:
@@ -148,7 +177,9 @@ def is_asset_cooled_down(token: str) -> bool:
         return False
     try:
         cd_time = datetime.fromisoformat(cooldowns[token].replace("Z", "+00:00"))
-        return datetime.now(timezone.utc) < cd_time + timedelta(minutes=COOLDOWN_MINUTES)
+        return datetime.now(timezone.utc) < cd_time + timedelta(
+            minutes=COOLDOWN_MINUTES
+        )
     except (ValueError, TypeError):
         return False
 
@@ -183,6 +214,7 @@ def check_asset_volume(token: str, dex: str = "") -> tuple[float, bool]:
 # MODE A: STALKER (accumulation detection)
 # ---------------------------------------------------------------------------
 
+
 def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict]:
     min_consecutive = 3
     min_total_climb = 5
@@ -207,7 +239,7 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
         # Build rank & contrib history
         rank_history, contrib_history = [], []
-        for scan in history[-(min_consecutive + 2):]:
+        for scan in history[-(min_consecutive + 2) :]:
             m = get_market_in_scan(scan, token, dex)
             if m:
                 rank_history.append(m["rank"])
@@ -222,8 +254,10 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
         if len(valid_ranks) < min_consecutive + 1:
             continue
 
-        recent_ranks = [r for _, r in valid_ranks[-(min_consecutive + 1):]]
-        is_climbing = all(recent_ranks[i] >= recent_ranks[i + 1] for i in range(len(recent_ranks) - 1))
+        recent_ranks = [r for _, r in valid_ranks[-(min_consecutive + 1) :]]
+        is_climbing = all(
+            recent_ranks[i] >= recent_ranks[i + 1] for i in range(len(recent_ranks) - 1)
+        )
         total_climb = recent_ranks[0] - recent_ranks[-1]
 
         if not is_climbing or total_climb < min_total_climb:
@@ -235,7 +269,9 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
         valid_contribs = [c for c in contrib_history if c is not None]
         if len(valid_contribs) >= 3:
             recent_c = valid_contribs[-3:]
-            if not all(recent_c[i] <= recent_c[i + 1] for i in range(len(recent_c) - 1)):
+            if not all(
+                recent_c[i] <= recent_c[i + 1] for i in range(len(recent_c) - 1)
+            ):
                 continue
 
         # Score
@@ -246,7 +282,10 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
         reasons.append(f"STALKER_CLIMB +{total_climb} over {len(recent_ranks)} scans")
 
         if len(valid_contribs) >= 2:
-            deltas = [valid_contribs[i + 1] - valid_contribs[i] for i in range(len(valid_contribs) - 1)]
+            deltas = [
+                valid_contribs[i + 1] - valid_contribs[i]
+                for i in range(len(valid_contribs) - 1)
+            ]
             vel = sum(deltas) / len(deltas)
             if vel > 0.001:
                 score += 2
@@ -270,21 +309,23 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
         if score < min_score:
             continue
 
-        signals.append({
-            "asset": token,
-            "dex": dex if dex else None,
-            "direction": direction,
-            "mode": "STALKER",
-            "signalType": "STALKER_CLIMB",
-            "score": score,
-            "reasons": reasons,
-            "rank": rank,
-            "contribution": round(market["contribution"] * 100, 3),
-            "traderCount": market["traders"],
-            "totalClimb": total_climb,
-            "erratic": False,
-            "timestamp": now_iso(),
-        })
+        signals.append(
+            {
+                "asset": token,
+                "dex": dex if dex else None,
+                "direction": direction,
+                "mode": "STALKER",
+                "signalType": "STALKER_CLIMB",
+                "score": score,
+                "reasons": reasons,
+                "rank": rank,
+                "contribution": round(market["contribution"] * 100, 3),
+                "traderCount": market["traders"],
+                "totalClimb": total_climb,
+                "erratic": False,
+                "timestamp": now_iso(),
+            }
+        )
 
     return signals
 
@@ -292,6 +333,7 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
 # ---------------------------------------------------------------------------
 # MODE B: STRIKER (explosion detection)
 # ---------------------------------------------------------------------------
+
 
 def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict]:
     min_score = 9
@@ -357,7 +399,10 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
         recent_contribs.append(contrib)
         contrib_velocity = 0
         if len(recent_contribs) >= 2:
-            deltas = [recent_contribs[i + 1] - recent_contribs[i] for i in range(len(recent_contribs) - 1)]
+            deltas = [
+                recent_contribs[i + 1] - recent_contribs[i]
+                for i in range(len(recent_contribs) - 1)
+            ]
             contrib_velocity = sum(deltas) / len(deltas) * 100
         abs_vel = abs(contrib_velocity)
 
@@ -404,24 +449,26 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
             continue
         reasons.append(f"VOL_CONFIRMED {vol_ratio:.1f}x")
 
-        signals.append({
-            "asset": token,
-            "dex": dex if dex else None,
-            "direction": direction,
-            "mode": "STRIKER",
-            "signalType": "FIRST_JUMP" if is_first_jump else "IMMEDIATE_MOVER",
-            "score": score,
-            "reasons": reasons,
-            "rank": rank,
-            "prevRank": prev_market["rank"],
-            "rankJump": rank_jump,
-            "contribution": round(contrib * 100, 3),
-            "contribVelocity": round(contrib_velocity, 4),
-            "volRatio": round(vol_ratio, 2),
-            "traderCount": market["traders"],
-            "erratic": False,
-            "timestamp": now_iso(),
-        })
+        signals.append(
+            {
+                "asset": token,
+                "dex": dex if dex else None,
+                "direction": direction,
+                "mode": "STRIKER",
+                "signalType": "FIRST_JUMP" if is_first_jump else "IMMEDIATE_MOVER",
+                "score": score,
+                "reasons": reasons,
+                "rank": rank,
+                "prevRank": prev_market["rank"],
+                "rankJump": rank_jump,
+                "contribution": round(contrib * 100, 3),
+                "contribVelocity": round(contrib_velocity, 4),
+                "volRatio": round(vol_ratio, 2),
+                "traderCount": market["traders"],
+                "erratic": False,
+                "timestamp": now_iso(),
+            }
+        )
 
     return signals
 
@@ -429,6 +476,7 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
 # ---------------------------------------------------------------------------
 # Auto-entry (with High Water DSL)
 # ---------------------------------------------------------------------------
+
 
 def try_auto_entry(signal: dict):
     if not is_auto_entry_enabled():
@@ -456,6 +504,7 @@ def try_auto_entry(signal: dict):
 
     # Check global position limit
     from senpi_common import get_open_positions
+
     total_open = sum(len(get_open_positions(s["_key"])) for s in strategies)
     if total_open >= MAX_POSITIONS:
         log(f"ORCA: max {MAX_POSITIONS} positions reached")
@@ -483,9 +532,11 @@ def try_auto_entry(signal: dict):
     # STALKER: ALO (maker) for fee savings. STRIKER: MARKET for speed.
     order_type = "ALO" if signal["mode"] == "STALKER" else "MARKET"
 
-    log(f"🐋 ORCA {signal['mode']}: {signal['direction']} {signal['asset']} | "
+    log(
+        f"🐋 ORCA {signal['mode']}: {signal['direction']} {signal['asset']} | "
         f"score={signal['score']} margin=${margin:.0f} lev={leverage}x order={order_type} | "
-        f"reasons={signal['reasons']}")
+        f"reasons={signal['reasons']}"
+    )
 
     entry_params = {
         "strategyId": target_strategy.get("strategyId"),
@@ -540,12 +591,12 @@ def try_auto_entry(signal: dict):
         },
         "phase2TriggerRoe": 5,
         "tiers": [
-            {"triggerPct": 5,   "lockHwPct": 20, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 10,  "lockHwPct": 40, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 20,  "lockHwPct": 55, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 30,  "lockHwPct": 70, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 50,  "lockHwPct": 80, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 75,  "lockHwPct": 85, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 5, "lockHwPct": 20, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 10, "lockHwPct": 40, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 20, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 30, "lockHwPct": 70, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 50, "lockHwPct": 80, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 75, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
             {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 1},
         ],
         "stagnationTp": dict(STAGNATION_TP),
@@ -578,30 +629,34 @@ def try_auto_entry(signal: dict):
     state_dir = get_strategy_state_dir(target_strategy["_key"])
     save_json(state_dir / f"dsl-{signal['asset']}.json", dsl_state)
 
-    record_trade({
-        "action": "OPEN",
-        "asset": signal["asset"],
-        "direction": signal["direction"],
-        "entryPrice": entry_price,
-        "size": size,
-        "margin": margin,
-        "leverage": leverage,
-        "strategyKey": target_strategy["_key"],
-        "entrySource": f"orca-{signal['mode'].lower()}",
-        "entryMode": signal["mode"],
-        "entryScore": signal["score"],
-        "orderType": order_type,
-        "signal": signal,
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": signal["asset"],
+            "direction": signal["direction"],
+            "entryPrice": entry_price,
+            "size": size,
+            "margin": margin,
+            "leverage": leverage,
+            "strategyKey": target_strategy["_key"],
+            "entrySource": f"orca-{signal['mode'].lower()}",
+            "entryMode": signal["mode"],
+            "entryScore": signal["score"],
+            "orderType": order_type,
+            "signal": signal,
+        }
+    )
 
-    add_pending_entry({
-        **signal,
-        "autoEntered": True,
-        "strategyKey": target_strategy["_key"],
-        "entryPrice": entry_price,
-        "margin": margin,
-        "leverage": leverage,
-    })
+    add_pending_entry(
+        {
+            **signal,
+            "autoEntered": True,
+            "strategyKey": target_strategy["_key"],
+            "entryPrice": entry_price,
+            "margin": margin,
+            "leverage": leverage,
+        }
+    )
 
     mode_emoji = "🔍" if signal["mode"] == "STALKER" else "⚡"
     send_telegram(
@@ -616,6 +671,7 @@ def try_auto_entry(signal: dict):
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     if not acquire_lock("orca-scanner"):
         return
@@ -626,9 +682,12 @@ def main():
 
         raw = fetch_markets()
         if raw is None:
+            log("ORCA: fetch_markets returned None — skipping")
             return
 
+        log(f"ORCA: fetched {len(raw)} markets")
         current_scan = parse_scan(raw)
+        log(f"ORCA: parsed {len(current_scan['markets'])} markets after filters")
         history_data = load_json(SCAN_HISTORY_FILE, default={"scans": []})
         if isinstance(history_data, list):
             history = history_data
@@ -637,20 +696,23 @@ def main():
         stalker_signals = detect_stalker_signals(current_scan, history)
         striker_signals = detect_striker_signals(current_scan, history)
 
-
         save_json(SCAN_HISTORY_FILE, {"scans": history})
 
         # Combine — STRIKER takes priority for same asset
         striker_assets = {s["asset"] for s in striker_signals}
-        combined = striker_signals + [s for s in stalker_signals if s["asset"] not in striker_assets]
+        combined = striker_signals + [
+            s for s in stalker_signals if s["asset"] not in striker_assets
+        ]
         combined.sort(key=lambda s: s["score"], reverse=True)
 
         if not combined:
             return
 
         for sig in combined:
-            log(f"ORCA {sig['mode']}: {sig['direction']} {sig['asset']} "
-                f"score={sig['score']} reasons={sig['reasons']}")
+            log(
+                f"ORCA {sig['mode']}: {sig['direction']} {sig['asset']} "
+                f"score={sig['score']} reasons={sig['reasons']}"
+            )
 
         # Auto-enter on highest-conviction signals
         if is_entries_allowed():
@@ -664,8 +726,9 @@ def main():
         auto_entered_assets = set()
         if is_entries_allowed():
             for sig in combined[:2]:
-                if (sig["mode"] == "STRIKER" and sig["score"] >= 9) or \
-                   (sig["mode"] == "STALKER" and sig["score"] >= 6):
+                if (sig["mode"] == "STRIKER" and sig["score"] >= 9) or (
+                    sig["mode"] == "STALKER" and sig["score"] >= 6
+                ):
                     auto_entered_assets.add(sig["asset"])
         for sig in combined:
             if sig["asset"] not in auto_entered_assets:
