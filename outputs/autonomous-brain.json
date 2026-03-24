@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-03-24T01:08:06Z",
-  "codebaseIndexAt": "2026-03-24T01:08:06Z",
-  "riskMode": "RISK_ON",
+  "generatedAt": "2026-03-24T01:16:36Z",
+  "codebaseIndexAt": "2026-03-24T01:16:36Z",
+  "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T01:08:06Z",
+    "generatedAt": "2026-03-24T01:16:36Z",
     "mode": "ACTIVE",
     "blockNewEntries": false,
     "allowAutoEntry": true,
-    "maxSlotsCap": 3,
+    "maxSlotsCap": 2,
     "maxLeverageCap": 10.0,
-    "allocPctCap": 35.0,
+    "allocPctCap": 30.0,
     "strategyCaps": {
       "wolf-primary": {
-        "maxSlotsCap": 3
+        "maxSlotsCap": 2
       }
     },
     "reasons": [],
@@ -21,7 +21,7 @@
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [],
-      "coreHeartbeatCount": 2
+      "coreHeartbeatCount": 10
     },
     "signalPolicy": {
       "preferredScanners": [
@@ -434,7 +434,7 @@
   },
   "systemHealth": {
     "health": {
-      "lastRunAt": "2026-03-24T01:04:06Z",
+      "lastRunAt": "2026-03-24T01:14:06Z",
       "mcporterOk": true,
       "configIssues": [],
       "reconcileRan": true,
@@ -444,7 +444,7 @@
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T01:07:37Z"
+      "lastCheckAt": "2026-03-24T01:16:07Z"
     }
   },
   "pending": {

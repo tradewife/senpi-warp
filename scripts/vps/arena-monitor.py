@@ -69,6 +69,17 @@ def compare_strategies(slugs: list[str]) -> dict | None:
     return rpc_call("compare_strategies", {"slugs": slugs})
 
 
+def _safe_float(val, default=0.0) -> float:
+    """Convert a value to float, stripping '%' suffix if present."""
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip().rstrip("%")
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return default
+
+
 def compute_insights(leaderboard: list, top_performers: list) -> dict:
     """Analyze leaderboard data and derive actionable insights."""
     if not leaderboard:
@@ -77,7 +88,7 @@ def compute_insights(leaderboard: list, top_performers: list) -> dict:
     # Identify best strategy
     best = leaderboard[0] if leaderboard else {}
     best_slug = best.get("slug", best.get("name", "unknown"))
-    best_roi = float(best.get("roi", best.get("roiPct", 0)))
+    best_roi = _safe_float(best.get("roi", best.get("roiPct", 0)))
 
     # Classify winners vs losers
     winners = []

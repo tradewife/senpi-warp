@@ -524,7 +524,7 @@ def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
 # ---------------------------------------------------------------------------
 
 _SENPI_MCP_URL = "https://mcp.prod.senpi.ai/mcp"
-_SENPI_AUTH_TOKEN = os.environ.get("SENPI_API_KEY", "")
+_SENPI_AUTH_TOKEN = os.environ.get("SENPI_API_KEY", "").strip()
 
 
 def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
