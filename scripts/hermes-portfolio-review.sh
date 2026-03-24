@@ -17,7 +17,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 # 1. Get portfolio
-portfolio = mcporter_call('account_get_portfolio', {})
+portfolio = mcporter_call('account_get_portfolio', {'strategyStatus': 'ACTIVE'})
 
 # 2. Read state
 regime = json.load(open('config/risk-regime.json'))

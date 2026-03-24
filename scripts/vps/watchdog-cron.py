@@ -32,7 +32,7 @@ ROE_WARN_PCT = -15       # Alert if ROE < -15%
 
 def get_portfolio_positions() -> list[dict]:
     """Fetch live position data from broker via mcporter."""
-    result = mcporter_call("account_get_portfolio", {}, timeout=15)
+    result = mcporter_call("account_get_portfolio", {"strategyStatus": "ACTIVE"}, timeout=15)
     if "error" in result:
         log(f"Watchdog: portfolio fetch failed: {result['error']}")
         return []

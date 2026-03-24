@@ -37,7 +37,7 @@ FOX_CONFIG_FILE = CONFIG_DIR / "fox-config.json"
 
 def check_mcporter() -> bool:
     """Verify mcporter can reach Senpi."""
-    result = mcporter_call("account_get_portfolio", {}, timeout=15)
+    result = mcporter_call("account_get_portfolio", {"strategyStatus": "ACTIVE"}, timeout=15)
     if "error" in result:
         log(f"Health: mcporter check failed: {result['error']}")
         return False
