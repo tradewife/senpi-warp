@@ -9,7 +9,7 @@
     "max": 10
   },
   "entry": {
-    "minScore": 8,
+    "minScore": 9,
     "marginPctBase": 0.25
   },
   "dsl": {

@@ -1,21 +1,45 @@
 {
   "maxPositions": 3,
-  "leverage": {"default": 10, "min": 5, "max": 10},
+  "leverage": {
+    "default": 10,
+    "min": 5,
+    "max": 10
+  },
   "entry": {
     "minFundingAnnPct": 30,
     "minPersistenceHours": 6,
-    "minScore": 8
+    "minScore": 9
   },
   "dsl": {
     "lockMode": "pct_of_high_water",
     "phase2TriggerRoe": 5,
     "tiers": [
-      {"triggerPct": 5,  "lockHwPct": 30, "consecutiveBreachesRequired": 3},
-      {"triggerPct": 10, "lockHwPct": 50, "consecutiveBreachesRequired": 2},
-      {"triggerPct": 15, "lockHwPct": 70, "consecutiveBreachesRequired": 2},
-      {"triggerPct": 20, "lockHwPct": 85, "consecutiveBreachesRequired": 1}
+      {
+        "triggerPct": 5,
+        "lockHwPct": 30,
+        "consecutiveBreachesRequired": 3
+      },
+      {
+        "triggerPct": 10,
+        "lockHwPct": 50,
+        "consecutiveBreachesRequired": 2
+      },
+      {
+        "triggerPct": 15,
+        "lockHwPct": 70,
+        "consecutiveBreachesRequired": 2
+      },
+      {
+        "triggerPct": 20,
+        "lockHwPct": 85,
+        "consecutiveBreachesRequired": 1
+      }
     ],
-    "stagnationTp": {"enabled": true, "roeMin": 8, "hwStaleMin": 120}
+    "stagnationTp": {
+      "enabled": true,
+      "roeMin": 8,
+      "hwStaleMin": 120
+    }
   },
   "risk": {
     "maxEntriesPerDay": 3,
