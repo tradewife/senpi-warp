@@ -24,3 +24,41 @@
 - Updated latest-report.json with full portfolio review
 
 **Directive:** No trades until regime returns to BASELINE/RISK_ON. When starting, target 1-3 trades/day max, favor STALKER mode, enforce score >=8.
+
+## [2026-03-24 18:15 UTC] SCANNER SUITE UPDATE — 8 ACTIVE SCANNERS
+
+**New scanners deployed to mechanical layer (worker.py):**
+
+| Scanner | Edge | Interval | Min Score | Arena Benchmark |
+|---------|------|----------|-----------|-----------------|
+| POLAR | ETH alpha hunter, wide stops, single asset | 3min | 10 | 28.09% ROI, 29 trades |
+| FOX | Dual-mode emerging movers, minReasons=3 STALKER filter | 90s | 7 (STALKER), 9 (STRIKER) | 13.93% ROI, 436 trades |
+| MANTIS | Hardened dual-mode, strict contribution velocity | 90s | 7 (STALKER), 9 (STRIKER) | 5.56% ROI, 460 trades |
+
+**Updated signal priority (highest first):**
+1. Polar (85) — proven arena best, single asset conviction
+2. Fox (78) — 2nd best arena ROI with broad signal confirmation
+3. Mantis (76) — hardened thresholds, good volume validation
+4. Komodo (70) — momentum event consensus
+5. Orca (68) — emerging movers baseline
+6. Sentinel (66) — quality trader convergence
+7. Rhino (60) — momentum pyramiding
+8. Condor (58) — multi-asset alpha
+
+**Evaluator thresholds (hermes-trade-evaluator.sh):**
+- Polar: score >= 10
+- Mantis: score >= 7
+- Fox: score >= 7
+- Orca: score >= 6
+- Komodo: score >= 10
+- Condor: score >= 10
+- Sentinel: score >= 5
+- Rhino: score >= 5
+
+**Paused:** SHARK (retired, -4.3% ROI), BARRACUDA (review), BISON (review)
+
+**Key design decisions in new scanners:**
+- Mantis v1.2: minScore raised 6->7, minTotalClimb 5->8 (Fox data-driven)
+- Fox: minReasons=3 for STALKER — forces signal confirmation breadth, prevents single-source entries
+- Polar: 5-tier DSL with consecutiveBreachesRequired, stagnation TP at 12% ROE after 90min stale
+- All three use DSL High Water Mode with conviction-scaled Phase 1 floors
