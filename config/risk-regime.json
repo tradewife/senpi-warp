@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_ON",
-  "updatedAt": "2026-03-24T15:20:00Z",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-24T06:50:00Z",
   "updatedBy": "hermes-regime",
-  "reason": "Clear directional trend (BTC slope: 4.92%, ETH slope: 5.13%) with controlled volatility (BTC ATR: 1.34%, ETH ATR: 2.00%) and both assets aligned upward",
+  "reason": "Low 4h slope (~ -0.3%) with elevated ATR (~2-3%) indicating choppy market",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
@@ -14,7 +14,7 @@
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
       "cooldownAfterLossSec": 0,
-      "_note": "XYZ leverage set to 0 \u2014 XYZ equities banned per ORCA hardened rules"
+      "_note": "XYZ leverage set to 0 — XYZ equities banned per ORCA hardened rules"
     },
     "BASELINE": {
       "maxSlots": 2,
@@ -26,7 +26,7 @@
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
       "cooldownAfterLossSec": 60,
-      "_note": "Default. Leverage capped at 10x (was 15x \u2014 Dire Wolf 25x blowup lesson)."
+      "_note": "Default. Leverage capped at 10x (was 15x — Dire Wolf 25x blowup lesson)."
     },
     "RISK_OFF": {
       "maxSlots": 0,
@@ -50,9 +50,9 @@
     "maxLeverage": 10,
     "maxPositionsTotal": 3,
     "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
+      "Fox's 10% daily loss > Vixen's 25% — tighter limit bled 2.5x less",
+      "7-10x leverage band — sub-7x can't overcome fees, >10x blows up",
+      "3 positions max — concentration beats diversification across all agents"
     ]
   }
 }
