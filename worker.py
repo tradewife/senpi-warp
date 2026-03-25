@@ -24,6 +24,9 @@ import sys
 from pathlib import Path
 
 from apscheduler.executors.pool import ThreadPoolExecutor
+from typing import Optional
+
+from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 # ---------------------------------------------------------------------------
@@ -87,16 +90,18 @@ def setup_mcporter():
         print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
 
 
-def run_py(script: str):
+def run_py(script: str, args: Optional[list] = None):
     """Run a Python script from the repo, printing stderr."""
+    cmd = ["python3", str(STATE_DIR / script)]
+    if args:
+        cmd.extend(args)
     result = subprocess.run(
-        ["python3", str(STATE_DIR / script)],
+        cmd,
         capture_output=True,
         text=True,
         env=CHILD_ENV,
     )
     if result.stderr.strip():
-        # Print only non-empty stderr (scripts log to stderr)
         print(result.stderr.rstrip())
 
 
@@ -191,7 +196,7 @@ def job_elite_trader():
 
 
 def job_elite_stale():
-    run_py("scripts/vps/elite_trader.py --stale")
+    run_py("scripts/vps/elite_trader.py", ["--stale"])
 
 
 # ---------------------------------------------------------------------------
