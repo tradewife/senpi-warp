@@ -443,9 +443,9 @@ def scan():
                     return
                 
                 log(f"CONDOR: Reload triggered for {asset} {dirn}")
-                res = mcporter_call("strategy_create_position", {
+                res = mcporter_call("create_position", {
                     "strategyId": condor_strat.get("strategyId"), "asset": asset,
-                    "direction": dirn, "marginUsd": margin, "leverage": lev,
+                    "direction": dirn, "margin": margin, "leverage": lev,
                     "orderType": config["execution"]["entryOrderType"]
                 })
                 
@@ -528,9 +528,9 @@ def scan():
 
     log(f"CONDOR: Entering {best['asset']} {best['direction']} at score {best['score']}")
     
-    res = mcporter_call("strategy_create_position", {
+    res = mcporter_call("create_position", {
         "strategyId": condor_strat.get("strategyId"), "asset": best["asset"],
-        "direction": best["direction"], "marginUsd": margin, "leverage": lev,
+        "direction": best["direction"], "margin": margin, "leverage": lev,
         "orderType": config["execution"]["entryOrderType"]
     })
 

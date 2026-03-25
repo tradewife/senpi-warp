@@ -284,9 +284,9 @@ def scan():
 
     log(f"BARRACUDA: Entering {asset} {dirn} for funding yield (Score: {best['score']})")
 
-    res = mcporter_call("strategy_create_position", {
+    res = mcporter_call("create_position", {
         "strategyId": active_strat.get("strategyId"), "asset": asset,
-        "direction": dirn, "marginUsd": margin, "leverage": lev,
+        "direction": dirn, "margin": margin, "leverage": lev,
         "orderType": config["execution"]["entryOrderType"]
     })
 

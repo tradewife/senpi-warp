@@ -630,7 +630,7 @@ def run_entry(strike_candidates: list[dict], oi_history: dict,
             )
             continue
 
-        res = mcporter_call_retry("strategy_create_position", {
+        res = mcporter_call_retry("create_position", {
             "strategyId": shark_strat.get("strategyId"),
             "asset": asset, "direction": direction,
             "margin": round(margin, 2), "leverage": lev,

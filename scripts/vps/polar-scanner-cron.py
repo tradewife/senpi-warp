@@ -606,9 +606,9 @@ def scan():
                     return
                 
                 log(f"POLAR: Reload triggered for ETH {dirn}")
-                res = mcporter_call("strategy_create_position", {
+                res = mcporter_call("create_position", {
                     "strategyId": target_strat.get("strategyId"), "asset": "ETH",
-                    "direction": dirn, "marginUsd": margin, "leverage": lev,
+                    "direction": dirn, "margin": margin, "leverage": lev,
                     "orderType": config["execution"]["entryOrderType"]
                 })
                 
@@ -681,9 +681,9 @@ def scan():
 
     log(f"POLAR: Entering ETH {thesis['direction']} at score {thesis['score']}")
     
-    res = mcporter_call("strategy_create_position", {
+    res = mcporter_call("create_position", {
         "strategyId": target_strat.get("strategyId"), "asset": "ETH",
-        "direction": thesis["direction"], "marginUsd": margin, "leverage": lev,
+        "direction": thesis["direction"], "margin": margin, "leverage": lev,
         "orderType": config["execution"]["entryOrderType"]
     })
 

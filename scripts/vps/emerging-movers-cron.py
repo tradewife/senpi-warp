@@ -202,11 +202,11 @@ def try_auto_entry(signal: dict):
         f"margin=${margin:.0f} lev={leverage}x | "
         f"signal={signal['signalType']} reasons={signal['reasons']}")
 
-    entry_result = mcporter_call("strategy_create_position", {
-        "strategyId": target_strategy.get("strategyId"),
+    entry_result = mcporter_call("create_position", {
+        "strategyWalletAddress": target_strategy.get("wallet"),
         "asset": signal["asset"],
         "direction": signal["direction"],
-        "marginUsd": margin,
+        "margin": margin,
         "leverage": leverage,
     })
 

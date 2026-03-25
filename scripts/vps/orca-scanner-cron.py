@@ -539,16 +539,16 @@ def try_auto_entry(signal: dict):
     )
 
     entry_params = {
-        "strategyId": target_strategy.get("strategyId"),
+        "strategyWalletAddress": target_strategy.get("wallet"),
         "asset": signal["asset"],
         "direction": signal["direction"],
-        "marginUsd": margin,
+        "margin": margin,
         "leverage": leverage,
     }
-    if order_type == "ALO":
+    if order_type == "limit":
         entry_params["orderType"] = "ALO"
 
-    entry_result = mcporter_call("strategy_create_position", entry_params)
+    entry_result = mcporter_call("create_position", entry_params)
 
     if "error" in entry_result:
         log(f"ORCA entry FAILED for {signal['asset']}: {entry_result['error']}")
@@ -580,7 +580,7 @@ def try_auto_entry(signal: dict):
         "entryPrice": entry_price,
         "size": size,
         "wallet": target_strategy.get("wallet"),
-        "strategyId": target_strategy.get("strategyId"),
+        "strategyWalletAddress": target_strategy.get("wallet"),
         "strategyKey": target_strategy["_key"],
         "phase": 1,
         "lockMode": "pct_of_high_water",

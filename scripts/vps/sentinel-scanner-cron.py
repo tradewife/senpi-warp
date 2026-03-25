@@ -473,11 +473,11 @@ def scan() -> bool:
         return False
 
     log(f"SENTINEL: entering {asset} {direction} score={best['score']}")
-    result = mcporter_call("strategy_create_position", {
-        "strategyId": target_strategy.get("strategyId"),
+    result = mcporter_call("create_position", {
+        "strategyWalletAddress": target_strategy.get("wallet"),
         "asset": asset,
         "direction": direction,
-        "marginUsd": margin,
+        "margin": margin,
         "leverage": leverage,
         "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
     })

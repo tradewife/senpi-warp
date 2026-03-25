@@ -577,14 +577,14 @@ def try_auto_entry(
     )
 
     entry_result = mcporter_call(
-        "strategy_create_position",
+        "create_position",
         {
-            "strategyId": target_strategy.get("strategyId"),
+            "strategyWalletAddress": target_strategy.get("wallet"),
             "asset": asset,
             "direction": direction,
-            "marginUsd": margin,
+            "margin": margin,
             "leverage": leverage,
-            "orderType": "ALO",
+            "orderType": "limit",
         },
     )
 
@@ -641,7 +641,7 @@ def try_auto_entry(
             "entrySource": "auto-komodo",
             "entryMode": "KOMODO",
             "entryScore": score,
-            "orderType": "ALO",
+            "orderType": "limit",
             "scoreBreakdown": breakdown,
             "traderCount": breakdown["traderCount"],
         }

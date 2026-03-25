@@ -467,12 +467,12 @@ def try_auto_entry(sig, strategies, config):
         return
 
     res = mcporter_call(
-        "strategy_create_position",
+        "create_position",
         {
             "strategyId": target_strat.get("strategyId"),
             "asset": sig["token"],
             "direction": sig["direction"],
-            "marginUsd": margin,
+            "margin": margin,
             "leverage": lev,
             "orderType": "MARKET",
         },

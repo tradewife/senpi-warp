@@ -399,11 +399,11 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
             f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
         )
         return False
-    result = mcporter_call("strategy_create_position", {
+    result = mcporter_call("create_position", {
         "strategyId": strategy.get("strategyId"),
         "asset": dsl_state["asset"],
         "direction": dsl_state["direction"],
-        "marginUsd": add_margin,
+        "margin": add_margin,
         "leverage": leverage,
         "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
     })
@@ -580,11 +580,11 @@ def scan() -> bool:
         save_state(state)
         return False
 
-    result = mcporter_call("strategy_create_position", {
-        "strategyId": target_strategy.get("strategyId"),
+    result = mcporter_call("create_position", {
+        "strategyWalletAddress": target_strategy.get("wallet"),
         "asset": best["coin"],
         "direction": best["direction"],
-        "marginUsd": scout_margin,
+        "margin": scout_margin,
         "leverage": leverage,
         "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
     })
