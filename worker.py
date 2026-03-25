@@ -201,6 +201,17 @@ def main():
         (STATE_DIR / subdir).mkdir(parents=True, exist_ok=True)
     print(f"[startup] Ensured directories: outputs, state, memory under {STATE_DIR}")
 
+    # Clear stale pending entries on startup to prevent brain feedback loop
+    pending_file = STATE_DIR / "state" / "pending-entries.json"
+    try:
+        import json
+
+        with open(pending_file, "w") as f:
+            json.dump([], f)
+        print("[startup] Cleared pending-entries.json")
+    except Exception:
+        pass
+
     setup_git()
     setup_mcporter()
 

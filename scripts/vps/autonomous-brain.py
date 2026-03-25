@@ -25,6 +25,7 @@ from senpi_common import (
     load_regime,
     load_trade_journal,
     load_pending_entries,
+    save_pending_entries,
     get_enabled_strategies,
     current_regime_params,
     BRAIN_STATE_FILE,
@@ -356,17 +357,27 @@ def extract_learning_signals(
 
 
 def pending_summary() -> dict:
+    from datetime import datetime, timezone, timedelta
+
     pending = load_pending_entries()
+    # Filter out stale entries (>30 min old) to prevent feedback loop
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    fresh = [
+        e for e in pending if e.get("timestamp", e.get("detectedAt", "")) >= cutoff
+    ]
+    # If we filtered anything, save the cleaned list
+    if len(fresh) < len(pending):
+        save_pending_entries(fresh)
     by_scanner = defaultdict(int)
-    for entry in pending:
+    for entry in fresh:
         scanner = normalize_source(
             entry.get("scanner", entry.get("source", entry.get("entryMode", "")))
         )
         by_scanner[scanner] += 1
     return {
-        "total": len(pending),
+        "total": len(fresh),
         "byScanner": dict(sorted(by_scanner.items())),
-        "latest": pending[-5:],
+        "latest": fresh[-5:],
     }
 
 
