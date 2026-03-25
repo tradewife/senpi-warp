@@ -693,6 +693,18 @@ def main():
         # Log scan status periodically
         if len(history) % 10 == 0 or len(history) < 4:
             log(f"ORCA scan #{len(history)}: {len(current_scan['markets'])} markets")
+
+        history.append(current_scan)
+        history = history[-MAX_SCAN_HISTORY:]
+
+        save_json(SCAN_HISTORY_FILE, {"scans": history})
+        # Verify save worked
+        verify = load_json(SCAN_HISTORY_FILE, default={"scans": []})
+        verify_scans = verify.get("scans", []) if isinstance(verify, dict) else verify
+        if len(verify_scans) != len(history):
+            log(
+                f"ORCA: SAVE FAILED — expected {len(history)} scans, file has {len(verify_scans)}"
+            )
         stalker_signals = detect_stalker_signals(current_scan, history)
         striker_signals = detect_striker_signals(current_scan, history)
 
