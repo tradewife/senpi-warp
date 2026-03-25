@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # HOWL v2 — Hunt, Optimize, Win, Learn.
-# Nightly analysis procedure. Runs daily at 23:55 as a Hermes cron job.
+# Nightly analysis procedure. Runs daily at 23:55 as a Waifu cron job.
 # Reads memory/howl-analysis-prompt.md and follows it exactly.
 #
 # This is the most complex agent — it runs the full 10-pillar analysis.

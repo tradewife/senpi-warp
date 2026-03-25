@@ -1,6 +1,6 @@
 [2026-03-24] HOWL completed. Placeholder analysis. No risk-increasing changes applied.
 
-## [2026-03-24 18:02 UTC] HERMES AUTONOMOUS INIT
+## [2026-03-24 18:02 UTC] WAIFU AUTONOMOUS INIT
 
 **Regime:** RISK_OFF
 **Reason:** BTC -8.8% (74700->69200), ETH -9.2% (2325->2109) multi-day downtrend. Volume spikes indicate liquidation cascades. No 4H trend reversal signal.
@@ -45,7 +45,7 @@
 7. Rhino (60) — momentum pyramiding
 8. Condor (58) — multi-asset alpha
 
-**Evaluator thresholds (hermes-trade-evaluator.sh):**
+**Evaluator thresholds (waifu-trade-evaluator.sh):**
 - Polar: score >= 10
 - Mantis: score >= 7
 - Fox: score >= 7

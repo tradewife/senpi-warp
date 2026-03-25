@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Trade Evaluator — validates queued scanner signals and executes approved trades.
-# Runs every 15 min as a Hermes cron job.
+# Runs every 15 min as a Waifu cron job.
 #
 # This is the STRATEGIC layer — it reads state written by the mechanical layer
 # (Railway/VPS worker) and decides which signals to execute.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regime Classifier — classifies macro market regime as RISK_ON/BASELINE/RISK_OFF.
-# Runs every hour as a Hermes cron job.
+# Runs every hour as a Waifu cron job.
 #
 # Reads BTC + ETH candles via Senpi MCP, analyzes trend/ATR/funding/OI,
 # and updates config/risk-regime.json.
@@ -84,7 +84,7 @@ regime = json.load(open(regime_path))
 old_mode = regime.get('riskMode', 'BASELINE')
 regime['riskMode'] = mode
 regime['updatedAt'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-regime['updatedBy'] = 'hermes-regime'
+regime['updatedBy'] = 'waifu-regime'
 regime['reason'] = reason
 
 regime_path.write_text(json.dumps(regime, indent=2) + '\n')

@@ -1,9 +1,9 @@
 # senpi-waifu
-Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with Hermes (local cron jobs) for strategic supervision. Fully controllable from Telegram.
+Vibe coded fork of senpi-skills for agents trading on hyperliquid perps. Runs on a $5/mo Railway container for deterministic execution, with Waifu (local cron jobs) for strategic supervision. Fully controllable from Telegram.
 
 ## How It Works
 
-Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — five active scanners (ORCA, KOMODO, CONDOR, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Hermes strategic layer** runs LLM agents locally via scheduled cron jobs for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
+Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 seconds with zero LLM cost — five active scanners (ORCA, KOMODO, CONDOR, SENTINEL, RHINO) hunt for entries, DSL trailing stops manage exits, and the Risk Arbiter enforces safety limits. The **in-container brain layer** runs inside the same Railway/runtime environment and builds a deterministic policy/playbook snapshot from regime, journal, pending signals, arena outputs, and health state. The **Waifu strategic layer** runs LLM agents locally via scheduled cron jobs for regime classification, trade evaluation, and self-improvement. All VPS scripts are native Python with no shell script or LLM dependencies on the hot path.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -13,7 +13,7 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 │  ┌────────────────────┐         ┌──────────────────┐    │
 │  │ 60s  🐋 ORCA       │         │ FastAPI dashboard │    │
 │  │ 90s  🦗 MANTIS     │         │ Telegram bot      │    │
-│  │ 90s  🦊 FOX        │         │ Hermes dispatch   │    │
+│  │ 90s  🦊 FOX        │         │ Waifu dispatch     │    │
 │  │ 5min 🦎 KOMODO     │         └──────────────────┘    │
 │  │ 3min 🦅 CONDOR     │                                 │
 │  │ 3min 🐻‍❄️ POLAR      │                                 │
@@ -34,7 +34,7 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
                      │  senpi-waifu repo (this repo)
                      │  git pull ↔ git push
 ┌────────────────────┴────────────────────────────────────┐
-│          Hermes Strategic Layer (Local Cron)              │
+│          Waifu Strategic Layer (Local Cron)              │
 │                                                         │
 │  15min  Trade Evaluator    → validate scanner signals   │
 │  1hr    Regime Classifier  → RISK_ON/BASELINE/RISK_OFF  │
@@ -51,14 +51,14 @@ Three cooperating surfaces, one repo. The **mechanical layer** runs every 30-60 
 
 - **Deterministic hot path.** Entries, exits, risk checks, exposure caps, and position supervision run locally in Python with no LLM dependency.
 - **In-container autonomous brain.** `scripts/vps/autonomous-brain.py` runs inside the Railway worker/runtime, synthesizes a policy layer from runtime state, and writes `outputs/autonomous-brain.json`, `outputs/playbook-state.json`, and `outputs/codebase-index.json`.
-- **Hermes as supervisory intelligence.** Hermes runs locally as scheduled cron jobs for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
+- **Waifu as supervisory intelligence.** Waifu runs locally as scheduled cron jobs for regime work, trade evaluation, reporting, and higher-order self-improvement. It can influence config and recommendations, but the mechanical layer remains authoritative on the hot path.
 - **Git as state bus.** Mechanical state, playbook state, reports, and config changes remain auditable and easy to inspect.
 
-## Railway ↔ Hermes Connection
+## Railway ↔ Waifu Connection
 
 - **Your laptop is not in the runtime path.** Once deployed, Railway runs the mechanical layer and the in-container brain whether or not your local machine is online.
-- **State sync happens through the repo and API calls.** Railway writes state and can push it to GitHub. Hermes agents read that state, update config/reports, and push back. Railway pulls the latest changes during health checks and on scanner cycles.
-- **Hermes runs locally on your machine.** The 6 strategic agent roles run as Hermes cron jobs on the local machine, reading/writing state via git pull/push.
+- **State sync happens through the repo and API calls.** Railway writes state and can push it to GitHub. Waifu agents read that state, update config/reports, and push back. Railway pulls the latest changes during health checks and on scanner cycles.
+- **Waifu runs locally on your machine.** The 6 strategic agent roles run as Waifu cron jobs on the local machine, reading/writing state via git pull/push.
 
 ## Telegram Bot
 
@@ -81,7 +81,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/risk_on` | Max 3 slots, 7-10x leverage, 35% allocation. Use when trend is clear |
 | `/risk_off` | Block all new entries. Existing positions managed by DSL trailing stops |
 | `/baseline` | Default balanced regime: 2 slots, 30% allocation, 60s loss cooldown |
-| `/flatten` | Emergency close ALL positions (sets RISK_OFF locally + optionally dispatches Hermes) |
+| `/flatten` | Emergency close ALL positions (sets RISK_OFF locally + optionally dispatches Waifu) |
 
 **Manual Triggers**
 | Command | What it does |
@@ -108,7 +108,7 @@ The bot runs inside the dashboard service and gives you full control from your p
 | `/journal` | Lifetime stats: total PnL, win rate, profit factor, breakdown by entry source |
 | `/arena_insights` | Top 5 predator strategies, winning/losing traits, recommendations |
 
-Any non-command text is dispatched to Hermes as a free-text prompt.
+Any non-command text is dispatched to Waifu as a free-text prompt.
 
 ## Scanners
 
@@ -259,7 +259,7 @@ senpi-waifu/
 │   ├── bison-config.json      # [PAUSED] BISON trend/momentum params
 │   ├── shark-config.json      # [PAUSED] SHARK OI/liquidation thresholds
 │   └── wolf-strategies.json   # Strategy registry (wallets, budgets, slots)
-├── state/                     # Runtime state (mechanical layer writes, brain/Hermes read)
+├── state/                     # Runtime state (mechanical layer writes, brain/Waifu read)
 │   ├── {strategy-key}/        # Per-strategy DSL state files
 │   │   └── dsl-{ASSET}.json   # Position state (High Water Mode)
 │   ├── pending-entries.json   # Signals queued with brain priority context
@@ -306,10 +306,10 @@ senpi-waifu/
 │   │   ├── arena-monitor.py         # 📊 Arena performance tracker
 │   │   ├── reconcile-closes.py      # Trade journal close reconciler
 │   │   └── provision-vps.sh         # One-shot VPS setup (alt deploy)
-│   ├── oz/                          # Legacy Oz scripts (replaced by Hermes)
+│   ├── oz/                          # Legacy Oz scripts (replaced by Waifu)
 │   │   ├── setup-oz-agents.sh       # Creates Oz environment + schedules
 │   │   └── agent-init.sh            # Runtime init for each Oz agent
-│   └── hermes-*.sh                  # Hermes strategic layer cron scripts
+│   └── waifu-*.sh                   # Waifu strategic layer cron scripts
 ├── worker.py              # APScheduler — replaces crontab for Railway
 ├── Dockerfile             # Python 3.11 + Node + git + mcporter
 ├── railway.toml           # Railway deployment config
@@ -363,9 +363,9 @@ mcporter call senpi strategy_create_custom_strategy --json '{"budgetUsd": 2000}'
 
 Register the returned strategy in `config/wolf-strategies.json`, fund the wallet with USDC, and the scanners start hunting immediately.
 
-### 5. Set up Hermes strategic agents
+### 5. Set up Waifu strategic agents
 
-The strategic layer runs locally as Hermes cron jobs — no cloud subscription required.
+The strategic layer runs locally as Waifu cron jobs — no cloud subscription required.
 
 ```bash
 # Set required env vars
@@ -408,14 +408,14 @@ Create `/opt/senpi/.env` with your secrets, then verify: `crontab -l && tail -f 
 
 Fits within the $5 included credit. Worst case under heavy manual triggering: ~$6-7/mo.
 
-### Hermes Strategic Layer
+### Waifu Strategic Layer
 
-Hermes runs locally as scheduled cron jobs — **zero additional cost** beyond your machine's compute. No cloud subscription or credit system required.
+Waifu runs locally as scheduled cron jobs — **zero additional cost** beyond your machine's compute. No cloud subscription or credit system required.
 
 ## Key Design Decisions
 
-- **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Hermes handles slower, higher-intelligence supervisory work via local cron jobs.
-- **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Hermes or embedding LLM logic in the hot path.
+- **Hybrid architecture.** VPS handles deterministic execution and local brain synthesis. Waifu handles slower, higher-intelligence supervisory work via local cron jobs.
+- **Local playbook layer.** Brain and playbook outputs let the execution layer consume strategy intelligence without waiting on Waifu or embedding LLM logic in the hot path.
 - **Active scanner suite (5).** ORCA (emerging movers), KOMODO (momentum events), CONDOR (multi-asset alpha), SENTINEL (quality trader convergence), RHINO (momentum pyramiding). Different edge types, one shared DSL exit engine.
 - **Paused scanners (3).** SHARK (Senpi paused, v1.0 -4.3% ROI), BARRACUDA and BISON removed pending performance review. Code preserved in `scripts/vps/` for reactivation.
 - **Scanner-specific supervision.** Conviction collapse and dead-weight rotation are tuned per scanner rather than handled by one generic kill rule.
@@ -428,8 +428,8 @@ Hermes runs locally as scheduled cron jobs — **zero additional cost** beyond y
 - **Risk Arbiter is not an LLM.** Mechanical safety should never depend on a language model or cloud credits.
 - **Directional exposure enforcement.** New entries are blocked when projected long/short concentration would breach the portfolio cap.
 - **Git as state bus.** Simple, auditable, works offline. Both layers read/write independently.
-- **Telegram-first control.** Full monitoring and manual override from your phone. Free-text messages dispatch to Hermes.
-- **Arena-informed learning.** Hermes studies 24 competing predator strategies and auto-applies risk-reducing improvements.
+- **Telegram-first control.** Full monitoring and manual override from your phone. Free-text messages dispatch to Waifu.
+- **Arena-informed learning.** Waifu studies 24 competing predator strategies and auto-applies risk-reducing improvements.
 - **HOWL only auto-applies risk-reducing changes.** Risk increases require manual approval.
 
 ## Emergency Stop

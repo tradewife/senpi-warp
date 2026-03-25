@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Portfolio Review — checks risk rails, reviews open positions, writes report.
-# Runs every 6 hours as a Hermes cron job.
+# Runs every 6 hours as a Waifu cron job.
 
 set -euo pipefail
 WAIFU_DIR="${SENPI_WAIFU_DIR:-/home/kt/senpi-waifu}"

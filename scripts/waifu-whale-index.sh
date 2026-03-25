@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Whale Index Manager — daily copy-trade portfolio review and rebalance.
-# Runs daily at 01:00 as a Hermes cron job.
+# Runs daily at 01:00 as a Waifu cron job.
 # Reads memory/whale-index-prompt.md and follows it.
 
 set -euo pipefail

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Arena Strategy Learner — studies Senpi Predators leaderboard for intelligence.
-# Runs every 4 hours as a Hermes cron job.
+# Runs every 4 hours as a Waifu cron job.
 
 set -euo pipefail
 WAIFU_DIR="${SENPI_WAIFU_DIR:-/home/kt/senpi-waifu}"

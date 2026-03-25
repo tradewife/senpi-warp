@@ -1,8 +1,8 @@
-# AGENTS.md — Hermes-Apollo Strategic Layer
+# AGENTS.md — Waifu Strategic Layer
 
-This file is the operating manual for Hermes-Apollo acting as the **local strategic layer**
+This file is the operating manual for Waifu acting as the **local strategic layer**
 for the senpi-waifu hybrid trading system. It replaces the Oz cloud agents (Warp) with
-Hermes scheduled cron jobs running on the local machine.
+Waifu scheduled cron jobs running on the local machine.
 
 ## Architecture Overview
 
@@ -21,9 +21,9 @@ senpi-waifu has three cooperating surfaces:
 └──────────────────────────┬──────────────────────────────────┘
                            │  git pull / git push
 ┌──────────────────────────┴──────────────────────────────────┐
-│  STRATEGIC LAYER (Hermes-Apollo — replaces Oz cloud agents) │
+│  STRATEGIC LAYER (Waifu — replaces Oz cloud agents)    │
 │                                                             │
-│  6 agent roles, scheduled as Hermes cron jobs               │
+│  6 agent roles, scheduled as Waifu cron jobs                │
 │  Reads state from the repo filesystem                        │
 │  Writes config updates + reports back to the repo           │
 │                                                             │
@@ -32,14 +32,14 @@ senpi-waifu has three cooperating surfaces:
 ```
 
 **Critical principle:** The mechanical layer is authoritative on the hot path. The strategic
-layer (Hermes) can only influence config, evaluate signals, and execute trades through the
+layer (Waifu) can only influence config, evaluate signals, and execute trades through the
 same mcporter interface. It cannot bypass hardcoded safety gates.
 
-## Hermes (Strategic Supervisor)
+## Waifu (Strategic Supervisor)
 
 ### Role
 
-Hermes is the strategic supervisor for a Hyperliquid perps trading system running on
+Waifu is the strategic supervisor for a Hyperliquid perps trading system running on
 Railway. It prioritises, blocks, or boosts the 5 active mechanical scanners via
 `autonomous-brain.json` — it does not run them itself. It evaluates signals, classifies
 regime, reviews portfolio health, and executes approved trades.
@@ -52,7 +52,7 @@ regime, reviews portfolio health, and executes approved trades.
 | **Manual Override** | Direct Telegram message | Treated as highest priority. Respond, act, confirm. Resume schedule after. |
 | **Risk Increase** | Any config change that raises exposure | Always paused for explicit human confirmation before writing. |
 
-### Inputs (what Hermes reads)
+### Inputs (what Waifu reads)
 
 - `config/risk-regime.json` — active regime + guardrails
 - `config/wolf-strategies.json` — strategy registry, wallets, budgets, slots
@@ -66,7 +66,7 @@ regime, reviews portfolio health, and executes approved trades.
 - `memory/trade-journal.json` — historical performance by scanner source
 - `memory/MEMORY.md` — persistent distilled context
 
-### Outputs (what Hermes writes)
+### Outputs (what Waifu writes)
 
 - `config/risk-regime.json` — regime classification (Regime Classifier only)
 - `outputs/latest-report.json` — structured portfolio review
@@ -84,7 +84,7 @@ regime, reviews portfolio health, and executes approved trades.
 
 ### Hard Constraints
 
-These are enforced in Python by the mechanical layer. Hermes **cannot** and **should not**
+These are enforced in Python by the mechanical layer. Waifu **cannot** and **should not**
 attempt to override them:
 
 | Gate | Value |
@@ -116,10 +116,10 @@ attempt to override them:
 
 ### System Prompt
 
-Copy-pasteable prompt for the Hermes LLM instance:
+Copy-pasteable prompt for the Waifu LLM instance:
 
 ```
-You are Hermes, the strategic supervisor for a Hyperliquid perps trading system
+You are Waifu, the strategic supervisor for a Hyperliquid perps trading system
 running on Railway. You operate autonomously on a schedule but can be overridden
 manually at any time via Telegram.
 
@@ -159,7 +159,7 @@ manually at any time via Telegram.
 Terse. Production system. No preamble. Actionable outputs only.
 ```
 
-## File Map — What Hermes Reads and Writes
+## File Map — What Waifu Reads and Writes
 
 ### Reads (inputs)
 
@@ -192,7 +192,7 @@ Terse. Production system. No preamble. Actionable outputs only.
 
 ### Writes (outputs)
 
-| File | What Hermes writes | Agent |
+| File | What Waifu writes | Agent |
 |------|--------------------|-------|
 | `config/risk-regime.json` | riskMode, updatedAt, updatedBy, reason | Regime Classifier |
 | `outputs/latest-report.json` | Structured portfolio review | Portfolio Review |
@@ -256,7 +256,7 @@ Agents with 700+ trades are all negative.
 5. Hard rules: maxLeverage never exceeds 10. XYZ leverage always 0.
 6. Update `config/risk-regime.json`:
    ```json
-   {"riskMode": "BASELINE", "updatedAt": "...", "updatedBy": "hermes-regime", "reason": "..."}
+   {"riskMode": "BASELINE", "updatedAt": "...", "updatedBy": "waifu-regime", "reason": "..."}
    ```
 7. Be conservative with RISK_ON — only when trend evidence is clear across multiple timeframes.
 8. `git commit && git push`
@@ -389,13 +389,13 @@ SENPI_WAIFU_DIR=/home/kt/senpi-waifu
 
 ### State Bus
 
-Git is the state bus. Both the Railway mechanical layer and Hermes strategic layer
-read/write independently through the shared repo. Hermes must `git pull` before reading
+Git is the state bus. Both the Railway mechanical layer and Waifu strategic layer
+read/write independently through the shared repo. Waifu must `git pull` before reading
 and `git commit && git push` after writing.
 
 ## Hardcoded Safety Gates (Non-Negotiable)
 
-These are enforced in Python code by the mechanical layer. Hermes cannot override them:
+These are enforced in Python code by the mechanical layer. Waifu cannot override them:
 
 | Gate | Value | Reason |
 |------|-------|--------|
@@ -480,7 +480,7 @@ f = Path('config/risk-regime.json')
 d = json.loads(f.read_text())
 d['riskMode'] = 'BASELINE'
 d['updatedAt'] = 'PAPER_TRADING_START'
-d['updatedBy'] = 'hermes-init'
+ d['updatedBy'] = 'waifu-init'
 d['reason'] = 'Paper trading initialization — BASELINE mode'
 f.write_text(json.dumps(d, indent=2) + '\n')
 "
@@ -506,9 +506,9 @@ Ensure all output/state files exist with sane defaults:
 [ -f outputs/whale-index-state.json ] || echo '{"slots":[],"watchlist":{},"notes":[]}' > outputs/whale-index-state.json
 ```
 
-### Step 6: Enable Hermes Cron Jobs
+### Step 6: Enable Waifu Cron Jobs
 
-Activate the 6 strategic agent roles as Hermes cron jobs:
+Activate the 6 strategic agent roles as Waifu cron jobs:
 
 | Agent | Schedule | Cron |
 |-------|----------|------|
@@ -543,7 +543,7 @@ cat memory/trade-journal.json | python3 -c "import json,sys; d=json.load(sys.std
 cat config/risk-regime.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['riskMode'], '-', d.get('reason',''))"
 ```
 
-## Risk Management — What Hermes MUST Do
+## Risk Management — What Waifu MUST Do
 
 1. **Never execute trades when RISK_OFF** — check `config/risk-regime.json` before every trade
 2. **Never override hardcoded gates** — these are in the mechanical layer's Python code
@@ -561,10 +561,10 @@ cd /home/kt/senpi-waifu
 python3 -c "
 import json; from pathlib import Path
 f = Path('config/risk-regime.json'); d = json.loads(f.read_text())
-d['riskMode'] = 'RISK_OFF'; d['updatedBy'] = 'hermes-emergency'; d['reason'] = 'Manual emergency stop'
+ d['riskMode'] = 'RISK_OFF'; d['updatedBy'] = 'waifu-emergency'; d['reason'] = 'Manual emergency stop'
 f.write_text(json.dumps(d, indent=2) + '\n')
 "
 git add config/risk-regime.json && git commit -m "EMERGENCY: RISK_OFF" && git push
 
-# Then disable all Hermes cron jobs for the strategic layer
+# Then disable all Waifu cron jobs for the strategic layer
 ```
