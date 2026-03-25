@@ -580,7 +580,7 @@ def try_auto_entry(signal: dict):
                 "direction": signal["direction"],
                 "leverage": int(leverage),
                 "marginAmount": margin,
-                "orderType": "MARKET" if order_type == "market" else "LIMIT",
+                "orderType": "MARKET",
             }
         ],
     }
