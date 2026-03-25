@@ -18,11 +18,24 @@ from datetime import datetime, timezone
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, log, now_iso, load_json, save_json,
-    mcporter_call, send_telegram, current_regime_params,
-    check_directional_exposure_limit, attach_position_playbook,
-    count_open_slots, get_enabled_strategies, get_strategy_state_dir,
-    POSITION_STATE_DIR, CONFIG_DIR, record_trade, add_pending_entry,
+    acquire_lock,
+    release_lock,
+    log,
+    now_iso,
+    load_json,
+    save_json,
+    mcporter_call,
+    send_telegram,
+    current_regime_params,
+    check_directional_exposure_limit,
+    attach_position_playbook,
+    count_open_slots,
+    get_enabled_strategies,
+    get_strategy_state_dir,
+    POSITION_STATE_DIR,
+    CONFIG_DIR,
+    record_trade,
+    add_pending_entry,
     record_heartbeat,
 )
 
@@ -31,6 +44,7 @@ POLAR_CONFIG_FILE = CONFIG_DIR / "polar-config.json"
 
 
 # ─── Tech Helpers ─────────────────────────────────────────────
+
 
 def price_momentum(candles, n_bars=1):
     if len(candles) < n_bars + 1:
@@ -60,16 +74,24 @@ def trend_structure(candles, lookback=6):
 def volume_ratio(candles, lookback=10):
     if len(candles) < lookback + 1:
         return 1.0
-    vols = [float(c.get("volume", c.get("v", c.get("vlm", 0)))) for c in candles[-(lookback + 1):-1]]
+    vols = [
+        float(c.get("volume", c.get("v", c.get("vlm", 0))))
+        for c in candles[-(lookback + 1) : -1]
+    ]
     avg = sum(vols) / len(vols) if vols else 1
-    latest = float(candles[-1].get("volume", candles[-1].get("v", candles[-1].get("vlm", 0))))
+    latest = float(
+        candles[-1].get("volume", candles[-1].get("v", candles[-1].get("vlm", 0)))
+    )
     return latest / avg if avg > 0 else 1.0
 
 
 def volume_trend(candles, lookback=6):
     if len(candles) < lookback + 2:
         return 0
-    vols = [float(c.get("volume", c.get("v", c.get("vlm", 0)))) for c in candles[-(lookback + 2):]]
+    vols = [
+        float(c.get("volume", c.get("v", c.get("vlm", 0))))
+        for c in candles[-(lookback + 2) :]
+    ]
     half = lookback // 2
     recent = sum(vols[-half:]) / half if half > 0 else 1
     earlier = sum(vols[:half]) / half if half > 0 else 1
@@ -95,23 +117,26 @@ def calc_rsi(closes, period=14):
 
 # ─── Data Fetching ───────────────────────────────────────────
 
+
 def get_eth_full_picture():
-    result = mcporter_call("market_get_asset_data", {
-        "asset": "ETH",
-        "candle_intervals": ["5m", "15m", "1h", "4h"],
-        "include_funding": True
-    })
+    result = mcporter_call(
+        "market_get_asset_data",
+        {
+            "asset": "ETH",
+            "candle_intervals": ["5m", "15m", "1h", "4h"],
+            "include_funding": True,
+        },
+    )
     if "error" in result:
         return None
     return result.get("data", result)
 
 
 def get_btc_correlation():
-    result = mcporter_call("market_get_asset_data", {
-        "asset": "BTC",
-        "candle_intervals": ["15m", "1h"],
-        "include_funding": False
-    })
+    result = mcporter_call(
+        "market_get_asset_data",
+        {"asset": "BTC", "candle_intervals": ["15m", "1h"], "include_funding": False},
+    )
     if "error" in result:
         return None, None
     data = result.get("data", result)
@@ -161,7 +186,7 @@ def get_eth_sm_direction():
     total = asset_long_pct + asset_short_pct
     if total == 0:
         return "NEUTRAL", 50, asset_traders
-        
+
     long_ratio = (asset_long_pct / total) * 100 if total > 0 else 50
     if long_ratio > 58:
         return "LONG", long_ratio, asset_traders
@@ -171,6 +196,7 @@ def get_eth_sm_direction():
 
 
 # ─── Thesis Builder ──────────────────────────────────────────
+
 
 def build_eth_thesis(entry_cfg):
     eth_data = get_eth_full_picture()
@@ -183,7 +209,12 @@ def build_eth_thesis(entry_cfg):
     candles_4h = eth_data.get("candles", {}).get("4h", [])
     funding = float(eth_data.get("asset_context", eth_data).get("funding", 0))
 
-    if len(candles_5m) < 12 or len(candles_15m) < 8 or len(candles_1h) < 8 or len(candles_4h) < 6:
+    if (
+        len(candles_5m) < 12
+        or len(candles_15m) < 8
+        or len(candles_1h) < 8
+        or len(candles_4h) < 6
+    ):
         return None
 
     price = float(candles_5m[-1].get("close", candles_5m[-1].get("c", 0)))
@@ -237,13 +268,15 @@ def build_eth_thesis(entry_cfg):
     elif sm_dir and sm_dir != "NEUTRAL" and sm_dir != direction:
         return None
 
-    if (direction == "LONG" and funding < 0):
+    if direction == "LONG" and funding < 0:
         score += 2
         reasons.append(f"funding_pays_longs_{funding:+.4f}")
-    elif (direction == "SHORT" and funding > 0):
+    elif direction == "SHORT" and funding > 0:
         score += 2
         reasons.append(f"funding_pays_shorts_{funding:+.4f}")
-    elif (direction == "LONG" and funding > 0.005) or (direction == "SHORT" and funding < -0.005):
+    elif (direction == "LONG" and funding > 0.005) or (
+        direction == "SHORT" and funding < -0.005
+    ):
         score -= 1
         reasons.append(f"funding_crowded_{funding:+.4f}")
 
@@ -263,15 +296,18 @@ def build_eth_thesis(entry_cfg):
 
     vol_recent = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-3:])
     vol_earlier = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-6:-3])
-    oi_proxy = ((vol_recent - vol_earlier) / vol_earlier * 100) if vol_earlier > 0 else 0
+    oi_proxy = (
+        ((vol_recent - vol_earlier) / vol_earlier * 100) if vol_earlier > 0 else 0
+    )
     if oi_proxy > 10:
         score += 1
         reasons.append(f"oi_growing_{oi_proxy:+.0f}%")
 
     corr_mom_15m, corr_mom_1h = get_btc_correlation()
     if corr_mom_15m is not None and corr_mom_1h is not None:
-        corr_agrees = (direction == "LONG" and corr_mom_15m > 0 and corr_mom_1h > 0) or \
-                     (direction == "SHORT" and corr_mom_15m < 0 and corr_mom_1h < 0)
+        corr_agrees = (
+            direction == "LONG" and corr_mom_15m > 0 and corr_mom_1h > 0
+        ) or (direction == "SHORT" and corr_mom_15m < 0 and corr_mom_1h < 0)
         if corr_agrees:
             score += 1
             reasons.append(f"btc_confirms_{corr_mom_1h:+.2f}%")
@@ -300,6 +336,7 @@ def build_eth_thesis(entry_cfg):
 
 
 # ─── Re-Evaluate Position ────────────────────────────────────
+
 
 def evaluate_eth_position(direction, entry_cfg):
     eth_data = get_eth_full_picture()
@@ -333,7 +370,9 @@ def evaluate_eth_position(direction, entry_cfg):
 
     if len(candles_1h) >= 12:
         recent_vols = [float(c.get("volume", c.get("v", 0))) for c in candles_1h[-3:]]
-        avg_vol = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-12:-3]) / 9
+        avg_vol = (
+            sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-12:-3]) / 9
+        )
         if avg_vol > 0 and all(v < avg_vol * 0.3 for v in recent_vols):
             invalidations.append("volume_dried_up_3h")
 
@@ -349,12 +388,13 @@ def evaluate_eth_position(direction, entry_cfg):
 
 # ─── Stalk Evaluation ────────────────────────────────────────
 
+
 def evaluate_reload(exit_state, entry_cfg):
     stalk_cfg = entry_cfg.get("stalk", {})
     direction = exit_state.get("exitDirection")
     exit_ts = exit_state.get("exitTimestamp")
     exit_vol = exit_state.get("exitEntryVolRatio", 1.0)
-    
+
     now_dt = datetime.now(timezone.utc)
     try:
         if isinstance(exit_ts, str):
@@ -393,13 +433,16 @@ def evaluate_reload(exit_state, entry_cfg):
 
     funding_ann = abs(funding) * 8760
     max_funding = stalk_cfg.get("maxFundingAnnPct", 100)
-    if (direction == "LONG" and funding > 0 and funding_ann > max_funding) or \
-       (direction == "SHORT" and funding < 0 and funding_ann > max_funding):
+    if (direction == "LONG" and funding > 0 and funding_ann > max_funding) or (
+        direction == "SHORT" and funding < 0 and funding_ann > max_funding
+    ):
         kill_reasons.append(f"funding_extreme_{funding_ann:.0f}%ann")
 
     if len(candles_1h) >= 6:
         recent_vols = [float(c.get("volume", c.get("v", 0))) for c in candles_1h[-3:]]
-        earlier_vols = [float(c.get("volume", c.get("v", 0))) for c in candles_1h[-6:-3]]
+        earlier_vols = [
+            float(c.get("volume", c.get("v", 0))) for c in candles_1h[-6:-3]
+        ]
         avg_recent = sum(recent_vols) / len(recent_vols) if recent_vols else 0
         avg_earlier = sum(earlier_vols) / len(earlier_vols) if earlier_vols else 1
         if avg_earlier > 0:
@@ -428,8 +471,12 @@ def evaluate_reload(exit_state, entry_cfg):
                 reload_checks.append("no_5m_impulse")
 
     if len(candles_1h) >= 4:
-        recent_v = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-2:]) / 2
-        earlier_v = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-4:-2]) / 2
+        recent_v = (
+            sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-2:]) / 2
+        )
+        earlier_v = (
+            sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-4:-2]) / 2
+        )
         if earlier_v > 0 and recent_v >= earlier_v * 0.8:
             reload_checks.append("oi_stable")
         else:
@@ -443,8 +490,9 @@ def evaluate_reload(exit_state, entry_cfg):
         reload_checks.append(f"vol_weak_{vol:.1f}x")
 
     crowd_threshold = stalk_cfg.get("crowdedFundingAnnPct", 50)
-    if (direction == "LONG" and (funding <= 0 or funding_ann < crowd_threshold)) or \
-       (direction == "SHORT" and (funding >= 0 or funding_ann < crowd_threshold)):
+    if (direction == "LONG" and (funding <= 0 or funding_ann < crowd_threshold)) or (
+        direction == "SHORT" and (funding >= 0 or funding_ann < crowd_threshold)
+    ):
         reload_checks.append("funding_ok")
     else:
         reload_checks.append(f"funding_crowded_{funding_ann:.0f}%ann")
@@ -461,9 +509,21 @@ def evaluate_reload(exit_state, entry_cfg):
     else:
         reload_checks.append(f"4h_{trend_4h}")
 
-    fails = [r for r in reload_checks if any(bad in r for bad in
-              ["no_5m", "oi_declining", "vol_weak", "funding_crowded",
-               "sm_not_aligned", "waiting_for"])]
+    fails = [
+        r
+        for r in reload_checks
+        if any(
+            bad in r
+            for bad in [
+                "no_5m",
+                "oi_declining",
+                "vol_weak",
+                "funding_crowded",
+                "sm_not_aligned",
+                "waiting_for",
+            ]
+        )
+    ]
 
     if not fails:
         return True, reload_checks
@@ -472,6 +532,7 @@ def evaluate_reload(exit_state, entry_cfg):
 
 
 # ─── DSL State Builder ───────────────────────────────────────
+
 
 def build_dsl_state(direction, score, config, price):
     # Determine conviction tier for absolute floor + timeout settings
@@ -505,11 +566,12 @@ def build_dsl_state(direction, score, config, price):
         },
         "tiers": config["dsl"]["tiers"],
         "stagnationTp": config["dsl"]["stagnationTp"],
-        "createdAt": now_iso()
+        "createdAt": now_iso(),
     }
 
 
 # ─── Main ────────────────────────────────────────────────────
+
 
 def scan():
     config = load_json(POLAR_CONFIG_FILE)
@@ -519,7 +581,7 @@ def scan():
 
     state = load_json(POLAR_STATE_FILE, default={"currentMode": "HUNTING"})
     mode = state.get("currentMode", "HUNTING")
-    
+
     strategies = get_enabled_strategies()
     target_strat = None
     active_pos = None
@@ -550,18 +612,23 @@ def scan():
 
         if not valid:
             log(f"POLAR: Thesis failed for ETH {direction}: {reasons}")
-            mcporter_call("strategy_close_position", {
-                "strategyId": active_pos.get("strategyId", target_strat.get("strategyId")),
-                "asset": "ETH"
-            })
+            mcporter_call(
+                "strategy_close_position",
+                {
+                    "strategyId": active_pos.get(
+                        "strategyId", target_strat.get("strategyId")
+                    ),
+                    "asset": "ETH",
+                },
+            )
             active_pos["active"] = False
             active_pos["closedAt"] = now_iso()
             active_pos["closeReason"] = "polar_thesis_exit"
             sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
             save_json(sfile, active_pos)
-            
+
             send_telegram(f"🐻‍❄️ POLAR THESIS EXIT: ETH\nReasons: {', '.join(reasons)}")
-            
+
             state["currentMode"] = "HUNTING"
             state.pop("exitState", None)
             save_json(POLAR_STATE_FILE, state)
@@ -579,7 +646,7 @@ def scan():
         state["exitState"] = {
             "exitDirection": state.get("lastDirection", "LONG"),
             "exitTimestamp": now_iso(),
-            "exitEntryVolRatio": evol
+            "exitEntryVolRatio": evol,
         }
         save_json(POLAR_STATE_FILE, state)
         log(f"POLAR: ETH hit DSL stop — STALKING for reload.")
@@ -599,19 +666,31 @@ def scan():
                 alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
                 margin = budget * alloc * 1.3  # Reloads get slightly higher margin
                 lev = config["leverage"]["default"]
-                
-                allowed_exposure, exposure = check_directional_exposure_limit(dirn, margin, lev)
+
+                allowed_exposure, exposure = check_directional_exposure_limit(
+                    dirn, margin, lev
+                )
                 if not allowed_exposure:
                     log(f"POLAR: cap blocked reload ETH {dirn}")
                     return
-                
+
                 log(f"POLAR: Reload triggered for ETH {dirn}")
-                res = mcporter_call("create_position", {
-                    "strategyId": target_strat.get("strategyId"), "asset": "ETH",
-                    "direction": dirn, "margin": margin, "leverage": lev,
-                    "orderType": config["execution"]["entryOrderType"]
-                })
-                
+                res = mcporter_call(
+                    "create_position",
+                    {
+                        "strategyWalletAddress": target_strat.get("wallet"),
+                        "orders": [
+                            {
+                                "coin": "ETH",
+                                "direction": dirn,
+                                "leverage": int(lev),
+                                "marginAmount": margin,
+                                "orderType": "MARKET",
+                            }
+                        ],
+                    },
+                )
+
                 if "error" not in res:
                     eprice = float(res.get("entryPrice", 0))
                     dsl = build_dsl_state(dirn, 12, config, eprice)
@@ -620,28 +699,58 @@ def scan():
                     dsl["strategyKey"] = target_strat["_key"]
                     dsl["entrySource"] = "polar-reload"
                     attach_position_playbook(
-                        dsl, scanner="polar", margin=margin, leverage=lev, score=12,
-                        reasons=reasons, setup={"mode": "STALKING"}
+                        dsl,
+                        scanner="polar",
+                        margin=margin,
+                        leverage=lev,
+                        score=12,
+                        reasons=reasons,
+                        setup={"mode": "STALKING"},
                     )
-                    
-                    sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
+
+                    sfile = (
+                        get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
+                    )
                     save_json(sfile, dsl)
-                    
+
                     state["currentMode"] = "RIDING"
                     state["lastDirection"] = dirn
                     state.pop("exitState", None)
                     save_json(POLAR_STATE_FILE, state)
-                    
-                    send_telegram(f"🐻‍❄️ POLAR RELOAD: {dirn} ETH\nMargin: ${margin:.0f} | Lev: {lev}x")
-                    record_trade({
-                        "action": "OPEN", "asset": "ETH", "direction": dirn,
-                        "entryPrice": eprice, "size": float(res.get("size", 0)),
-                        "margin": margin, "leverage": lev, "strategyKey": target_strat["_key"],
-                        "entrySource": "polar-reload", "entryMode": "STALKING"
-                    })
+
+                    send_telegram(
+                        f"🐻‍❄️ POLAR RELOAD: {dirn} ETH\nMargin: ${margin:.0f} | Lev: {lev}x"
+                    )
+                    record_trade(
+                        {
+                            "action": "OPEN",
+                            "asset": "ETH",
+                            "direction": dirn,
+                            "entryPrice": eprice,
+                            "size": float(res.get("size", 0)),
+                            "margin": margin,
+                            "leverage": lev,
+                            "strategyKey": target_strat["_key"],
+                            "entrySource": "polar-reload",
+                            "entryMode": "STALKING",
+                        }
+                    )
                 return
-            
-            kills = [r for r in reasons if any(k in r for k in ["stalk_timeout", "4h_trend_reversed", "sm_flipped", "funding_extreme", "oi_collapsed"])]
+
+            kills = [
+                r
+                for r in reasons
+                if any(
+                    k in r
+                    for k in [
+                        "stalk_timeout",
+                        "4h_trend_reversed",
+                        "sm_flipped",
+                        "funding_extreme",
+                        "oi_collapsed",
+                    ]
+                )
+            ]
             if kills:
                 state["currentMode"] = "HUNTING"
                 state.pop("exitState", None)
@@ -650,42 +759,62 @@ def scan():
             return
 
     # HUNTING MODE (Default)
-    if not target_strat: return
+    if not target_strat:
+        return
 
     entry_cfg = config.get("entry", {})
     min_score = entry_cfg.get("minScore", 10)
-    
+
     thesis = build_eth_thesis(entry_cfg)
     if not thesis or thesis["score"] < min_score:
         return
 
     budget = target_strat.get("budget", 1000)
     alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
-    
+
     base_margin_pct = entry_cfg.get("marginPctBase", 0.30)
     # Using budget * alloc as account proxy.
-    if thesis["score"] >= 14: base_adj = 1.5 
-    elif thesis["score"] >= 12: base_adj = 1.25
-    else: base_adj = 1.0
-    
+    if thesis["score"] >= 14:
+        base_adj = 1.5
+    elif thesis["score"] >= 12:
+        base_adj = 1.25
+    else:
+        base_adj = 1.0
+
     margin = budget * alloc * base_adj
     lev_cfg = config.get("leverage", {})
-    if thesis["score"] >= 14: lev = lev_cfg.get("max", 20)
-    elif thesis["score"] >= 12: lev = lev_cfg.get("high", 18)
-    elif thesis["score"] >= 10: lev = lev_cfg.get("default", 15)
-    else: lev = lev_cfg.get("min", 12)
+    if thesis["score"] >= 14:
+        lev = lev_cfg.get("max", 20)
+    elif thesis["score"] >= 12:
+        lev = lev_cfg.get("high", 18)
+    elif thesis["score"] >= 10:
+        lev = lev_cfg.get("default", 15)
+    else:
+        lev = lev_cfg.get("min", 12)
 
-    allowed_exposure, exposure = check_directional_exposure_limit(thesis["direction"], margin, lev)
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        thesis["direction"], margin, lev
+    )
     if not allowed_exposure:
         return
 
     log(f"POLAR: Entering ETH {thesis['direction']} at score {thesis['score']}")
-    
-    res = mcporter_call("create_position", {
-        "strategyId": target_strat.get("strategyId"), "asset": "ETH",
-        "direction": thesis["direction"], "margin": margin, "leverage": lev,
-        "orderType": config["execution"]["entryOrderType"]
-    })
+
+    res = mcporter_call(
+        "create_position",
+        {
+            "strategyWalletAddress": target_strat.get("wallet"),
+            "orders": [
+                {
+                    "coin": "ETH",
+                    "direction": thesis["direction"],
+                    "leverage": int(lev),
+                    "marginAmount": margin,
+                    "orderType": "MARKET",
+                }
+            ],
+        },
+    )
 
     if "error" not in res:
         eprice = float(res.get("entryPrice", 0))
@@ -693,12 +822,17 @@ def scan():
         dsl["wallet"] = target_strat.get("wallet")
         dsl["strategyId"] = target_strat.get("strategyId")
         dsl["strategyKey"] = target_strat["_key"]
-        
+
         attach_position_playbook(
-            dsl, scanner="polar", margin=margin, leverage=lev,
-            score=thesis["score"], reasons=thesis["reasons"], setup={"mode": "HUNTING"}
+            dsl,
+            scanner="polar",
+            margin=margin,
+            leverage=lev,
+            score=thesis["score"],
+            reasons=thesis["reasons"],
+            setup={"mode": "HUNTING"},
         )
-        
+
         sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
         save_json(sfile, dsl)
 
@@ -706,32 +840,52 @@ def scan():
         state["lastDirection"] = thesis["direction"]
         save_json(POLAR_STATE_FILE, state)
 
-        send_telegram(f"🐻‍❄️ POLAR ENTRY: {thesis['direction']} ETH\n"
-                      f"Score: {thesis['score']}\n"
-                      f"Reasons: {', '.join(thesis['reasons'])}\n"
-                      f"Margin: ${margin:.0f} | Lev: {lev}x")
+        send_telegram(
+            f"🐻‍❄️ POLAR ENTRY: {thesis['direction']} ETH\n"
+            f"Score: {thesis['score']}\n"
+            f"Reasons: {', '.join(thesis['reasons'])}\n"
+            f"Margin: ${margin:.0f} | Lev: {lev}x"
+        )
 
-        record_trade({
-            "action": "OPEN", "asset": "ETH", "direction": thesis["direction"],
-            "entryPrice": eprice, "size": float(res.get("size", 0)),
-            "margin": margin, "leverage": lev, "strategyKey": target_strat["_key"],
-            "entrySource": "polar-hunting", "entryMode": "HUNTING",
-            "entryScore": thesis["score"]
-        })
-        
-        add_pending_entry({
-            "asset": "ETH", "direction": thesis["direction"], "autoEntered": True,
-            "strategyKey": target_strat["_key"], "entryPrice": eprice, "margin": margin,
-            "leverage": lev, "score": thesis["score"], "source": "polar"
-        })
+        record_trade(
+            {
+                "action": "OPEN",
+                "asset": "ETH",
+                "direction": thesis["direction"],
+                "entryPrice": eprice,
+                "size": float(res.get("size", 0)),
+                "margin": margin,
+                "leverage": lev,
+                "strategyKey": target_strat["_key"],
+                "entrySource": "polar-hunting",
+                "entryMode": "HUNTING",
+                "entryScore": thesis["score"],
+            }
+        )
+
+        add_pending_entry(
+            {
+                "asset": "ETH",
+                "direction": thesis["direction"],
+                "autoEntered": True,
+                "strategyKey": target_strat["_key"],
+                "entryPrice": eprice,
+                "margin": margin,
+                "leverage": lev,
+                "score": thesis["score"],
+                "source": "polar",
+            }
+        )
 
 
 def main():
-    if not acquire_lock("polar-scanner"): return
+    if not acquire_lock("polar-scanner"):
+        return
     try:
         record_heartbeat("polar")
         scan()
-    finally: release_lock("polar-scanner")
+    finally:
+        release_lock("polar-scanner")
 
 
 if __name__ == "__main__":

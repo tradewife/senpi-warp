@@ -11,11 +11,24 @@ from datetime import datetime, timezone
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, log, now_iso, load_json, save_json,
-    mcporter_call, send_telegram, current_regime_params,
-    check_directional_exposure_limit, attach_position_playbook,
-    count_open_slots, get_enabled_strategies, get_strategy_state_dir,
-    POSITION_STATE_DIR, CONFIG_DIR, record_trade, add_pending_entry,
+    acquire_lock,
+    release_lock,
+    log,
+    now_iso,
+    load_json,
+    save_json,
+    mcporter_call,
+    send_telegram,
+    current_regime_params,
+    check_directional_exposure_limit,
+    attach_position_playbook,
+    count_open_slots,
+    get_enabled_strategies,
+    get_strategy_state_dir,
+    POSITION_STATE_DIR,
+    CONFIG_DIR,
+    record_trade,
+    add_pending_entry,
     record_heartbeat,
 )
 
@@ -26,11 +39,14 @@ CONDOR_CONFIG_FILE = CONFIG_DIR / "condor-config.json"
 
 # ─── Tech Helpers ─────────────────────────────────────────────
 
+
 def price_momentum(candles, periods: int) -> float:
     if len(candles) <= periods:
         return 0.0
     curr = float(candles[-1].get("close", candles[-1].get("c", 0)))
-    prev = float(candles[-(periods+1)].get("close", candles[-(periods+1)].get("c", 0)))
+    prev = float(
+        candles[-(periods + 1)].get("close", candles[-(periods + 1)].get("c", 0))
+    )
     if prev == 0:
         return 0.0
     return ((curr - prev) / prev) * 100
@@ -40,7 +56,9 @@ def volume_ratio(candles) -> float:
     """Ratio of most recent candle volume to the average of the 4 before it."""
     if len(candles) < 6:
         return 1.0
-    recent = float(candles[-2].get("volume", candles[-2].get("v", candles[-2].get("vlm", 0))))  # use -2 to avoid partial current candle
+    recent = float(
+        candles[-2].get("volume", candles[-2].get("v", candles[-2].get("vlm", 0)))
+    )  # use -2 to avoid partial current candle
     vols = [float(c.get("volume", c.get("v", c.get("vlm", 0)))) for c in candles[-6:-2]]
     avg = sum(vols) / len(vols) if vols else 0
     return (recent / avg) if avg > 0 else 1.0
@@ -74,12 +92,16 @@ def trend_structure(candles, lookbacks=12):
 
 # ─── Data Fetching ───────────────────────────────────────────
 
+
 def get_asset_data(asset):
-    result = mcporter_call("market_get_asset_data", {
-        "asset": asset,
-        "candle_intervals": ["5m", "15m", "1h", "4h"],
-        "include_funding": True
-    })
+    result = mcporter_call(
+        "market_get_asset_data",
+        {
+            "asset": asset,
+            "candle_intervals": ["5m", "15m", "1h", "4h"],
+            "include_funding": True,
+        },
+    )
     if "error" in result:
         return None
     return result.get("data", result)
@@ -122,6 +144,7 @@ def get_sm_direction(asset):
 
 # ─── Thesis Builder ──────────────────────────────────────────
 
+
 def build_thesis(asset, config):
     entry_cfg = config.get("entry", {})
     asset_data = get_asset_data(asset)
@@ -134,7 +157,12 @@ def build_thesis(asset, config):
     candles_4h = asset_data.get("candles", {}).get("4h", [])
     funding = float(asset_data.get("funding", 0))
 
-    if len(candles_5m) < 12 or len(candles_15m) < 8 or len(candles_1h) < 8 or len(candles_4h) < 6:
+    if (
+        len(candles_5m) < 12
+        or len(candles_15m) < 8
+        or len(candles_1h) < 8
+        or len(candles_4h) < 6
+    ):
         return None
 
     price = float(candles_5m[-1].get("close", candles_5m[-1].get("c", 0)))
@@ -150,12 +178,14 @@ def build_thesis(asset, config):
 
     mom_15m = price_momentum(candles_15m, 1)
     min_mom = entry_cfg.get("minMom15mPct", 0.1)
-    if direction == "LONG" and mom_15m < min_mom: return None
-    if direction == "SHORT" and mom_15m > -min_mom: return None
+    if direction == "LONG" and mom_15m < min_mom:
+        return None
+    if direction == "SHORT" and mom_15m > -min_mom:
+        return None
 
     score = 5  # 3 for 4h, 2 for 1h
     reasons = [f"4h_{trend_4h.lower()}", "1h_confirms"]
-    
+
     score += 1
     reasons.append(f"15m_mom_{mom_15m:+.2f}%")
 
@@ -169,11 +199,13 @@ def build_thesis(asset, config):
     if sm_dir == direction:
         score += 2
         reasons.append(f"sm_aligned_{sm_pct:.0f}%")
-        if (direction == "LONG" and sm_pct >= 70) or (direction == "SHORT" and sm_pct <= 30):
+        if (direction == "LONG" and sm_pct >= 70) or (
+            direction == "SHORT" and sm_pct <= 30
+        ):
             score += 1
             reasons.append("sm_strongly_tilted")
     elif sm_dir and sm_dir != "NEUTRAL" and sm_dir != direction:
-        return None # Hard block
+        return None  # Hard block
 
     if direction == "LONG" and funding < 0:
         score += 1
@@ -189,68 +221,85 @@ def build_thesis(asset, config):
 
     corr_15m, corr_1h = get_correlation_data(asset, config.get("correlationMap", {}))
     if corr_15m is not None and corr_1h is not None:
-        corr_agrees = (direction == "LONG" and corr_15m > 0 and corr_1h > 0) or \
-                      (direction == "SHORT" and corr_15m < 0 and corr_1h < 0)
+        corr_agrees = (direction == "LONG" and corr_15m > 0 and corr_1h > 0) or (
+            direction == "SHORT" and corr_15m < 0 and corr_1h < 0
+        )
         if corr_agrees:
             bonus = 2 if asset in config.get("bonusOnlyCorrelation", []) else 1
             score += bonus
             reasons.append("correlation_confirms")
 
     return {
-        "asset": asset, "direction": direction, "score": score,
-        "reasons": reasons, "price": price, "funding": funding
+        "asset": asset,
+        "direction": direction,
+        "score": score,
+        "reasons": reasons,
+        "price": price,
+        "funding": funding,
     }
 
 
 # ─── Re-Evaluate Position ────────────────────────────────────
 
+
 def evaluate_position(asset, direction, config):
     entry_cfg = config.get("entry", {})
     asset_data = get_asset_data(asset)
-    if not asset_data: return True, ["data_unavailable"]
+    if not asset_data:
+        return True, ["data_unavailable"]
 
     candles_1h = asset_data.get("candles", {}).get("1h", [])
     candles_4h = asset_data.get("candles", {}).get("4h", [])
     funding = float(asset_data.get("funding", 0))
 
-    if len(candles_4h) < 6: return True, []
+    if len(candles_4h) < 6:
+        return True, []
 
     invs = []
     trend_4h, _ = trend_structure(candles_4h)
-    if direction == "LONG" and trend_4h == "BEARISH": invs.append("4h_flipped_bearish")
-    if direction == "SHORT" and trend_4h == "BULLISH": invs.append("4h_flipped_bullish")
+    if direction == "LONG" and trend_4h == "BEARISH":
+        invs.append("4h_flipped_bearish")
+    if direction == "SHORT" and trend_4h == "BULLISH":
+        invs.append("4h_flipped_bullish")
 
     sm_dir, _, _ = get_sm_direction(asset)
     if sm_dir and sm_dir != "NEUTRAL" and sm_dir != direction:
         invs.append(f"sm_flipped_{sm_dir}")
 
     thresh = entry_cfg.get("fundingExtremeThreshold", 0.012)
-    if direction == "LONG" and funding > thresh: invs.append("funding_extreme_against")
-    if direction == "SHORT" and funding < -thresh: invs.append("funding_extreme_against")
+    if direction == "LONG" and funding > thresh:
+        invs.append("funding_extreme_against")
+    if direction == "SHORT" and funding < -thresh:
+        invs.append("funding_extreme_against")
 
     if len(candles_1h) >= 12:
         recent_vols = [float(c.get("volume", c.get("v", 0))) for c in candles_1h[-3:]]
-        avg_vol = sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-12:-3]) / 9
+        avg_vol = (
+            sum(float(c.get("volume", c.get("v", 0))) for c in candles_1h[-12:-3]) / 9
+        )
         if avg_vol > 0 and all(v < avg_vol * 0.3 for v in recent_vols):
             invs.append("volume_dried_up")
 
     if asset not in config.get("bonusOnlyCorrelation", []):
         _, corr_1h = get_correlation_data(asset, config.get("correlationMap", {}))
         if corr_1h is not None:
-            if direction == "LONG" and corr_1h < -1.0: invs.append("correlation_diverging")
-            if direction == "SHORT" and corr_1h > 1.0: invs.append("correlation_diverging")
+            if direction == "LONG" and corr_1h < -1.0:
+                invs.append("correlation_diverging")
+            if direction == "SHORT" and corr_1h > 1.0:
+                invs.append("correlation_diverging")
 
     return len(invs) == 0, invs
 
 
 # ─── Stalk Reload ────────────────────────────────────────────
 
+
 def evaluate_reload(exit_state, config):
     direction = exit_state.get("exitDirection")
     asset = exit_state.get("exitAsset")
     exit_ts = exit_state.get("exitTimestamp", 0)
     exit_vol = exit_state.get("exitEntryVolRatio", 1.0)
-    
+
     now_dt = datetime.now(timezone.utc)
     try:
         if isinstance(exit_ts, str):
@@ -262,12 +311,13 @@ def evaluate_reload(exit_state, config):
 
     hours_stalking = (now_dt - exit_dt).total_seconds() / 3600
     stalk_cfg = config.get("entry", {}).get("stalking", {})
-    
+
     if hours_stalking > stalk_cfg.get("maxStalkHours", 4):
         return False, ["stalk_timeout"]
 
     asset_data = get_asset_data(asset)
-    if not asset_data: return False, ["data_unavailable"]
+    if not asset_data:
+        return False, ["data_unavailable"]
 
     candles_5m = asset_data.get("candles", {}).get("5m", [])
     candles_4h = asset_data.get("candles", {}).get("4h", [])
@@ -277,34 +327,51 @@ def evaluate_reload(exit_state, config):
 
     trend_4h, _ = trend_structure(candles_4h)
     expected = "BULLISH" if direction == "LONG" else "BEARISH"
-    if trend_4h != expected and trend_4h != "NEUTRAL": kills.append("4h_trend_reversed")
+    if trend_4h != expected and trend_4h != "NEUTRAL":
+        kills.append("4h_trend_reversed")
 
     sm_dir, _, _ = get_sm_direction(asset)
-    if sm_dir and sm_dir != "NEUTRAL" and sm_dir != direction: kills.append("sm_flipped")
+    if sm_dir and sm_dir != "NEUTRAL" and sm_dir != direction:
+        kills.append("sm_flipped")
 
-    if kills: return False, kills
+    if kills:
+        return False, kills
 
-    if hours_stalking < 0.5: checks.append("waiting_for_cooldown")
+    if hours_stalking < 0.5:
+        checks.append("waiting_for_cooldown")
 
     if len(candles_5m) >= 3:
         mom = price_momentum(candles_5m, 1)
-        if direction == "LONG" and mom > 0.15: checks.append("fresh_impulse_up")
-        elif direction == "SHORT" and mom < -0.15: checks.append("fresh_impulse_down")
-        else: checks.append("no_impulse")
+        if direction == "LONG" and mom > 0.15:
+            checks.append("fresh_impulse_up")
+        elif direction == "SHORT" and mom < -0.15:
+            checks.append("fresh_impulse_down")
+        else:
+            checks.append("no_impulse")
 
     vol = volume_ratio(candles_5m)
-    if vol >= exit_vol * stalk_cfg.get("minReloadVolPct", 50) / 100: checks.append("vol_ok")
-    else: checks.append("vol_weak")
+    if vol >= exit_vol * stalk_cfg.get("minReloadVolPct", 50) / 100:
+        checks.append("vol_ok")
+    else:
+        checks.append("vol_weak")
 
-    if sm_dir == direction: checks.append("sm_aligned")
-    elif sm_dir == "NEUTRAL": checks.append("sm_neutral")
-    else: checks.append("sm_not_aligned")
+    if sm_dir == direction:
+        checks.append("sm_aligned")
+    elif sm_dir == "NEUTRAL":
+        checks.append("sm_neutral")
+    else:
+        checks.append("sm_not_aligned")
 
-    fails = [r for r in checks if r in ["no_impulse", "vol_weak", "sm_not_aligned", "waiting_for_cooldown"]]
+    fails = [
+        r
+        for r in checks
+        if r in ["no_impulse", "vol_weak", "sm_not_aligned", "waiting_for_cooldown"]
+    ]
     return len(fails) == 0, checks
 
 
 # ─── DSL Builder ─────────────────────────────────────────────
+
 
 def build_dsl_state(asset, direction, score, config, details):
     tier = config["dsl"]["convictionTiers"][-1]
@@ -314,10 +381,17 @@ def build_dsl_state(asset, direction, score, config, details):
             break
 
     return {
-        "active": True, "asset": asset, "direction": direction, "score": score,
-        "entrySource": "auto-condor", "phase": 1,
-        "highWaterPrice": details["price"], "highWaterRoe": 0,
-        "currentTierIndex": -1, "consecutiveBreaches": 0, "floorPrice": None,
+        "active": True,
+        "asset": asset,
+        "direction": direction,
+        "score": score,
+        "entrySource": "auto-condor",
+        "phase": 1,
+        "highWaterPrice": details["price"],
+        "highWaterRoe": 0,
+        "currentTierIndex": -1,
+        "consecutiveBreaches": 0,
+        "floorPrice": None,
         "lockMode": config["dsl"]["lockMode"],
         "phase2TriggerRoe": config["dsl"]["phase2TriggerRoe"],
         "phase1": {
@@ -326,15 +400,16 @@ def build_dsl_state(asset, direction, score, config, details):
             "hardTimeoutMinutes": tier["hardTimeoutMin"],
             "weakPeakCutMinutes": tier["weakPeakCutMin"],
             "deadWeightCutMinutes": tier["deadWeightCutMin"],
-            "absoluteFloorRoe": tier["absoluteFloorRoe"]
+            "absoluteFloorRoe": tier["absoluteFloorRoe"],
         },
         "tiers": config["dsl"]["tiers"],
         "stagnation": config["dsl"]["stagnationTp"],
-        "createdAt": now_iso()
+        "createdAt": now_iso(),
     }
 
 
 # ─── Main ────────────────────────────────────────────────────
+
 
 def scan():
     config = load_json(CONDOR_CONFIG_FILE)
@@ -358,7 +433,8 @@ def scan():
                 active_pos = ps
                 condor_strat = strat
                 break
-        if active_pos: break
+        if active_pos:
+            break
 
     # Fallback to general open slot check if HUNTING
     if not condor_strat and mode == "HUNTING":
@@ -380,18 +456,25 @@ def scan():
 
         if not valid:
             log(f"CONDOR: Thesis failed for {asset} {direction}: {reasons}")
-            mcporter_call("strategy_close_position", {
-                "strategyId": active_pos.get("strategyId", condor_strat.get("strategyId")),
-                "asset": asset
-            })
+            mcporter_call(
+                "strategy_close_position",
+                {
+                    "strategyId": active_pos.get(
+                        "strategyId", condor_strat.get("strategyId")
+                    ),
+                    "asset": asset,
+                },
+            )
             active_pos["active"] = False
             active_pos["closedAt"] = now_iso()
             active_pos["closeReason"] = "condor_thesis_exit"
             sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{asset}.json"
             save_json(sfile, active_pos)
-            
-            send_telegram(f"🦅 CONDOR THESIS EXIT: {asset}\nReasons: {', '.join(reasons)}")
-            
+
+            send_telegram(
+                f"🦅 CONDOR THESIS EXIT: {asset}\nReasons: {', '.join(reasons)}"
+            )
+
             state["currentMode"] = "HUNTING"
             state.pop("exitState", None)
             state.pop("activeAsset", None)
@@ -412,7 +495,7 @@ def scan():
             "exitAsset": asset,
             "exitDirection": state.get("lastDirection", "LONG"),
             "exitTimestamp": now_iso(),
-            "exitEntryVolRatio": evol
+            "exitEntryVolRatio": evol,
         }
         save_json(CONDOR_STATE_FILE, state)
         log(f"CONDOR: {asset} hit DSL stop — STALKING for reload.")
@@ -429,26 +512,40 @@ def scan():
             if reload and condor_strat:
                 asset = exst["exitAsset"]
                 dirn = exst["exitDirection"]
-                
+
                 budget = condor_strat.get("budget", 1000)
                 alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
-                margin = budget * alloc * 1.4  # Reloads get slightly higher margin 35% vs 25%
+                margin = (
+                    budget * alloc * 1.4
+                )  # Reloads get slightly higher margin 35% vs 25%
                 lev = config["leverage"]["default"]
-                allowed_exposure, exposure = check_directional_exposure_limit(dirn, margin, lev)
+                allowed_exposure, exposure = check_directional_exposure_limit(
+                    dirn, margin, lev
+                )
                 if not allowed_exposure:
                     log(
                         f"CONDOR: directional cap blocked reload {asset} {dirn} "
                         f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
                     )
                     return
-                
+
                 log(f"CONDOR: Reload triggered for {asset} {dirn}")
-                res = mcporter_call("create_position", {
-                    "strategyId": condor_strat.get("strategyId"), "asset": asset,
-                    "direction": dirn, "margin": margin, "leverage": lev,
-                    "orderType": config["execution"]["entryOrderType"]
-                })
-                
+                res = mcporter_call(
+                    "create_position",
+                    {
+                        "strategyWalletAddress": condor_strat.get("wallet"),
+                        "orders": [
+                            {
+                                "coin": asset,
+                                "direction": dirn,
+                                "leverage": int(lev),
+                                "marginAmount": margin,
+                                "orderType": "MARKET",
+                            }
+                        ],
+                    },
+                )
+
                 if "error" not in res:
                     eprice = float(res.get("entryPrice", 0))
                     dsl = build_dsl_state(asset, dirn, 10, config, {"price": eprice})
@@ -464,26 +561,45 @@ def scan():
                         reasons=reasons,
                         setup={"reload": True},
                     )
-                    sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{asset}.json"
+                    sfile = (
+                        get_strategy_state_dir(condor_strat["_key"])
+                        / f"dsl-{asset}.json"
+                    )
                     save_json(sfile, dsl)
-                    
+
                     state["currentMode"] = "RIDING"
                     state["activeAsset"] = asset
                     state["lastDirection"] = dirn
                     state.pop("exitState", None)
                     save_json(CONDOR_STATE_FILE, state)
-                    
-                    send_telegram(f"🦅 CONDOR RELOAD: {dirn} {asset}\nMargin: ${margin:.0f} | Lev: {lev}x")
-                    
-                    record_trade({
-                        "action": "OPEN", "asset": asset, "direction": dirn,
-                        "entryPrice": eprice, "size": float(res.get("size", 0)),
-                        "margin": margin, "leverage": lev, "strategyKey": condor_strat["_key"],
-                        "entrySource": "auto-condor", "entryMode": "CONDOR_RELOAD"
-                    })
+
+                    send_telegram(
+                        f"🦅 CONDOR RELOAD: {dirn} {asset}\nMargin: ${margin:.0f} | Lev: {lev}x"
+                    )
+
+                    record_trade(
+                        {
+                            "action": "OPEN",
+                            "asset": asset,
+                            "direction": dirn,
+                            "entryPrice": eprice,
+                            "size": float(res.get("size", 0)),
+                            "margin": margin,
+                            "leverage": lev,
+                            "strategyKey": condor_strat["_key"],
+                            "entrySource": "auto-condor",
+                            "entryMode": "CONDOR_RELOAD",
+                        }
+                    )
                 return
-            
-            kills = [r for r in reasons if any(k in r for k in ["stalk_timeout", "4h_trend_reversed", "sm_flipped"])]
+
+            kills = [
+                r
+                for r in reasons
+                if any(
+                    k in r for k in ["stalk_timeout", "4h_trend_reversed", "sm_flipped"]
+                )
+            ]
             if kills:
                 state["currentMode"] = "HUNTING"
                 state.pop("exitState", None)
@@ -492,16 +608,19 @@ def scan():
             return
 
     # HUNTING MODE (Default)
-    if not condor_strat: return
+    if not condor_strat:
+        return
 
     min_score = config["entry"].get("minScore", 10)
     theses = []
-    
+
     for a in config.get("assets", ["BTC", "ETH", "SOL", "HYPE"]):
         t = build_thesis(a, config)
-        if t and t["score"] >= min_score: theses.append(t)
+        if t and t["score"] >= min_score:
+            theses.append(t)
 
-    if not theses: return
+    if not theses:
+        return
 
     # Pick highest score
     theses.sort(key=lambda x: x["score"], reverse=True)
@@ -509,16 +628,21 @@ def scan():
 
     budget = condor_strat.get("budget", 1000)
     alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
-    
+
     # Margin scales by conviction (score)
-    if best["score"] >= 14: base_adj = 1.8  # 0.45 
-    elif best["score"] >= 12: base_adj = 1.4 # 0.35
-    else: base_adj = 1.0 # 0.25 (assuming alloc is ~0.25)
-    
+    if best["score"] >= 14:
+        base_adj = 1.8  # 0.45
+    elif best["score"] >= 12:
+        base_adj = 1.4  # 0.35
+    else:
+        base_adj = 1.0  # 0.25 (assuming alloc is ~0.25)
+
     margin = budget * alloc * base_adj
     lev = config["leverage"]["default"]
 
-    allowed_exposure, exposure = check_directional_exposure_limit(best["direction"], margin, lev)
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        best["direction"], margin, lev
+    )
     if not allowed_exposure:
         log(
             f"CONDOR: directional cap blocked {best['asset']} {best['direction']} "
@@ -526,17 +650,31 @@ def scan():
         )
         return
 
-    log(f"CONDOR: Entering {best['asset']} {best['direction']} at score {best['score']}")
-    
-    res = mcporter_call("create_position", {
-        "strategyId": condor_strat.get("strategyId"), "asset": best["asset"],
-        "direction": best["direction"], "margin": margin, "leverage": lev,
-        "orderType": config["execution"]["entryOrderType"]
-    })
+    log(
+        f"CONDOR: Entering {best['asset']} {best['direction']} at score {best['score']}"
+    )
+
+    res = mcporter_call(
+        "create_position",
+        {
+            "strategyWalletAddress": condor_strat.get("wallet"),
+            "orders": [
+                {
+                    "coin": best["asset"],
+                    "direction": best["direction"],
+                    "leverage": int(lev),
+                    "marginAmount": margin,
+                    "orderType": "MARKET",
+                }
+            ],
+        },
+    )
 
     if "error" not in res:
         eprice = float(res.get("entryPrice", 0))
-        dsl = build_dsl_state(best["asset"], best["direction"], best["score"], config, best)
+        dsl = build_dsl_state(
+            best["asset"], best["direction"], best["score"], config, best
+        )
         dsl["wallet"] = condor_strat.get("wallet")
         dsl["strategyId"] = condor_strat.get("strategyId")
         dsl["strategyKey"] = condor_strat["_key"]
@@ -549,8 +687,10 @@ def scan():
             reasons=best["reasons"],
             setup={"asset": best["asset"]},
         )
-        
-        sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{best['asset']}.json"
+
+        sfile = (
+            get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{best['asset']}.json"
+        )
         save_json(sfile, dsl)
 
         state["currentMode"] = "RIDING"
@@ -559,32 +699,53 @@ def scan():
         save_json(CONDOR_STATE_FILE, state)
 
         scores_str = ", ".join(f"{t['asset']}:{t['score']}" for t in theses)
-        send_telegram(f"🦅 CONDOR ENTRY: {best['direction']} {best['asset']}\n"
-                      f"Score: {best['score']} (Options: {scores_str})\n"
-                      f"Reasons: {', '.join(best['reasons'])}\n"
-                      f"Margin: ${margin:.0f} | Lev: {lev}x")
+        send_telegram(
+            f"🦅 CONDOR ENTRY: {best['direction']} {best['asset']}\n"
+            f"Score: {best['score']} (Options: {scores_str})\n"
+            f"Reasons: {', '.join(best['reasons'])}\n"
+            f"Margin: ${margin:.0f} | Lev: {lev}x"
+        )
 
-        record_trade({
-            "action": "OPEN", "asset": best["asset"], "direction": best["direction"],
-            "entryPrice": eprice, "size": float(res.get("size", 0)),
-            "margin": margin, "leverage": lev, "strategyKey": condor_strat["_key"],
-            "entrySource": "auto-condor", "entryMode": "CONDOR_HUNT",
-            "entryScore": best["score"]
-        })
-        
-        add_pending_entry({
-            "asset": best["asset"], "direction": best["direction"], "autoEntered": True,
-            "strategyKey": condor_strat["_key"], "entryPrice": eprice, "margin": margin,
-            "leverage": lev, "score": best["score"], "source": "condor"
-        })
+        record_trade(
+            {
+                "action": "OPEN",
+                "asset": best["asset"],
+                "direction": best["direction"],
+                "entryPrice": eprice,
+                "size": float(res.get("size", 0)),
+                "margin": margin,
+                "leverage": lev,
+                "strategyKey": condor_strat["_key"],
+                "entrySource": "auto-condor",
+                "entryMode": "CONDOR_HUNT",
+                "entryScore": best["score"],
+            }
+        )
+
+        add_pending_entry(
+            {
+                "asset": best["asset"],
+                "direction": best["direction"],
+                "autoEntered": True,
+                "strategyKey": condor_strat["_key"],
+                "entryPrice": eprice,
+                "margin": margin,
+                "leverage": lev,
+                "score": best["score"],
+                "source": "condor",
+            }
+        )
 
 
 def main():
-    if not acquire_lock("condor-scanner"): return
+    if not acquire_lock("condor-scanner"):
+        return
     try:
         record_heartbeat("condor")
         scan()
-    finally: release_lock("condor-scanner")
+    finally:
+        release_lock("condor-scanner")
+
 
 if __name__ == "__main__":
     main()

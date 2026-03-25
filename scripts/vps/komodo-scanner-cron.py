@@ -580,11 +580,15 @@ def try_auto_entry(
         "create_position",
         {
             "strategyWalletAddress": target_strategy.get("wallet"),
-            "asset": asset,
-            "direction": direction,
-            "margin": margin,
-            "leverage": leverage,
-            "orderType": "limit",
+            "orders": [
+                {
+                    "coin": asset,
+                    "direction": direction,
+                    "leverage": int(leverage),
+                    "marginAmount": margin,
+                    "orderType": "MARKET",
+                }
+            ],
         },
     )
 

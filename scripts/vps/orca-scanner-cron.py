@@ -540,13 +540,16 @@ def try_auto_entry(signal: dict):
 
     entry_params = {
         "strategyWalletAddress": target_strategy.get("wallet"),
-        "asset": signal["asset"],
-        "direction": signal["direction"],
-        "margin": margin,
-        "leverage": leverage,
+        "orders": [
+            {
+                "coin": signal["asset"],
+                "direction": signal["direction"],
+                "leverage": int(leverage),
+                "marginAmount": margin,
+                "orderType": "MARKET" if order_type == "market" else "LIMIT",
+            }
+        ],
     }
-    if order_type == "limit":
-        entry_params["orderType"] = "ALO"
 
     entry_result = mcporter_call("create_position", entry_params)
 

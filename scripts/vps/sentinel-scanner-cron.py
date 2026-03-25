@@ -118,15 +118,23 @@ def find_rising_assets() -> list[dict]:
         dex = market.get("dex", "")
         rank = idx + 1
         direction = market.get("direction", market.get("side", "")).upper()
-        contribution = _safe_float(market.get("pct_of_top_traders_gain", market.get("contribution", 0)))
+        contribution = _safe_float(
+            market.get("pct_of_top_traders_gain", market.get("contribution", 0))
+        )
         contrib_change = _safe_float(
-            market.get("contribution_pct_change_4h", market.get("contributionPctChange4h", 0))
+            market.get(
+                "contribution_pct_change_4h", market.get("contributionPctChange4h", 0)
+            )
         )
         price_change = _safe_float(
             market.get("token_price_change_pct_4h", market.get("priceChange4hPct", 0))
         )
-        trader_count = _safe_int(market.get("trader_count", market.get("traderCount", 0)))
-        max_leverage = _safe_int(market.get("max_leverage", market.get("maxLeverage", 0)))
+        trader_count = _safe_int(
+            market.get("trader_count", market.get("traderCount", 0))
+        )
+        max_leverage = _safe_int(
+            market.get("max_leverage", market.get("maxLeverage", 0))
+        )
 
         if not token or token.lower().startswith("xyz:") or dex.lower() == "xyz":
             continue
@@ -145,17 +153,19 @@ def find_rising_assets() -> list[dict]:
         if direction == "SHORT" and price_change > 0:
             continue
 
-        candidates.append({
-            "token": token,
-            "dex": dex,
-            "rank": rank,
-            "direction": direction,
-            "contribution": contribution,
-            "contrib_change_4h": contrib_change,
-            "price_chg_4h": price_change,
-            "trader_count": trader_count,
-            "max_leverage": max_leverage,
-        })
+        candidates.append(
+            {
+                "token": token,
+                "dex": dex,
+                "rank": rank,
+                "direction": direction,
+                "contribution": contribution,
+                "contrib_change_4h": contrib_change,
+                "price_chg_4h": price_change,
+                "trader_count": trader_count,
+                "max_leverage": max_leverage,
+            }
+        )
 
     candidates.sort(key=lambda item: item["contrib_change_4h"], reverse=True)
     return candidates[:10]
@@ -168,12 +178,15 @@ def check_quality_traders(asset: str) -> list[dict]:
     seen_traders = set()
 
     for tier in (2, 1):
-        result = mcporter_call("leaderboard_get_momentum_events", {
-            "tier": tier,
-            "limit": 50,
-            "from": from_time,
-            "to": now.isoformat(),
-        })
+        result = mcporter_call(
+            "leaderboard_get_momentum_events",
+            {
+                "tier": tier,
+                "limit": 50,
+                "from": from_time,
+                "to": now.isoformat(),
+            },
+        )
         if "error" in result:
             continue
 
@@ -203,18 +216,30 @@ def check_quality_traders(asset: str) -> list[dict]:
             trp = str(tags.get("trp", "")).strip().lower()
             concentration = _safe_float(event.get("concentration", 0))
 
-            if tcs in QUALITY_TCS and trp in QUALITY_TRP and concentration >= MIN_CONCENTRATION:
-                confirmations.append({
-                    "trader_id": trader_id,
-                    "tier": tier,
-                    "tcs": tags.get("tcs", ""),
-                    "tas": tags.get("tas", ""),
-                    "trp": tags.get("trp", ""),
-                    "concentration": concentration,
-                    "delta_pnl": _safe_float(event.get("delta_pnl", event.get("deltaPnl", 0))),
-                    "position_direction": asset_match.get("direction", asset_match.get("side", "")).upper(),
-                    "position_leverage": _safe_float(asset_match.get("leverage", 0)),
-                })
+            if (
+                tcs in QUALITY_TCS
+                and trp in QUALITY_TRP
+                and concentration >= MIN_CONCENTRATION
+            ):
+                confirmations.append(
+                    {
+                        "trader_id": trader_id,
+                        "tier": tier,
+                        "tcs": tags.get("tcs", ""),
+                        "tas": tags.get("tas", ""),
+                        "trp": tags.get("trp", ""),
+                        "concentration": concentration,
+                        "delta_pnl": _safe_float(
+                            event.get("delta_pnl", event.get("deltaPnl", 0))
+                        ),
+                        "position_direction": asset_match.get(
+                            "direction", asset_match.get("side", "")
+                        ).upper(),
+                        "position_leverage": _safe_float(
+                            asset_match.get("leverage", 0)
+                        ),
+                    }
+                )
                 seen_traders.add(trader_id)
 
     return confirmations
@@ -237,18 +262,28 @@ def check_top_trader_presence(asset: str, top_traders: list[dict]) -> list[dict]
         if isinstance(top_markets, list):
             for market in top_markets:
                 if isinstance(market, dict):
-                    normalized.append(market.get("market", market.get("asset", market.get("token", ""))))
+                    normalized.append(
+                        market.get(
+                            "market", market.get("asset", market.get("token", ""))
+                        )
+                    )
                 else:
                     normalized.append(str(market))
         if asset in normalized:
-            appearances.append({
-                "rank": _safe_int(trader.get("rank", 999), 999),
-                "pnl": _safe_float(trader.get("unrealized_pnl", trader.get("unrealizedPnl", 0))),
-            })
+            appearances.append(
+                {
+                    "rank": _safe_int(trader.get("rank", 999), 999),
+                    "pnl": _safe_float(
+                        trader.get("unrealized_pnl", trader.get("unrealizedPnl", 0))
+                    ),
+                }
+            )
     return appearances
 
 
-def score_signal(candidate: dict, quality_traders: list[dict], top_appearances: list[dict]) -> tuple[int, list[str]]:
+def score_signal(
+    candidate: dict, quality_traders: list[dict], top_appearances: list[dict]
+) -> tuple[int, list[str]]:
     score = 0
     reasons = []
 
@@ -299,7 +334,8 @@ def score_signal(candidate: dict, quality_traders: list[dict], top_appearances: 
 
     avg_concentration = (
         sum(trader["concentration"] for trader in quality_traders) / quality_count
-        if quality_count else 0
+        if quality_count
+        else 0
     )
     if avg_concentration > 0.7:
         score += 1
@@ -356,11 +392,14 @@ def build_dsl_state(
             "deadWeightCutMin": dead_weight_min,
         },
         "tiers": dsl_cfg.get("tiers", []),
-        "stagnationTp": dsl_cfg.get("stagnationTp", {
-            "enabled": True,
-            "roeMin": 10,
-            "hwStaleMin": 40,
-        }),
+        "stagnationTp": dsl_cfg.get(
+            "stagnationTp",
+            {
+                "enabled": True,
+                "roeMin": 10,
+                "hwStaleMin": 40,
+            },
+        ),
         "_sentinel_version": "1.0",
     }
 
@@ -369,7 +408,8 @@ def count_daily_entries(strategy_key: str) -> int:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     journal = load_trade_journal()
     return sum(
-        1 for trade in journal
+        1
+        for trade in journal
         if trade.get("action") == "OPEN"
         and trade.get("strategyKey") == strategy_key
         and trade.get("entrySource") == "auto-sentinel"
@@ -405,7 +445,8 @@ def scan() -> bool:
 
     cooldown_min = config.get("risk", {}).get("cooldownMinutes", 120)
     candidates = [
-        candidate for candidate in find_rising_assets()
+        candidate
+        for candidate in find_rising_assets()
         if candidate["token"] not in active_assets
         and not is_rotation_cooled_down(candidate["token"], cooldown_min)
     ]
@@ -417,7 +458,8 @@ def scan() -> bool:
     for candidate in candidates[:5]:
         quality = check_quality_traders(candidate["token"])
         matching = [
-            trader for trader in quality
+            trader
+            for trader in quality
             if trader["position_direction"].upper() == candidate["direction"]
         ]
         if len(matching) < MIN_QUALITY_TRADERS:
@@ -425,15 +467,17 @@ def scan() -> bool:
 
         top_appearances = check_top_trader_presence(candidate["token"], top_traders)
         score, reasons = score_signal(candidate, matching, top_appearances)
-        signals.append({
-            "token": candidate["token"],
-            "direction": candidate["direction"],
-            "score": score,
-            "reasons": reasons,
-            "leaderboard": candidate,
-            "quality_traders": matching,
-            "top_trader_appearances": len(top_appearances),
-        })
+        signals.append(
+            {
+                "token": candidate["token"],
+                "direction": candidate["direction"],
+                "score": score,
+                "reasons": reasons,
+                "leaderboard": candidate,
+                "quality_traders": matching,
+                "top_trader_appearances": len(top_appearances),
+            }
+        )
 
     min_score = config.get("entry", {}).get("minScore", 8)
     signals = [signal for signal in signals if signal["score"] >= min_score]
@@ -464,7 +508,9 @@ def scan() -> bool:
 
     asset = best["token"]
     direction = best["direction"]
-    allowed_exposure, exposure = check_directional_exposure_limit(direction, margin, leverage)
+    allowed_exposure, exposure = check_directional_exposure_limit(
+        direction, margin, leverage
+    )
     if not allowed_exposure:
         log(
             f"SENTINEL: directional cap blocked {asset} {direction} "
@@ -473,21 +519,30 @@ def scan() -> bool:
         return False
 
     log(f"SENTINEL: entering {asset} {direction} score={best['score']}")
-    result = mcporter_call("create_position", {
-        "strategyWalletAddress": target_strategy.get("wallet"),
-        "asset": asset,
-        "direction": direction,
-        "margin": margin,
-        "leverage": leverage,
-        "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
-    })
+    result = mcporter_call(
+        "create_position",
+        {
+            "strategyWalletAddress": target_strategy.get("wallet"),
+            "orders": [
+                {
+                    "coin": asset,
+                    "direction": direction,
+                    "leverage": int(leverage),
+                    "marginAmount": margin,
+                    "orderType": "MARKET",
+                }
+            ],
+        },
+    )
     if "error" in result:
         log(f"SENTINEL: entry failed for {asset}: {result.get('error')}")
         return False
 
     entry_price = _safe_float(result.get("entryPrice", 0))
     size = _safe_float(result.get("size", 0))
-    dsl = build_dsl_state(asset, direction, best["score"], config, entry_price, leverage)
+    dsl = build_dsl_state(
+        asset, direction, best["score"], config, entry_price, leverage
+    )
     dsl["wallet"] = target_strategy.get("wallet")
     dsl["strategyId"] = target_strategy.get("strategyId")
     dsl["strategyKey"] = target_strategy["_key"]
@@ -501,7 +556,9 @@ def scan() -> bool:
         reasons=best["reasons"],
         sm_snapshot={
             "traderCount": best["leaderboard"].get("trader_count"),
-            "concentration": best["quality_traders"][0]["concentration"] if best["quality_traders"] else None,
+            "concentration": best["quality_traders"][0]["concentration"]
+            if best["quality_traders"]
+            else None,
         },
         setup={
             "qualityTraderCount": len(best["quality_traders"]),
@@ -519,33 +576,37 @@ def scan() -> bool:
         f"Margin: ${margin:.0f} | Lev: {leverage}x"
     )
 
-    record_trade({
-        "action": "OPEN",
-        "asset": asset,
-        "direction": direction,
-        "entryPrice": entry_price,
-        "size": size,
-        "margin": margin,
-        "leverage": leverage,
-        "strategyKey": target_strategy["_key"],
-        "entrySource": "auto-sentinel",
-        "entryMode": "SENTINEL",
-        "entryScore": best["score"],
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": asset,
+            "direction": direction,
+            "entryPrice": entry_price,
+            "size": size,
+            "margin": margin,
+            "leverage": leverage,
+            "strategyKey": target_strategy["_key"],
+            "entrySource": "auto-sentinel",
+            "entryMode": "SENTINEL",
+            "entryScore": best["score"],
+        }
+    )
 
-    add_pending_entry({
-        "asset": asset,
-        "direction": direction,
-        "autoEntered": True,
-        "strategyKey": target_strategy["_key"],
-        "entryPrice": entry_price,
-        "margin": margin,
-        "leverage": leverage,
-        "score": best["score"],
-        "source": "sentinel",
-        "mode": "SENTINEL",
-        "reasons": best["reasons"],
-    })
+    add_pending_entry(
+        {
+            "asset": asset,
+            "direction": direction,
+            "autoEntered": True,
+            "strategyKey": target_strategy["_key"],
+            "entryPrice": entry_price,
+            "margin": margin,
+            "leverage": leverage,
+            "score": best["score"],
+            "source": "sentinel",
+            "mode": "SENTINEL",
+            "reasons": best["reasons"],
+        }
+    )
     return True
 
 

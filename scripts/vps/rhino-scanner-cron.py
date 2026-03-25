@@ -69,7 +69,9 @@ def _safe_float(value, default=0.0) -> float:
 def price_momentum(candles: list[dict], n_bars: int = 1) -> float:
     if len(candles) < n_bars + 1:
         return 0.0
-    old = _safe_float(candles[-(n_bars + 1)].get("close", candles[-(n_bars + 1)].get("c", 0)))
+    old = _safe_float(
+        candles[-(n_bars + 1)].get("close", candles[-(n_bars + 1)].get("c", 0))
+    )
     new = _safe_float(candles[-1].get("close", candles[-1].get("c", 0)))
     if old == 0:
         return 0.0
@@ -94,9 +96,14 @@ def trend_structure(candles: list[dict], lookback: int = 6) -> tuple[str, float]
 def volume_ratio(candles: list[dict], lookback: int = 10) -> float:
     if len(candles) < lookback + 1:
         return 1.0
-    vols = [_safe_float(c.get("volume", c.get("v", c.get("vlm", 0)))) for c in candles[-(lookback + 1):-1]]
+    vols = [
+        _safe_float(c.get("volume", c.get("v", c.get("vlm", 0))))
+        for c in candles[-(lookback + 1) : -1]
+    ]
     avg = sum(vols) / len(vols) if vols else 1.0
-    latest = _safe_float(candles[-1].get("volume", candles[-1].get("v", candles[-1].get("vlm", 0))))
+    latest = _safe_float(
+        candles[-1].get("volume", candles[-1].get("v", candles[-1].get("vlm", 0)))
+    )
     return latest / avg if avg > 0 else 1.0
 
 
@@ -141,7 +148,9 @@ def get_top_assets(n: int = 10) -> list[dict]:
             continue
         oi_usd = oi * mark_px if mark_px > 0 else 0
         if oi_usd > 5_000_000 and vol > 0:
-            assets.append({"coin": coin, "oi_usd": oi_usd, "volume": vol, "price": mark_px})
+            assets.append(
+                {"coin": coin, "oi_usd": oi_usd, "volume": vol, "price": mark_px}
+            )
     assets.sort(key=lambda item: item["oi_usd"] + item["volume"], reverse=True)
     return assets[:n]
 
@@ -170,12 +179,15 @@ def get_sm_direction(coin: str) -> tuple[str | None, float]:
 
 
 def get_asset_data(coin: str, intervals: list[str]) -> dict | None:
-    result = mcporter_call("market_get_asset_data", {
-        "asset": coin,
-        "candle_intervals": intervals,
-        "include_funding": True,
-        "include_order_book": False,
-    })
+    result = mcporter_call(
+        "market_get_asset_data",
+        {
+            "asset": coin,
+            "candle_intervals": intervals,
+            "include_funding": True,
+            "include_order_book": False,
+        },
+    )
     if "error" in result:
         return None
     data = result.get("data", result)
@@ -195,7 +207,11 @@ def build_thesis(coin: str, entry_cfg: dict) -> dict | None:
     if len(candles_1h) < 8 or len(candles_4h) < 6:
         return None
 
-    price = _safe_float(candles_15m[-1].get("close", candles_15m[-1].get("c", 0))) if candles_15m else 0.0
+    price = (
+        _safe_float(candles_15m[-1].get("close", candles_15m[-1].get("c", 0)))
+        if candles_15m
+        else 0.0
+    )
     trend_4h, strength_4h = trend_structure(candles_4h)
     if trend_4h == "NEUTRAL":
         return None
@@ -229,7 +245,9 @@ def build_thesis(coin: str, entry_cfg: dict) -> dict | None:
     if (direction == "LONG" and funding < 0) or (direction == "SHORT" and funding > 0):
         score += 2
         reasons.append(f"funding_aligned_{funding:+.4f}")
-    elif (direction == "LONG" and funding > 0.008) or (direction == "SHORT" and funding < -0.005):
+    elif (direction == "LONG" and funding > 0.008) or (
+        direction == "SHORT" and funding < -0.005
+    ):
         score -= 1
         reasons.append("funding_crowded")
 
@@ -277,7 +295,9 @@ def get_current_price(coin: str) -> float | None:
     return _safe_float(data.get("markPx", data.get("price", 0))) or None
 
 
-def compute_roe(entry_price: float, current_price: float, direction: str, leverage: float) -> float:
+def compute_roe(
+    entry_price: float, current_price: float, direction: str, leverage: float
+) -> float:
     if entry_price <= 0 or current_price <= 0:
         return 0.0
     if direction.upper() == "LONG":
@@ -285,7 +305,9 @@ def compute_roe(entry_price: float, current_price: float, direction: str, levera
     return ((entry_price - current_price) / entry_price) * leverage * 100
 
 
-def evaluate_add(coin: str, direction: str, current_roe: float, current_stage: int, entry_cfg: dict) -> tuple[bool, dict | None, list[str]]:
+def evaluate_add(
+    coin: str, direction: str, current_roe: float, current_stage: int, entry_cfg: dict
+) -> tuple[bool, dict | None, list[str]]:
     pyramid_cfg = entry_cfg.get("pyramid", {})
     if not pyramid_cfg.get("enabled", True):
         return False, None, ["pyramid_disabled"]
@@ -328,7 +350,14 @@ def evaluate_add(coin: str, direction: str, current_roe: float, current_stage: i
     return True, next_stage, reasons
 
 
-def build_dsl_state(coin: str, direction: str, score: int, config: dict, entry_price: float, leverage: float) -> dict:
+def build_dsl_state(
+    coin: str,
+    direction: str,
+    score: int,
+    config: dict,
+    entry_price: float,
+    leverage: float,
+) -> dict:
     conviction = config.get("dsl", {}).get("convictionTiers", [])
     selected = conviction[-1] if conviction else {}
     for tier in conviction:
@@ -360,11 +389,14 @@ def build_dsl_state(coin: str, direction: str, score: int, config: dict, entry_p
             "deadWeightCutMin": selected.get("deadWeightCutMin", 0),
         },
         "tiers": dsl_cfg.get("tiers", []),
-        "stagnationTp": dsl_cfg.get("stagnationTp", {
-            "enabled": True,
-            "roeMin": 15,
-            "hwStaleMin": 90,
-        }),
+        "stagnationTp": dsl_cfg.get(
+            "stagnationTp",
+            {
+                "enabled": True,
+                "roeMin": 15,
+                "hwStaleMin": 90,
+            },
+        ),
         "_rhino_version": "1.0",
     }
 
@@ -373,7 +405,8 @@ def count_daily_rhino_entries(strategy_key: str) -> int:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     journal = load_trade_journal()
     return sum(
-        1 for trade in journal
+        1
+        for trade in journal
         if trade.get("action") == "OPEN"
         and trade.get("strategyKey") == strategy_key
         and trade.get("entrySource") == "auto-rhino"
@@ -381,7 +414,14 @@ def count_daily_rhino_entries(strategy_key: str) -> int:
     )
 
 
-def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dict, reasons: list[str], config: dict) -> bool:
+def execute_add(
+    strategy: dict,
+    dsl_state: dict,
+    pyramid_state: dict,
+    stage: dict,
+    reasons: list[str],
+    config: dict,
+) -> bool:
     max_margin = _safe_float(pyramid_state.get("maxMargin", 0))
     if max_margin <= 0:
         return False
@@ -389,7 +429,9 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
     if add_margin <= 0:
         return False
 
-    leverage = _safe_float(dsl_state.get("leverage", config.get("leverage", {}).get("default", 10)))
+    leverage = _safe_float(
+        dsl_state.get("leverage", config.get("leverage", {}).get("default", 10))
+    )
     allowed_exposure, exposure = check_directional_exposure_limit(
         dsl_state["direction"], add_margin, leverage, additional_position=False
     )
@@ -399,24 +441,38 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
             f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
         )
         return False
-    result = mcporter_call("create_position", {
-        "strategyId": strategy.get("strategyId"),
-        "asset": dsl_state["asset"],
-        "direction": dsl_state["direction"],
-        "margin": add_margin,
-        "leverage": leverage,
-        "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
-    })
+    result = mcporter_call(
+        "create_position",
+        {
+            "strategyWalletAddress": strategy.get("wallet"),
+            "orders": [
+                {
+                    "coin": dsl_state["asset"],
+                    "direction": dsl_state["direction"],
+                    "leverage": int(leverage),
+                    "marginAmount": add_margin,
+                    "orderType": "MARKET",
+                }
+            ],
+        },
+    )
     if "error" in result:
         log(f"RHINO add failed for {dsl_state['asset']}: {result.get('error')}")
         return False
 
     pyramid_state["stage"] = stage["stage"]
     pyramid_state["lastAddedAt"] = now_iso()
-    pyramid_state["currentMargin"] = round(_safe_float(pyramid_state.get("currentMargin", 0)) + add_margin, 2)
+    pyramid_state["currentMargin"] = round(
+        _safe_float(pyramid_state.get("currentMargin", 0)) + add_margin, 2
+    )
 
-    dsl_state["entryPrice"] = _safe_float(result.get("entryPrice", dsl_state.get("entryPrice", 0)), dsl_state.get("entryPrice", 0))
-    dsl_state["size"] = _safe_float(result.get("size", dsl_state.get("size", 0)), dsl_state.get("size", 0))
+    dsl_state["entryPrice"] = _safe_float(
+        result.get("entryPrice", dsl_state.get("entryPrice", 0)),
+        dsl_state.get("entryPrice", 0),
+    )
+    dsl_state["size"] = _safe_float(
+        result.get("size", dsl_state.get("size", 0)), dsl_state.get("size", 0)
+    )
     dsl_state["entryMode"] = f"RHINO_STAGE_{stage['stage']}"
     dsl_state["entryScore"] = max(int(dsl_state.get("entryScore", 0)), 10)
     attach_position_playbook(
@@ -435,32 +491,36 @@ def execute_add(strategy: dict, dsl_state: dict, pyramid_state: dict, stage: dic
         f"Added: ${add_margin:.0f} | Total margin: ${pyramid_state['currentMargin']:.0f}\n"
         f"Reasons: {', '.join(reasons)}"
     )
-    record_trade({
-        "action": "OPEN",
-        "asset": dsl_state["asset"],
-        "direction": dsl_state["direction"],
-        "entryPrice": dsl_state["entryPrice"],
-        "size": dsl_state.get("size", 0),
-        "margin": add_margin,
-        "leverage": leverage,
-        "strategyKey": strategy["_key"],
-        "entrySource": "auto-rhino",
-        "entryMode": f"RHINO_STAGE_{stage['stage']}",
-        "entryScore": dsl_state.get("entryScore", 0),
-    })
-    add_pending_entry({
-        "asset": dsl_state["asset"],
-        "direction": dsl_state["direction"],
-        "autoEntered": True,
-        "strategyKey": strategy["_key"],
-        "entryPrice": dsl_state["entryPrice"],
-        "margin": add_margin,
-        "leverage": leverage,
-        "score": dsl_state.get("entryScore", 0),
-        "source": "rhino",
-        "mode": f"RHINO_STAGE_{stage['stage']}",
-        "reasons": reasons,
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": dsl_state["asset"],
+            "direction": dsl_state["direction"],
+            "entryPrice": dsl_state["entryPrice"],
+            "size": dsl_state.get("size", 0),
+            "margin": add_margin,
+            "leverage": leverage,
+            "strategyKey": strategy["_key"],
+            "entrySource": "auto-rhino",
+            "entryMode": f"RHINO_STAGE_{stage['stage']}",
+            "entryScore": dsl_state.get("entryScore", 0),
+        }
+    )
+    add_pending_entry(
+        {
+            "asset": dsl_state["asset"],
+            "direction": dsl_state["direction"],
+            "autoEntered": True,
+            "strategyKey": strategy["_key"],
+            "entryPrice": dsl_state["entryPrice"],
+            "margin": add_margin,
+            "leverage": leverage,
+            "score": dsl_state.get("entryScore", 0),
+            "source": "rhino",
+            "mode": f"RHINO_STAGE_{stage['stage']}",
+            "reasons": reasons,
+        }
+    )
     return True
 
 
@@ -473,10 +533,14 @@ def effective_daily_entry_limit(config: dict, strategy_key: str) -> int:
         for trade in load_trade_journal()
         if trade.get("action") == "CLOSE"
         and trade.get("strategyKey") == strategy_key
-        and trade.get("recordedAt", "").startswith(datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+        and trade.get("recordedAt", "").startswith(
+            datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        )
     )
     effective = dynamic.get("baseMax", 3)
-    for threshold in sorted(dynamic.get("unlockThresholds", []), key=lambda x: x.get("pnl", 0)):
+    for threshold in sorted(
+        dynamic.get("unlockThresholds", []), key=lambda x: x.get("pnl", 0)
+    ):
         if daily_pnl >= threshold.get("pnl", 0):
             effective = threshold.get("maxEntries", effective)
     return min(effective, dynamic.get("absoluteMax", effective))
@@ -509,7 +573,13 @@ def scan() -> bool:
                 pos.get("direction", "LONG"),
                 _safe_float(pos.get("leverage", 1)),
             )
-            should_add, stage, reasons = evaluate_add(asset, pos.get("direction", "LONG"), roe, current_stage, config.get("entry", {}))
+            should_add, stage, reasons = evaluate_add(
+                asset,
+                pos.get("direction", "LONG"),
+                roe,
+                current_stage,
+                config.get("entry", {}),
+            )
             if should_add and stage:
                 if execute_add(strategy, pos, pyramid_state, stage, reasons, config):
                     state["pyramids"] = pyramids
@@ -527,7 +597,9 @@ def scan() -> bool:
         save_state(state)
         return False
 
-    if count_daily_rhino_entries(target_strategy["_key"]) >= effective_daily_entry_limit(config, target_strategy["_key"]):
+    if count_daily_rhino_entries(
+        target_strategy["_key"]
+    ) >= effective_daily_entry_limit(config, target_strategy["_key"]):
         save_state(state)
         return False
 
@@ -580,14 +652,19 @@ def scan() -> bool:
         save_state(state)
         return False
 
-    result = mcporter_call("create_position", {
-        "strategyWalletAddress": target_strategy.get("wallet"),
-        "asset": best["coin"],
-        "direction": best["direction"],
-        "margin": scout_margin,
-        "leverage": leverage,
-        "orderType": config.get("execution", {}).get("entryOrderType", "FEE_OPTIMIZED_LIMIT"),
-    })
+    result = mcporter_call(
+        "create_position",
+        {
+            "strategyWalletAddress": target_strategy.get("wallet"),
+            "asset": best["coin"],
+            "direction": best["direction"],
+            "margin": scout_margin,
+            "leverage": leverage,
+            "orderType": config.get("execution", {}).get(
+                "entryOrderType", "FEE_OPTIMIZED_LIMIT"
+            ),
+        },
+    )
     if "error" in result:
         log(f"RHINO scout entry failed for {best['coin']}: {result.get('error')}")
         save_state(state)
@@ -595,7 +672,9 @@ def scan() -> bool:
 
     entry_price = _safe_float(result.get("entryPrice", 0))
     size = _safe_float(result.get("size", 0))
-    dsl = build_dsl_state(best["coin"], best["direction"], best["score"], config, entry_price, leverage)
+    dsl = build_dsl_state(
+        best["coin"], best["direction"], best["score"], config, entry_price, leverage
+    )
     dsl["wallet"] = target_strategy.get("wallet")
     dsl["strategyId"] = target_strategy.get("strategyId")
     dsl["strategyKey"] = target_strategy["_key"]
@@ -630,32 +709,36 @@ def scan() -> bool:
         f"Reasons: {', '.join(best['reasons'][:4])}\n"
         f"Adds at +10% and +20% ROE if thesis holds"
     )
-    record_trade({
-        "action": "OPEN",
-        "asset": best["coin"],
-        "direction": best["direction"],
-        "entryPrice": entry_price,
-        "size": size,
-        "margin": scout_margin,
-        "leverage": leverage,
-        "strategyKey": target_strategy["_key"],
-        "entrySource": "auto-rhino",
-        "entryMode": "RHINO_SCOUT",
-        "entryScore": best["score"],
-    })
-    add_pending_entry({
-        "asset": best["coin"],
-        "direction": best["direction"],
-        "autoEntered": True,
-        "strategyKey": target_strategy["_key"],
-        "entryPrice": entry_price,
-        "margin": scout_margin,
-        "leverage": leverage,
-        "score": best["score"],
-        "source": "rhino",
-        "mode": "RHINO_SCOUT",
-        "reasons": best["reasons"],
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": best["coin"],
+            "direction": best["direction"],
+            "entryPrice": entry_price,
+            "size": size,
+            "margin": scout_margin,
+            "leverage": leverage,
+            "strategyKey": target_strategy["_key"],
+            "entrySource": "auto-rhino",
+            "entryMode": "RHINO_SCOUT",
+            "entryScore": best["score"],
+        }
+    )
+    add_pending_entry(
+        {
+            "asset": best["coin"],
+            "direction": best["direction"],
+            "autoEntered": True,
+            "strategyKey": target_strategy["_key"],
+            "entryPrice": entry_price,
+            "margin": scout_margin,
+            "leverage": leverage,
+            "score": best["score"],
+            "source": "rhino",
+            "mode": "RHINO_SCOUT",
+            "reasons": best["reasons"],
+        }
+    )
     git_sync("auto: RHINO scan")
     return True
 
