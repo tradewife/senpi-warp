@@ -42,6 +42,7 @@ LOCKFILE_DIR = Path("/tmp/senpi-locks")
 # File I/O
 # ---------------------------------------------------------------------------
 
+
 def load_json(path: Path, default=None):
     """Load a JSON file, returning `default` if missing or corrupt."""
     try:
@@ -79,6 +80,7 @@ def now_iso() -> str:
 # Risk regime
 # ---------------------------------------------------------------------------
 
+
 def load_regime() -> dict:
     """Return the full regime config."""
     return load_json(RISK_REGIME_FILE)
@@ -104,7 +106,11 @@ def current_scanner_profile(scanner: str) -> dict:
         return profiles.get(scanner_key, {})
 
     playbook = load_playbook_state()
-    return playbook.get("scannerProfiles", {}).get(scanner_key, {}) if isinstance(playbook, dict) else {}
+    return (
+        playbook.get("scannerProfiles", {}).get(scanner_key, {})
+        if isinstance(playbook, dict)
+        else {}
+    )
 
 
 def current_brain_policy() -> dict:
@@ -135,11 +141,15 @@ def _apply_brain_policy(params: dict) -> dict:
 
     max_leverage_cap = policy.get("maxLeverageCap")
     if isinstance(max_leverage_cap, (int, float)) and "maxLeverageCrypto" in effective:
-        effective["maxLeverageCrypto"] = min(float(effective["maxLeverageCrypto"]), float(max_leverage_cap))
+        effective["maxLeverageCrypto"] = min(
+            float(effective["maxLeverageCrypto"]), float(max_leverage_cap)
+        )
 
     alloc_pct_cap = policy.get("allocPctCap")
     if isinstance(alloc_pct_cap, (int, float)) and "allocPctPerSlot" in effective:
-        effective["allocPctPerSlot"] = min(float(effective["allocPctPerSlot"]), float(alloc_pct_cap))
+        effective["allocPctPerSlot"] = min(
+            float(effective["allocPctPerSlot"]), float(alloc_pct_cap)
+        )
 
     if policy:
         effective["_brainPolicy"] = {
@@ -184,6 +194,7 @@ def set_risk_mode(mode: str, reason: str, updated_by: str = "vps-script"):
 # Strategy registry
 # ---------------------------------------------------------------------------
 
+
 def load_strategies() -> dict:
     return load_json(STRATEGIES_FILE)
 
@@ -225,7 +236,9 @@ def get_all_open_positions() -> list[dict]:
     return positions
 
 
-def compute_roe_pct(entry_price: float, current_price: float, direction: str, leverage: float) -> float:
+def compute_roe_pct(
+    entry_price: float, current_price: float, direction: str, leverage: float
+) -> float:
     """Compute leverage-adjusted ROE percentage."""
     if entry_price <= 0 or leverage <= 0:
         return 0.0
@@ -268,7 +281,9 @@ def directional_exposure_snapshot(
         elif direction == "SHORT":
             short_notional += notional
 
-    additional_notional = max(0.0, float(additional_margin or 0) * max(float(additional_leverage or 0), 1.0))
+    additional_notional = max(
+        0.0, float(additional_margin or 0) * max(float(additional_leverage or 0), 1.0)
+    )
     projected_long = long_notional
     projected_short = short_notional
     if additional_direction:
@@ -279,7 +294,9 @@ def directional_exposure_snapshot(
 
     current_total = long_notional + short_notional
     projected_total = projected_long + projected_short
-    projected_open_positions = len(positions) + (1 if additional_notional > 0 and additional_position else 0)
+    projected_open_positions = len(positions) + (
+        1 if additional_notional > 0 and additional_position else 0
+    )
     return {
         "currentOpenPositions": len(positions),
         "projectedOpenPositions": projected_open_positions,
@@ -289,8 +306,12 @@ def directional_exposure_snapshot(
         "projectedLongNotional": round(projected_long, 2),
         "projectedShortNotional": round(projected_short, 2),
         "projectedTotalNotional": round(projected_total, 2),
-        "projectedLongPct": round(projected_long / projected_total * 100, 2) if projected_total > 0 else 0.0,
-        "projectedShortPct": round(projected_short / projected_total * 100, 2) if projected_total > 0 else 0.0,
+        "projectedLongPct": round(projected_long / projected_total * 100, 2)
+        if projected_total > 0
+        else 0.0,
+        "projectedShortPct": round(projected_short / projected_total * 100, 2)
+        if projected_total > 0
+        else 0.0,
     }
 
 
@@ -315,7 +336,11 @@ def check_directional_exposure_limit(
         additional_leverage=additional_leverage,
         additional_position=additional_position,
     )
-    offending_pct = snapshot["projectedLongPct"] if direction.upper() == "LONG" else snapshot["projectedShortPct"]
+    offending_pct = (
+        snapshot["projectedLongPct"]
+        if direction.upper() == "LONG"
+        else snapshot["projectedShortPct"]
+    )
     snapshot["capPct"] = cap_pct
     snapshot["offendingPct"] = offending_pct
 
@@ -338,9 +363,13 @@ def build_position_playbook_metadata(
     scanner_key = str(scanner or "unknown").lower()
     profile = current_scanner_profile(scanner_key)
     signal_policy = load_brain_state().get("signalPolicy", {})
-    priority = profile.get("priority", signal_policy.get("priorityByScanner", {}).get(scanner_key, 50))
+    priority = profile.get(
+        "priority", signal_policy.get("priorityByScanner", {}).get(scanner_key, 50)
+    )
     fast_scanners = {"orca", "komodo", "sentinel", "shark", "rhino"}
-    dead_weight_min = profile.get("deadWeightMin", 20 if scanner_key in fast_scanners else 45)
+    dead_weight_min = profile.get(
+        "deadWeightMin", 20 if scanner_key in fast_scanners else 45
+    )
     return {
         "schemaVersion": "1.0",
         "scanner": scanner_key,
@@ -447,8 +476,11 @@ def count_open_slots(strategy: dict) -> int:
             and t.get("strategyKey") == strategy["_key"]
             and t.get("recordedAt", "").startswith(today)
         )
-        for threshold in sorted(dynamic.get("unlockThresholds", []),
-                                key=lambda x: x.get("pnl", 0), reverse=True):
+        for threshold in sorted(
+            dynamic.get("unlockThresholds", []),
+            key=lambda x: x.get("pnl", 0),
+            reverse=True,
+        ):
             if daily_pnl >= threshold.get("pnl", 0):
                 max_slots = min(threshold.get("maxEntries", max_slots), absolute_max)
                 break
@@ -460,6 +492,7 @@ def count_open_slots(strategy: dict) -> int:
 # ---------------------------------------------------------------------------
 # Pending entries queue
 # ---------------------------------------------------------------------------
+
 
 def load_pending_entries() -> list[dict]:
     return load_json(PENDING_ENTRIES_FILE, default=[])
@@ -476,7 +509,13 @@ def add_pending_entry(entry: dict):
     brain = load_brain_state()
     policy = brain.get("executionPolicy", {}) if isinstance(brain, dict) else {}
     signal_policy = brain.get("signalPolicy", {}) if isinstance(brain, dict) else {}
-    scanner = (entry.get("scanner") or entry.get("source") or entry.get("entryMode") or entry.get("mode") or "unknown")
+    scanner = (
+        entry.get("scanner")
+        or entry.get("source")
+        or entry.get("entryMode")
+        or entry.get("mode")
+        or "unknown"
+    )
     scanner_key = str(scanner).lower()
     entry["brainContext"] = {
         "brainAt": brain.get("generatedAt"),
@@ -493,6 +532,7 @@ def add_pending_entry(entry: dict):
 # Trade journal
 # ---------------------------------------------------------------------------
 
+
 def load_trade_journal() -> list[dict]:
     return load_json(TRADE_JOURNAL_FILE, default=[])
 
@@ -507,7 +547,7 @@ def record_trade(trade: dict):
 
 def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
     """Check if an asset was closed too recently (rotation cooldown).
-    
+
     Per senpi-skills v6.3: prevents re-entry within 45 min of closing
     a position on the same asset, avoiding churn from close+reopen cycles.
     Returns True if the asset is still in cooldown (should NOT enter).
@@ -533,14 +573,17 @@ def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
 # Senpi MCP direct HTTP calls (bypasses mcporter)
 # ---------------------------------------------------------------------------
 
+
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
     Call a Senpi MCP tool via mcporter CLI (bypassing direct HTTP to match upstream).
     Returns parsed JSON response or dict with 'error' key on failure.
+    Retries up to 3 times on transient errors (connection closed, timeout).
     """
     import subprocess
     import json
-    
+    import time
+
     inner_cmd = ["mcporter", "call", f"senpi.{tool}"]
     for k, v in args.items():
         if isinstance(v, (list, dict)):
@@ -553,21 +596,54 @@ def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     # Wrap with `timeout` command for reliable kill
     cmd = ["timeout", "--signal=KILL", str(timeout)] + inner_cmd
 
-    try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = proc.communicate()
-        if proc.returncode == 137:  # killed by timeout
-            return {"error": "timeout", "success": False}
-        if proc.returncode != 0:
-            return {"error": stderr.strip(), "success": False}
-        return json.loads(stdout)
-    except json.JSONDecodeError:
-        return {"error": f"invalid json: {stdout[:200]}", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
+    last_result = {}
+    for attempt in range(3):
+        try:
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            stdout, stderr = proc.communicate()
+            if proc.returncode == 137:  # killed by timeout
+                last_result = {"error": "timeout", "success": False}
+                if attempt < 2:
+                    time.sleep(1)
+                    continue
+                return last_result
+            if proc.returncode != 0:
+                err = stderr.strip()
+                last_result = {"error": err, "success": False}
+                # Retry on transient MCP errors
+                if (
+                    "Connection closed" in err
+                    or "appears offline" in err
+                    or "timeout" in err.lower()
+                ):
+                    if attempt < 2:
+                        time.sleep(1.5)
+                        continue
+                return last_result
+            return json.loads(stdout)
+        except json.JSONDecodeError:
+            return {
+                "error": f"invalid json: {stdout[:200] if stdout else 'empty'}",
+                "success": False,
+            }
+        except Exception as e:
+            last_result = {"error": str(e), "success": False}
+            if attempt < 2:
+                time.sleep(1)
+                continue
+    return last_result
 
 
-def mcporter_call_retry(tool: str, args: dict, *, timeout: int = 30, max_attempts: int = 4, delay: float = 1.0) -> dict:
+def mcporter_call_retry(
+    tool: str,
+    args: dict,
+    *,
+    timeout: int = 30,
+    max_attempts: int = 4,
+    delay: float = 1.0,
+) -> dict:
     """mcporter_call with retry logic.
 
     Retries up to max_attempts times with delay between attempts.
@@ -592,6 +668,7 @@ def mcporter_call_retry(tool: str, args: dict, *, timeout: int = 30, max_attempt
 # Locking (prevent cron overlap)
 # ---------------------------------------------------------------------------
 
+
 def acquire_lock(name: str) -> bool:
     """Simple file-based lock. Returns True if acquired."""
     LOCKFILE_DIR.mkdir(parents=True, exist_ok=True)
@@ -615,26 +692,35 @@ def release_lock(name: str):
 # Git sync
 # ---------------------------------------------------------------------------
 
+
 def git_sync(message: str = "auto: state update"):
     """Stage all changes in STATE_DIR and push. Uses a global lock to prevent concurrent pushes."""
     if not acquire_lock("git-sync"):
         log("git sync: another sync in progress — skipping")
         return
     try:
-        subprocess.run(["git", "add", "-A"], cwd=STATE_DIR, capture_output=True, timeout=10)
+        subprocess.run(
+            ["git", "add", "-A"], cwd=STATE_DIR, capture_output=True, timeout=10
+        )
         # Only commit if there are changes
         result = subprocess.run(
             ["git", "diff", "--cached", "--quiet"],
-            cwd=STATE_DIR, capture_output=True, timeout=10,
+            cwd=STATE_DIR,
+            capture_output=True,
+            timeout=10,
         )
         if result.returncode != 0:  # There are staged changes
             subprocess.run(
                 ["git", "commit", "-m", message, "--no-verify"],
-                cwd=STATE_DIR, capture_output=True, timeout=15,
+                cwd=STATE_DIR,
+                capture_output=True,
+                timeout=15,
             )
             subprocess.run(
                 ["git", "push", "--quiet"],
-                cwd=STATE_DIR, capture_output=True, timeout=30,
+                cwd=STATE_DIR,
+                capture_output=True,
+                timeout=30,
             )
     except subprocess.TimeoutExpired:
         log("git sync timeout — will retry next cycle")
@@ -647,7 +733,9 @@ def git_pull():
     try:
         subprocess.run(
             ["git", "pull", "--rebase", "--quiet"],
-            cwd=STATE_DIR, capture_output=True, timeout=30,
+            cwd=STATE_DIR,
+            capture_output=True,
+            timeout=30,
         )
     except subprocess.TimeoutExpired:
         log("git pull timeout")
@@ -667,30 +755,32 @@ def record_heartbeat(cron_name: str):
     save_json(HEARTBEAT_FILE, heartbeats)
 
 
-def check_stale_heartbeats(max_stale_minutes: dict[str, int] | None = None) -> list[str]:
+def check_stale_heartbeats(
+    max_stale_minutes: dict[str, int] | None = None,
+) -> list[str]:
     """Return list of cron names that haven't run within their expected window.
-    
+
     max_stale_minutes maps cron name → max minutes before considered stale.
     Defaults to 2x the expected interval for safety margin.
     """
     defaults = {
-        "orca": 3,       # runs every 60s, stale after 3 min
-        "mantis": 4,     # runs every 90s, stale after 4 min
-        "fox": 4,        # runs every 90s, stale after 4 min
-        "komodo": 12,    # runs every 5min, stale after 12 min
-        "condor": 8,     # runs every 3min, stale after 8 min
-        "polar": 8,      # runs every 3min, stale after 8 min
+        "orca": 3,  # runs every 60s, stale after 3 min
+        "mantis": 4,  # runs every 90s, stale after 4 min
+        "fox": 4,  # runs every 90s, stale after 4 min
+        "komodo": 12,  # runs every 5min, stale after 12 min
+        "condor": 8,  # runs every 3min, stale after 8 min
+        "polar": 8,  # runs every 3min, stale after 8 min
         # PAUSED: barracuda — removed from schedule
         # PAUSED: bison     — removed from schedule
         # PAUSED: shark     — Senpi paused (v1.0, -4.3% ROI)
-        "rhino": 8,      # runs every 3min, stale after 8 min
-        "sentinel": 8,   # runs every 3min, stale after 8 min
-        "dsl-runner": 8, # runs every 3min, stale after 8 min
-        "sm-flip": 12,   # runs every 5min, stale after 12 min
+        "rhino": 8,  # runs every 3min, stale after 8 min
+        "sentinel": 8,  # runs every 3min, stale after 8 min
+        "dsl-runner": 8,  # runs every 3min, stale after 8 min
+        "sm-flip": 12,  # runs every 5min, stale after 12 min
         "watchdog": 12,  # runs every 5min, stale after 12 min
-        "risk-arbiter": 3, # runs every 30s, stale after 3 min
-        "arena": 35,     # runs every 15min, stale after 35 min
-        "brain": 12,     # runs every 5min, stale after 12 min
+        "risk-arbiter": 3,  # runs every 30s, stale after 3 min
+        "arena": 35,  # runs every 15min, stale after 35 min
+        "brain": 12,  # runs every 5min, stale after 12 min
     }
     if max_stale_minutes:
         defaults.update(max_stale_minutes)
@@ -717,6 +807,7 @@ def check_stale_heartbeats(max_stale_minutes: dict[str, int] | None = None) -> l
 # Telegram
 # ---------------------------------------------------------------------------
 
+
 def send_telegram(message: str):
     """Send a Telegram alert. Reads token and chat_id from env."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -725,9 +816,14 @@ def send_telegram(message: str):
         return
     try:
         import urllib.request
+
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        data = json.dumps({"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}).encode()
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        data = json.dumps(
+            {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+        ).encode()
+        req = urllib.request.Request(
+            url, data=data, headers={"Content-Type": "application/json"}
+        )
         urllib.request.urlopen(req, timeout=10)
     except Exception as e:
         log(f"Telegram send failed: {e}")
@@ -736,6 +832,7 @@ def send_telegram(message: str):
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
+
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).strftime("%H:%M:%S")
