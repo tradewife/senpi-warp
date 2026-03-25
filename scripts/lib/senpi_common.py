@@ -13,9 +13,31 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Paths — resolved relative to SENPI_WAIFU_DIR env var or /opt/senpi/senpi-waifu
-# ---------------------------------------------------------------------------
+
+def _load_env_file():
+    """Load .env file from SENPI_WAIFU_DIR or project root into os.environ."""
+    env_paths = []
+    waifu_dir = os.environ.get("SENPI_WAIFU_DIR", "")
+    if waifu_dir:
+        env_paths.append(Path(waifu_dir) / ".env")
+    env_paths.append(Path(__file__).parent.parent.parent / ".env")
+    for env_file in env_paths:
+        if env_file.exists():
+            for line in env_file.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, _, val = line.partition("=")
+                    key = key.strip()
+                    val = val.strip().strip('"').strip("'")
+                    if key and key not in os.environ:
+                        os.environ[key] = val
+            break
+
+
+_load_env_file()
+
 
 STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/opt/senpi/senpi-waifu"))
 CONFIG_DIR = STATE_DIR / "config"
@@ -567,6 +589,59 @@ def is_rotation_cooled_down(asset: str, cooldown_minutes: int = 45) -> bool:
         except (ValueError, TypeError):
             continue
     return False
+
+
+# ---------------------------------------------------------------------------
+# Hard safety gates (non-negotiable)
+# ---------------------------------------------------------------------------
+
+# Default guardrails — used if globalGuardrails is missing from risk-regime.json
+DEFAULT_GLOBAL_GUARDRAILS = {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": ["xyz:"],
+}
+
+
+def load_global_guardrails() -> dict:
+    """Load globalGuardrails from risk-regime.json, falling back to defaults."""
+    regime = load_regime()
+    guardrails = regime.get("globalGuardrails", {})
+    merged = dict(DEFAULT_GLOBAL_GUARDRAILS)
+    merged.update({k: v for k, v in guardrails.items() if v is not None})
+    return merged
+
+
+def clamp_leverage(leverage: float) -> int:
+    """Clamp leverage to the hard 7-10x band. Returns clamped integer."""
+    guardrails = load_global_guardrails()
+    min_lev = int(guardrails.get("minLeverage", 7))
+    max_lev = int(guardrails.get("maxLeverage", 10))
+    return max(min_lev, min(max_lev, int(leverage)))
+
+
+def is_asset_banned(asset: str) -> bool:
+    """Check if an asset is banned (XYZ equities or other configured bans)."""
+    guardrails = load_global_guardrails()
+    prefixes = guardrails.get("bannedAssetPrefixes", ["xyz:"])
+    asset_lower = str(asset).lower()
+    for prefix in prefixes:
+        if asset_lower.startswith(prefix.lower()):
+            return True
+    return False
+
+
+def check_hard_cooldown(asset: str) -> bool:
+    """Check 120-minute per-asset cooldown. Returns True if STILL IN COOLDOWN (should NOT enter)."""
+    guardrails = load_global_guardrails()
+    cooldown_min = int(guardrails.get("perAssetCooldownMinutes", 120))
+    return is_rotation_cooled_down(asset, cooldown_min)
 
 
 # ---------------------------------------------------------------------------

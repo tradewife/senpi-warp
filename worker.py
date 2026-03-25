@@ -37,20 +37,26 @@ STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 SKILLS_DIR = Path(os.environ.get("SENPI_SKILLS_DIR", "/opt/senpi/senpi-skills"))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "tradewife/senpi-waifu")
-# Read Senpi auth token: prefer SENPIAUTHTOKEN, then SENPI_API_KEY, then SENPI_AUTH_TOKEN
-SENPIAUTHTOKEN = os.environ.get("SENPIAUTHTOKEN", "").strip()
-SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "").strip()
+# Read Senpi auth token: prefer SENPI_AUTH_TOKEN (official), then SENPI_API_KEY, then SENPIAUTHTOKEN (legacy)
 SENPI_AUTH_TOKEN = os.environ.get("SENPI_AUTH_TOKEN", "").strip()
-SENPI_TOKEN = SENPIAUTHTOKEN or SENPI_API_KEY or SENPI_AUTH_TOKEN
+SENPI_API_KEY = os.environ.get("SENPI_API_KEY", "").strip()
+SENPIAUTHTOKEN = os.environ.get("SENPIAUTHTOKEN", "").strip()
+SENPI_TOKEN = SENPI_AUTH_TOKEN or SENPI_API_KEY or SENPIAUTHTOKEN
 
-# Propagate key env vars to child processes — ensure both env var names are set
+# Propagate key env vars to child processes — ensure all token env var names are set
 CHILD_ENV = {
     **os.environ,
     "SENPI_WAIFU_DIR": str(STATE_DIR),
     "SENPI_SKILLS_DIR": str(SKILLS_DIR),
-    "SENPI_API_KEY": SENPI_API_KEY,
-    "SENPI_AUTH_TOKEN": SENPI_API_KEY,
 }
+if SENPI_TOKEN:
+    CHILD_ENV.update(
+        {
+            "SENPIAUTHTOKEN": SENPI_TOKEN,
+            "SENPI_API_KEY": SENPI_TOKEN,
+            "SENPI_AUTH_TOKEN": SENPI_TOKEN,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -213,17 +219,6 @@ def main():
     for subdir in ("outputs", "state", "memory"):
         (STATE_DIR / subdir).mkdir(parents=True, exist_ok=True)
     print(f"[startup] Ensured directories: outputs, state, memory under {STATE_DIR}")
-
-    # Clear stale pending entries on startup to prevent brain feedback loop
-    pending_file = STATE_DIR / "state" / "pending-entries.json"
-    try:
-        import json
-
-        with open(pending_file, "w") as f:
-            json.dump([], f)
-        print("[startup] Cleared pending-entries.json")
-    except Exception:
-        pass
 
     setup_git()
     setup_mcporter()

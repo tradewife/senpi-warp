@@ -10,3 +10,6 @@ python-multipart>=0.0.9
 
 # Telegram bot
 python-telegram-bot>=21.0
+
+# CLI
+click>=8.1

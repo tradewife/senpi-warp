@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Waifu CLI entry point."""
+import sys
+from pathlib import Path
+
+# Ensure project root is importable
+sys.path.insert(0, str(Path(__file__).parent))
+
+from waifu_cli.main import cli
+
+if __name__ == "__main__":
+    cli()
+else:
+    cli()

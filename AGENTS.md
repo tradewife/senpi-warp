@@ -1,570 +1,551 @@
-# AGENTS.md — Waifu Strategic Layer
+# AGENTS.md — Operating Manual
 
-This file is the operating manual for Waifu acting as the **local strategic layer**
-for the senpi-waifu hybrid trading system. It replaces the Oz cloud agents (Warp) with
-Waifu scheduled cron jobs running on the local machine.
+This document teaches both AI agents and human operators how to use the waifu CLI to operate the trading system.
 
-## Architecture Overview
+## Quick Reference
 
-senpi-waifu has three cooperating surfaces:
+```bash
+# Always activate venv first
+source venv/bin/activate
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  MECHANICAL LAYER (Railway worker.py — APScheduler)         │
-│                                                             │
-│  5 active scanners hunt entries every 60s–5min (zero LLM)   │
-│  DSL trailing stops manage exits every 3min                 │
-│  Risk Arbiter enforces safety every 30s                     │
-│  Autonomous Brain synthesizes local policy every 5min       │
-│                                                             │
-│  Writes state to: config/, state/, memory/, outputs/        │
-└──────────────────────────┬──────────────────────────────────┘
-                           │  git pull / git push
-┌──────────────────────────┴──────────────────────────────────┐
-│  STRATEGIC LAYER (Waifu — replaces Oz cloud agents)    │
-│                                                             │
-│  6 agent roles, scheduled as Waifu cron jobs                │
-│  Reads state from the repo filesystem                        │
-│  Writes config updates + reports back to the repo           │
-│                                                             │
-│  EXECUTES TRADES via mcporter (Senpi MCP)                   │
-└─────────────────────────────────────────────────────────────┘
+# Configuration (first-time setup)
+waifu config show                 # View current config
+waifu config validate             # Check required vars
+waifu config set SENPI_AUTH_TOKEN "your-token"  # Set token
+
+# Read-only checks
+waifu status                    # Current state
+waifu debug status              # Railway + local health
+waifu debug logs -f             # Live logs
+
+# Strategic actions
+waifu regime [--dry-run]        # Classify regime
+waifu evaluate [--dry-run]      # Process signals
+waifu review                    # Portfolio report
+
+# Skill management
+waifu dev list-skills           # Browse catalog
+waifu dev add-skill orca        # Install skill
 ```
 
-**Critical principle:** The mechanical layer is authoritative on the hot path. The strategic
-layer (Waifu) can only influence config, evaluate signals, and execute trades through the
-same mcporter interface. It cannot bypass hardcoded safety gates.
+---
 
-## Waifu (Strategic Supervisor)
+## Commands Deep Dive
 
-### Role
+### waifu status
 
-Waifu is the strategic supervisor for a Hyperliquid perps trading system running on
-Railway. It prioritises, blocks, or boosts the 5 active mechanical scanners via
-`autonomous-brain.json` — it does not run them itself. It evaluates signals, classifies
-regime, reviews portfolio health, and executes approved trades.
+**Purpose:** Read-only snapshot of system state.
 
-### Autonomy Model
+**Shows:**
+- Current regime (RISK_ON/BASELINE/RISK_OFF)
+- Effective parameters (slots, leverage, allocation)
+- Open positions with ROE
+- Pending entries count
+- Stale cron detection
+- Active alerts
 
-| Mode | Trigger | Behavior |
-|------|---------|----------|
-| **Scheduled** | Default | Runs 6 agent roles on cron. Acts without human approval unless a change increases risk. |
-| **Manual Override** | Direct Telegram message | Treated as highest priority. Respond, act, confirm. Resume schedule after. |
-| **Risk Increase** | Any config change that raises exposure | Always paused for explicit human confirmation before writing. |
+**When to run:** Before any action, to understand current state.
 
-### Inputs (what Waifu reads)
-
-- `config/risk-regime.json` — active regime + guardrails
-- `config/wolf-strategies.json` — strategy registry, wallets, budgets, slots
-- `config/scanner-*.json` — per-scanner thresholds (7 files)
-- `state/pending-entries.json` — live signal queue from mechanical scanners
-- `state/*/dsl-*.json` — open position DSL state
-- `outputs/autonomous-brain.json` — current brain policy, scanner priorities
-- `outputs/playbook-state.json` — normalised scanner profiles
-- `outputs/arena-state.json` — competing predator benchmarks
-- `outputs/arbiter-state.json` — peak equity, drawdown tracking
-- `memory/trade-journal.json` — historical performance by scanner source
-- `memory/MEMORY.md` — persistent distilled context
-
-### Outputs (what Waifu writes)
-
-- `config/risk-regime.json` — regime classification (Regime Classifier only)
-- `outputs/latest-report.json` — structured portfolio review
-- `outputs/arena-learnings.json` — recommendations with confidence levels
-- `outputs/whale-index-state.json` — copy-trade slot/watch/rebalance state
-- `memory/howl-YYYY-MM-DD.md` — nightly self-improvement report
-- `memory/MEMORY.md` — distilled summary append
-- `state/pending-entries.json` — cleared after processing
-- **Trade execution** via mcporter (`strategy_open_position`, `strategy_close_position`)
-
-### Write Permissions
-
-- **Autonomous:** Risk-neutral or risk-reducing config changes only. Tightening thresholds, reducing leverage caps, increasing cooldowns, disabling underperforming scanners.
-- **Requires human approval:** Any change that increases risk — higher leverage, more slots, wider thresholds, lower cooldowns, new entry modes.
-
-### Hard Constraints
-
-These are enforced in Python by the mechanical layer. Waifu **cannot** and **should not**
-attempt to override them:
-
-| Gate | Value |
-|------|-------|
-| Max positions | 3 |
-| Leverage band | 7–10x only |
-| Daily loss limit | 10% → automatic RISK_OFF |
-| Catastrophic drawdown | 20% from peak → automatic full flatten |
-| XYZ equities | BANNED |
-| Per-asset cooldown | 2 hours after Phase 1 exit |
-| 4H trend alignment | HARD gate — never counter-trend |
-| Stagnation TP | Mandatory — positions that peaked then reversed |
-
-### Scanner Suite (managed, not run)
-
-| Scanner | Edge Type | Interval | Status |
-|---------|-----------|----------|--------|
-| ORCA | Emerging movers (STALKER + STRIKER) | 60s | ✅ Active |
-| MANTIS | Dual-mode emerging movers | 90s | ✅ Active |
-| FOX | Dual-mode emerging movers | 90s | ✅ Active |
-| KOMODO | Momentum event consensus | 5min | ✅ Active |
-| CONDOR | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 3min | ✅ Active |
-| POLAR | ETH Alpha Hunter | 3min | ✅ Active |
-| SENTINEL | Quality trader convergence | 3min | ✅ Active |
-| RHINO | Momentum pyramiding (30/40/30 staged) | 3min | ✅ Active |
-| SHARK | Liquidation cascade front-runner | — | ⏸ Paused (Senpi v1.0, -4.3% ROI) |
-| BARRACUDA | Funding decay / fade (counter-trend) | — | ⏸ Paused (performance review) |
-| BISON | Conviction trend holder | — | ⏸ Paused (performance review) |
-
-### System Prompt
-
-Copy-pasteable prompt for the Waifu LLM instance:
-
+**Example:**
 ```
-You are Waifu, the strategic supervisor for a Hyperliquid perps trading system
-running on Railway. You operate autonomously on a schedule but can be overridden
-manually at any time via Telegram.
+$ waifu status
+==================================================
+  WAIFU STATUS — 2026-03-26T10:00:00Z
+==================================================
 
-## Autonomy Model
-- DEFAULT: You run on schedule (regime classification 1hr, trade evaluation 15min,
-  portfolio review 6hr, nightly HOWL daily). Act without waiting for human approval
-  unless a change INCREASES risk.
-- MANUAL OVERRIDE: If a human sends you a direct message, treat it as highest
-  priority. Respond, act, and confirm. Then resume autonomous schedule.
-- RISK INCREASES (leverage up, slots up, allocation up) always require explicit
-  human confirmation before writing to config.
+📊 Regime: BASELINE
+   Reason: Mixed signals (slope=0.5%, ATR=2.1%)
+   Updated: 2026-03-26T09:00:00Z
 
-## State Files You Read
-- outputs/autonomous-brain.json   → current policy, scanner priorities
-- outputs/playbook-state.json     → execution playbook
-- outputs/arena-state.json        → competing predator benchmarks
-- config/risk-regime.json         → active regime
-- memory/trade-journal.json       → historical performance by scanner
-- state/pending-entries.json      → live signal queue
+⚙️  Effective params:
+   Max slots: 2
+   Max leverage: 10.0x
+   Alloc/slot: 25.0%
+   Auto-entry: True
+   Entries allowed: True
 
-## What You Output
-- Regime calls: RISK_ON / BASELINE / RISK_OFF with 1-2 sentence rationale
-- Scanner prioritisation: which to favour or suppress and why
-- Signal scores: HIGH / MEDIUM / PASS per pending entry
-- Config writes: only risk-neutral or risk-reducing changes autonomously
-- HOWL: nightly self-improvement with auto-apply for risk-reducing changes only
+🛡  Guardrails:
+   Leverage: 7-10x
+   Max positions: 3
+   Daily loss limit: 10%
+   Catastrophic DD: 20%
+   Cooldown: 120min
 
-## Hard Constraints (hardcoded — you cannot override)
-- Max 3 positions, 7-10x leverage only
-- 10% daily loss limit → RISK_OFF automatic
-- 20% drawdown from peak → full flatten automatic
-- No XYZ equities
-- 2hr per-asset cooldown after Phase 1 exit
-- 4H trend alignment is a HARD gate
+📈 Open positions: 1
+   ETH LONG (+3.2% ROE)
 
-## Tone
-Terse. Production system. No preamble. Actionable outputs only.
+📋 Pending entries: 2
+   BTC via orca
+   SOL via komodo
+
+✅ All mechanical crons healthy
+==================================================
 ```
 
-## File Map — What Waifu Reads and Writes
+---
 
-### Reads (inputs)
+### waifu regime
 
-| File | What it contains | Used by |
-|------|------------------|---------|
-| `config/risk-regime.json` | Current RISK_ON/BASELINE/RISK_OFF + guardrails | All agents |
-| `config/scanner-config.json` | ORCA + KOMODO entry thresholds | Trade Evaluator |
-| `config/condor-config.json` | CONDOR multi-asset params | Trade Evaluator |
-| `config/sentinel-config.json` | SENTINEL quality-convergence params | Trade Evaluator |
-| `config/rhino-config.json` | RHINO pyramid stage params | Trade Evaluator |
-| `config/barracuda-config.json` | [PAUSED] BARRACUDA funding thresholds | — |
-| `config/bison-config.json` | [PAUSED] BISON trend/momentum params | — |
-| `config/shark-config.json` | [PAUSED] SHARK OI/liquidation params | — |
-| `config/wolf-strategies.json` | Strategy registry (wallets, budgets, slots) | All agents |
-| `state/pending-entries.json` | Queued scanner signals with brain context | Trade Evaluator |
-| `state/*/dsl-*.json` | Open position DSL state files | Portfolio Review |
-| `state/orca-scan-history.json` | Last 40 ORCA scans | HOWL |
-| `state/komodo-events.json` | KOMODO momentum event history | HOWL |
-| `memory/trade-journal.json` | All trades with entry source tags | All agents |
-| `memory/MEMORY.md` | Persistent distilled context | All agents |
-| `outputs/autonomous-brain.json` | Local brain policy snapshot | Trade Evaluator |
-| `outputs/playbook-state.json` | Normalized scanner profiles | Trade Evaluator |
-| `outputs/arbiter-state.json` | Peak equity, drawdown tracking | Portfolio Review |
-| `outputs/arena-state.json` | Senpi Predators leaderboard snapshot | Arena Learner |
-| `outputs/arena-learnings.json` | Arena-derived recommendations | All agents |
-| `outputs/latest-report.json` | Last portfolio review | Portfolio Review |
-| `outputs/health-state.json` | System health + stale crons | All agents |
-| `outputs/cron-heartbeats.json` | Cron job heartbeat timestamps | All agents |
-| `outputs/whale-index-state.json` | Copy-trade portfolio state | Whale Index |
+**Purpose:** Classify market regime as RISK_ON / BASELINE / RISK_OFF based on BTC price action.
 
-### Writes (outputs)
+**Inputs:** Fetches BTC 4h and 1h candles via Senpi MCP.
 
-| File | What Waifu writes | Agent |
-|------|--------------------|-------|
-| `config/risk-regime.json` | riskMode, updatedAt, updatedBy, reason | Regime Classifier |
-| `outputs/latest-report.json` | Structured portfolio review | Portfolio Review |
-| `outputs/arena-learnings.json` | Recommendations with confidence levels | Arena Learner |
-| `outputs/whale-index-state.json` | Slot/watch/rebalance tracking | Whale Index |
-| `memory/howl-YYYY-MM-DD.md` | Nightly analysis report | HOWL |
-| `memory/MEMORY.md` | Distilled summary appended | HOWL |
-| `state/pending-entries.json` | Cleared after processing | Trade Evaluator |
+**Outputs:** Updates `config/risk-regime.json`
 
-## Agent Roles (6 scheduled jobs)
+**Logic:**
+- **RISK_ON:** Strong trend (slope >1.5%), low volatility (ATR <5%)
+- **RISK_OFF:** High volatility (ATR >6%) or extreme chop
+- **BASELINE:** Everything else (default)
 
-### Agent 1: Trade Evaluator — every 15 min
+**When to run:** Hourly, or when market conditions change significantly.
 
-**Purpose:** Validate queued scanner signals and execute approved trades.
+**Example:**
+```
+$ waifu regime
+[regime] 2026-03-26T10:00:00Z starting
+  BTC MA slope: 2.30%, ATR: 3.50%
+  MA_short: 71500, MA_long: 69800
+  -> RISK_ON (Clear BULLISH trend (slope=2.3%, ATR=3.5%))
+  REGIME CHANGE: BASELINE -> RISK_ON
+[regime] 2026-03-26T10:00:05Z done
+```
 
-**Schedule:** `*/15 * * * *`
+---
 
-**Procedure:**
-1. `git pull` in `/home/kt/senpi-waifu`
-2. Read `state/pending-entries.json`
-3. Read `outputs/autonomous-brain.json` for current brain policy
-4. Read `config/risk-regime.json` — if RISK_OFF, skip all entries
-5. For each pending signal:
-   a. Check scanner source (orca/komodo/condor/sentinel/rhino) — SHARK/BARRACUDA/BISON are paused and will not appear in queue
-   b. For ORCA signals: validate STALKER (score >=6, 3+ consecutive scans) or STRIKER (score >=9, 15+ rank jump, 1.5x volume)
-   c. For KOMODO signals: verify 2+ quality traders on same asset/direction
-   d. Read scanner-specific config for thresholds
-   e. For auto-entered signals (`autoEntered: true`): review quality — if erratic or counter-trend, close immediately
-6. Apply HARDCODED rules (non-negotiable):
-   - NEVER enter XYZ equities
-   - Leverage MUST be 7-10x
-   - Max 3 simultaneous positions
-   - 4H trend alignment is a HARD gate
-   - 2-hour per-asset cooldown after Phase 1 exit
-7. For valid entries: execute via mcporter `strategy_open_position` with DSL High Water Mode
-8. Record trade in `memory/trade-journal.json`
-9. Clear processed entries from `state/pending-entries.json`
-10. Read `outputs/arena-state.json` for selectivity guidance
-11. `git add && git commit && git push`
+### waifu evaluate
 
-**Key lesson:** FEWER TRADES + HIGHER CONVICTION. FOX is #1 at +13.93% with only 436 trades.
-Agents with 700+ trades are all negative.
+**Purpose:** Process pending scanner signals and execute approved trades.
 
-### Agent 2: Regime Classifier — every hour
+**Inputs:**
+- `state/pending-entries.json` — queued signals
+- `outputs/autonomous-brain.json` — current policy
+- `config/risk-regime.json` — regime check
 
-**Purpose:** Classify macro market regime as RISK_ON / BASELINE / RISK_OFF.
+**Outputs:**
+- Executes trades via Senpi MCP
+- Updates `memory/trade-journal.json`
+- Clears processed entries
 
-**Schedule:** `0 * * * *`
+**Gate pipeline (10 gates):**
+1. Entries allowed by regime
+2. Auto-entry enabled
+3. Valid strategy ID
+4. Slots available
+5. Scanner not blocked by brain
+6. Score threshold met
+7. Asset not banned (XYZ check)
+8. Not in cooldown (2hr)
+9. Directional exposure OK
+10. Leverage clamped to 7-10x
 
-**Procedure:**
-1. `git pull`
-2. Fetch BTC and ETH candles via mcporter:
-   - `market_get_candles(asset="BTC", interval="4h", limit=10)`
-   - `market_get_candles(asset="BTC", interval="1h", limit=10)`
-   - `market_get_candles(asset="ETH", interval="4h", limit=10)`
-3. Analyze: MA slope, ATR ratio, funding rates, OI changes
-4. Classify:
-   - **RISK_ON:** Strong trend + controlled volatility. Max 3 slots, 7-10x leverage.
-   - **BASELINE:** Mixed signals. 2 slots max, 7-10x leverage. Default.
-   - **RISK_OFF:** Extreme chop, funding blowouts, liquidation clusters. No new entries.
-5. Hard rules: maxLeverage never exceeds 10. XYZ leverage always 0.
-6. Update `config/risk-regime.json`:
-   ```json
-   {"riskMode": "BASELINE", "updatedAt": "...", "updatedBy": "waifu-regime", "reason": "..."}
-   ```
-7. Be conservative with RISK_ON — only when trend evidence is clear across multiple timeframes.
-8. `git commit && git push`
+**When to run:** Every 15 minutes. Always `--dry-run` first if uncertain.
 
-### Agent 3: Portfolio Review — every 6 hours
+**Example:**
+```
+$ waifu evaluate --dry-run
+[evaluate] 2026-03-26T10:00:00Z starting (dry-run)
+[evaluate] regime: BASELINE
+[evaluate] 3 pending entries
+[evaluate] Using strategy: wolf-primary (abc123def456...)
+  APPROVE BTC LONG @ 8x (score=12, scanner=orca)
+    DRY-RUN: would open BTC LONG @ 8x
+  REJECT XYZ: Asset XYZ is BANNED
+  REJECT ETH: Score 5 < min 6 for orca
+[evaluate] 1 processed, 2 remaining
+[evaluate] 2026-03-26T10:00:05Z done
+```
 
-**Purpose:** Check risk rails, review open positions, write structured report.
+---
 
-**Schedule:** `0 */6 * * *`
+### waifu review
 
-**Procedure:**
-1. `git pull`
-2. Read all `state/*/dsl-*.json` for open positions
-3. Read `memory/trade-journal.json` for recent trades
-4. Compute: daily realized PnL, unrealized PnL, drawdown from peak, directional exposure
-5. Check guardrails from `config/risk-regime.json`:
-   - 10% daily loss limit
-   - 20% catastrophic drawdown
-   - 70% directional cap
-   - Max 3 positions
-   - Per-trade risk 1.0%
-6. Verify DSL mode: all positions should be High Water Mode (`pct_of_high_water`)
-7. Read `outputs/arena-state.json` — compare performance vs top predators
-8. Identify dead weight: positions with SM conviction 0, negative ROE, open > 30 min
-9. Write structured JSON report to `outputs/latest-report.json`
-10. `git commit && git push`
+**Purpose:** Portfolio health check with structured report.
 
-### Agent 4: HOWL Nightly Review — daily at 23:55
+**Shows:**
+- Current equity and peak
+- Drawdown percentage
+- Daily PnL and win rate
+- Open positions count
+- Dead weight detection (positions that should be closed)
+- Guardrail alerts
 
-**Purpose:** Full self-improvement analysis across 10 pillars.
+**Outputs:** `outputs/latest-report.json`, `outputs/arbiter-state.json`
 
-**Schedule:** `55 23 * * *`
+**When to run:** Every 6 hours, or after significant market moves.
 
-**Procedure:** Read and follow `memory/howl-analysis-prompt.md` exactly. It contains:
-1. Core metrics (trades, win rate, PF, avg win/loss)
-2. Scanner source breakdown by entrySource tag
-3. Monster trade dependency (top 3 trades as % of gross PnL)
-4. Fee Drag Ratio (FDR): cumulativeFees / account start value
-5. Rotation cost tracking (~$65 per rotation)
-6. Holding period buckets (<30min, 30-90min, 90min-4h, >4h)
-7. Direction regime detection (LONG vs SHORT win rates)
-8. DSL tier distribution (Phase 1 exits vs High Water tier exits)
-9. Arena benchmarking (vs top 5 Senpi Predators)
-10. Drift detection (recurring unimplemented recommendations)
+**Example:**
+```
+$ waifu review
+[review] 2026-03-26T10:00:00Z starting
+  Regime: BASELINE
+  Equity: $2,150.00 | Peak: $2,300.00
+  Drawdown: 6.5% | Daily PnL: $45.00
+  Open: 2 | Daily closes: 4 (75.0% WR)
+  DEAD WEIGHT: DOGE (-5.2% ROE, 45min)
+[review] 2026-03-26T10:00:05Z done
+```
 
-**Output:** Save `memory/howl-YYYY-MM-DD.md`, append to `memory/MEMORY.md`, commit and push.
+---
 
-**Auto-apply rules (risk-reducing ONLY):**
+### waifu howl
+
+**Purpose:** Nightly 10-pillar self-improvement analysis.
+
+**Pillars:**
+1. Core metrics (trades, win rate, profit factor)
+2. Scanner source breakdown
+3. Monster trade dependency
+4. Fee drag ratio
+5. Rotation cost tracking
+6. Holding period buckets
+7. Direction regime (LONG vs SHORT win rates)
+8. DSL tier distribution
+9. Arena benchmarking
+10. Drift detection
+
+**Outputs:**
+- `memory/howl-YYYY-MM-DD.md`
+- Appends to `memory/MEMORY.md`
+
+**Auto-applies (risk-reducing only):**
 - Tighten entry score thresholds
 - Reduce leverage caps
-- Increase cooldown durations
-- Disable scanner with <25% WR and >10 trades
+- Increase cooldowns
+- Disable underperforming scanners (<25% WR, >10 trades)
 
-**NEVER auto-apply:** lowering thresholds, increasing leverage, new modes, reduced cooldowns.
+**Never auto-applies:** Lowering thresholds, increasing leverage, new modes.
 
-### Agent 5: Whale Index — daily at 01:00
+**When to run:** Daily at 23:55 UTC.
 
-**Purpose:** Copy-trade portfolio management via Senpi Discovery.
+---
 
-**Schedule:** `0 1 * * *`
+### waifu whale
 
-**Procedure:** Read and follow `memory/whale-index-prompt.md` exactly. Key steps:
-1. Discover traders: `discovery_top_traders(limit=50, timeframe="30d")`
-2. Score candidates: `0.35*pnl + 0.25*wr + 0.20*consistency + 0.10*hold + 0.10*drawdown`
-3. Check overlap, cap at 35% per slot
-4. Create mirror strategies via `strategy_create_mirror`
-5. Monitor: HOLD (healthy) / WATCH (degrading) / SWAP (failed, 2-day watch required)
-6. Update `outputs/whale-index-state.json`
+**Purpose:** Copy-trade portfolio management.
 
-### Agent 6: Arena Strategy Learner — every 4 hours
+**Process:**
+1. Fetch top traders from Senpi Discovery
+2. Score candidates (PnL 35%, WR 25%, consistency 20%, hold 10%, DD 10%)
+3. Monitor existing slots (HOLD / WATCH / SWAP)
+4. Fill empty slots with top candidates
 
-**Purpose:** Study Senpi Predators leaderboard for actionable intelligence.
+**Outputs:** `outputs/whale-index-state.json`
 
-**Schedule:** `0 */4 * * *`
+**When to run:** Daily at 01:00 UTC.
 
-**Procedure:**
-1. `git pull`
-2. Read `outputs/arena-state.json` (written by arena-monitor every 15min on Railway)
-3. Analyze leaderboard: which predators are profitable, what strategies they use, trade frequency
-4. Compare our performance (from `memory/trade-journal.json`) vs arena
-5. Generate recommendations:
-   - Tighten entry scores? (if win rate < 50%)
-   - Widen Phase 1 tolerance? (if most exits are early cuts)
-   - Favor STALKER vs STRIKER? (based on mode performance)
-   - Adjust leverage? (always within 7-10x)
-6. Write `outputs/arena-learnings.json` with confidence levels
-7. Auto-apply ONLY risk-reducing changes
-8. `git commit && git push`
+---
 
-**Hard constraints:** NEVER increase leverage above 10x. NEVER remove XYZ ban. NEVER disable stagnation TP.
+### waifu arena
 
-## Execution Environment
+**Purpose:** Study Senpi Predators leaderboard for strategy intelligence.
 
-### mcporter — How to Trade
+**Compares:**
+- Our win rate vs top 5 predators
+- Our trade frequency vs optimal
+- Generates actionable recommendations
 
-All trade execution goes through mcporter calling the Senpi MCP server.
+**Outputs:** `outputs/arena-learnings.json`
 
-```bash
-# Configure (run once or on agent init)
-mcporter config add senpi \
-  --command npx \
-  --env "SENPI_AUTH_TOKEN=<key>" \
-  -- mcp-remote https://mcp.prod.senpi.ai/mcp \
-  --header "Authorization: Bearer <key>"
+**When to run:** Every 4 hours.
 
-# Call a tool
-mcporter call senpi <tool_name> --json '<params>'
+---
+
+### waifu emergency-stop
+
+**Purpose:** Immediate RISK_OFF with Telegram alert.
+
+**Actions:**
+1. Sets `riskMode: RISK_OFF` in config
+2. Sends Telegram alert
+3. Commits and pushes
+
+**When to run:** Emergency situations only.
+
+---
+
+## Config Commands
+
+### waifu config show
+
+**Purpose:** Display all configuration values (secrets masked).
+
+**Shows:**
+- Required variables (SENPI_AUTH_TOKEN, GITHUB_TOKEN)
+- Optional variables with defaults
+- Source of each value (.env file, environment, or default)
+
+**Example:**
+```
+$ waifu config show
+=======================================================
+  WAIFU CONFIGURATION
+  Config file: /home/kt/senpi-waifu/.env
+=======================================================
+
+📋 Required:
+   SENPI_AUTH_TOKEN: eyJh***...8llig
+      (.env)
+   GITHUB_TOKEN: gith********JohS
+      (.env)
+
+📦 Optional:
+   SENPI_WAIFU_DIR: /home/kt/senpi-waifu
+   GITHUB_REPO: tradewife/senpi-waifu
+   TELEGRAM_BOT_TOKEN: 8660********8Fbs
+      (.env)
+
+✅ All required variables set
+=======================================================
 ```
 
-Key tools:
-- `strategy_open_position` — open a trade
-- `strategy_close_position` — close a trade
-- `account_get_portfolio` — get equity/balance
-- `market_get_candles` — get OHLCV candles
-- `discovery_top_traders` — get trader leaderboard
-- `discovery_get_trader_state` — get single trader stats
-- `discovery_get_trader_history` — get trader trade history
-- `strategy_create_mirror` — create copy-trade strategy
-- `strategy_create_custom_strategy` — create custom strategy
+---
 
-### Environment Variables Required
+### waifu config set
 
-```bash
-SENPI_API_KEY=***          # Senpi MCP auth token (same value as SENPI_AUTH_TOKEN)
-SENPI_AUTH_TOKEN=***       # Alternative name — code accepts either
-GITHUB_TOKEN=***           # GitHub fine-grained token (Contents read/write)
-GITHUB_REPO=tradewife/senpi-waifu
-SENPI_WAIFU_DIR=/home/kt/senpi-waifu
+**Purpose:** Set a configuration value (writes to .env file).
+
+**Usage:** `waifu config set <key> <value>`
+
+**Example:**
+```
+$ waifu config set SENPI_AUTH_TOKEN "eyJhbG..."
+✅ Set SENPI_AUTH_TOKEN=eyJh***...8llig
+   Written to /home/kt/senpi-waifu/.env
 ```
 
-### State Bus
+---
 
-Git is the state bus. Both the Railway mechanical layer and Waifu strategic layer
-read/write independently through the shared repo. Waifu must `git pull` before reading
-and `git commit && git push` after writing.
+### waifu config validate
 
-## Hardcoded Safety Gates (Non-Negotiable)
+**Purpose:** Check that all required variables are set.
 
-These are enforced in Python code by the mechanical layer. Waifu cannot override them:
+**Example:**
+```
+$ waifu config validate
+
+📋 Configuration Validation
+
+✅ All required variables are set
+
+⚠️  Warnings:
+   - Railway CLI may require login (RAILWAY_TOKEN not set)
+```
+
+---
+
+### waifu config export
+
+**Purpose:** Export configuration for Railway deployment.
+
+**Usage:** `waifu config export [--format env|json]`
+
+**Example:**
+```
+$ waifu config export
+SENPI_AUTH_TOKEN="eyJhbG..."
+GITHUB_TOKEN="github_pat_..."
+GITHUB_REPO="tradewife/senpi-waifu"
+
+# Copy above to Railway dashboard > Variables
+```
+
+---
+
+## Debug Commands
+
+### waifu debug logs
+
+Stream Railway deployment logs.
+
+```bash
+waifu debug logs              # Last 50 lines
+waifu debug logs -n 200       # Last 200 lines
+waifu debug logs -f           # Follow mode (tail -f)
+waifu debug logs -f --filter ORCA  # Filter to ORCA
+```
+
+### waifu debug status
+
+Combined view: Railway deployment status + local health state + heartbeat freshness.
+
+### waifu debug tail <scanner>
+
+Follow logs filtered to a specific scanner:
+
+```bash
+waifu debug tail orca     # ORCA scanner only
+waifu debug tail arbiter  # Risk arbiter
+waifu debug tail brain    # Autonomous brain
+```
+
+Valid scanners: orca, mantis, fox, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena
+
+### waifu debug deploy --trigger
+
+Trigger a Railway redeploy.
+
+---
+
+## Dev Commands
+
+### waifu dev list-skills
+
+Browse the installable skill catalog:
+
+```bash
+waifu dev list-skills
+```
+
+Shows skills grouped by category, with installation status (available/installed/configured).
+
+### waifu dev add-skill <name>
+
+Install a skill from the catalog:
+
+```bash
+waifu dev add-skill orca
+```
+
+Copies config to `config/orca-config.json`. Edit before enabling.
+
+### waifu dev create-skill <name>
+
+Scaffold a new custom skill:
+
+```bash
+waifu dev create-skill my-strategy
+```
+
+Creates:
+- `senpi-skills/my-strategy/SKILL.md`
+- `senpi-skills/my-strategy/scripts/my-strategy_scanner.py`
+- `senpi-skills/my-strategy/config/my-strategy-config.json`
+
+### waifu dev show-skill <name>
+
+Display a skill's documentation:
+
+```bash
+waifu dev show-skill orca
+```
+
+---
+
+## Observability Patterns
+
+### Is the system healthy?
+
+```bash
+waifu status
+waifu debug status
+```
+
+Look for: stale crons, alerts, regime mismatches.
+
+### Are trades being executed?
+
+```bash
+waifu debug logs -f --filter evaluate
+```
+
+Look for: "APPROVE" or "REJECT" lines from evaluate command.
+
+### Is a specific scanner working?
+
+```bash
+waifu debug tail orca
+```
+
+Look for: "scan #N" lines, signals found.
+
+### What signals are pending?
+
+```bash
+waifu status
+```
+
+Check "Pending entries" section.
+
+---
+
+## Safety Rules (Non-Negotiable)
+
+These gates are hardcoded in Python. The CLI cannot override them:
 
 | Gate | Value | Reason |
 |------|-------|--------|
-| XYZ equities | BANNED | Net negative across all 22 live agents |
-| Leverage band | 7-10x only | Sub-7x can't overcome fees, >10x blows up |
+| XYZ equities | BANNED | Net negative across all agents |
+| Leverage | 7-10x only | Sub-7x can't overcome fees, >10x blows up |
 | Max positions | 3 | Concentration beats diversification |
-| Directional exposure cap | 70% | Prevents lopsided book |
-| Daily loss limit | 10% | Fox 10% > Vixen 25% — bled 2.5x less |
+| Daily loss limit | 10% | Fox's 10% limit bled 2.5x less than Vixen's 25% |
+| Catastrophic DD | 20% | Auto-flatten from peak |
 | Per-asset cooldown | 2 hours | Prevents re-entry after Phase 1 exit |
-| Stagnation TP | Mandatory | Positions that peaked then reversed (Mantis lesson) |
-| 4H trend alignment | HARD gate | Never counter-trend on 4H timeframe |
+| 4H trend alignment | HARD gate | Never counter-trend |
+| Stagnation TP | Mandatory | Positions that peaked then reversed |
 
-## DSL High Water Mode — Exit Geometry
+---
 
-7-tier infinite trailing stop. No ceiling.
+## Troubleshooting
 
-| Trigger ROE | Lock % of Peak |
-|-------------|----------------|
-| +5% | 20% |
-| +10% | 40% |
-| +20% | 55% |
-| +30% | 70% |
-| +50% | 80% |
-| +75% | 85% |
-| +100% | 90% |
+### "No pending entries" but scanner is running
 
-**Phase 1** (proving period): Conviction-scaled. Score >=10 → 30min timeout, -30% ROE floor.
-Score 6-7 → 15min timeout, -20% floor. Stagnation TP at 10% ROE if high water hasn't moved in 45min.
-
-## Scanner Reference
-
-| Scanner | Emoji | Interval | Edge Type | Entry Score | Status |
-|---------|-------|----------|-----------|-------------|--------|
-| ORCA | 🐋 | 60s | Emerging movers (STALKER + STRIKER) | 6-9+ | ✅ Active |
-| KOMODO | 🦎 | 5min | Momentum event consensus | 10+ | ✅ Active |
-| CONDOR | 🦅 | 3min | Multi-asset alpha (BTC, ETH, SOL, HYPE) | 10+ | ✅ Active |
-| SENTINEL | 🛡 | 3min | Quality trader convergence | varies | ✅ Active |
-| RHINO | 🦏 | 3min | Momentum pyramider (30/40/30 staged) | varies | ✅ Active |
-| SHARK | 🦈 | — | Liquidation cascade front-runner | varies | ⏸ Paused |
-| BARRACUDA | 🎣 | — | Funding decay collector (counter-trend) | 8+ | ⏸ Paused |
-| BISON | 🦬 | — | Conviction trend holder | 8+ | ⏸ Paused |
-
-## Paper Trading Preparation
-
-### Step 1: Verify Environment
+Scanners may not be finding signals that meet thresholds. Check logs:
 
 ```bash
-# Check mcporter is available
-mcporter --version
-
-# Check git access
-cd /home/kt/senpi-waifu && git status
-
-# Verify SENPI_API_KEY is set
-echo $SENPI_API_KEY | head -c 8
+waifu debug tail orca
 ```
 
-### Step 2: Confirm Strategy Registration
+### Trades rejected but score looks good
+
+Check the full gate pipeline. Common rejections:
+- Asset in cooldown (2hr)
+- Directional exposure cap
+- Scanner blocked by brain policy
 
 ```bash
-# Check wolf-strategies.json has real values (not REPLACE_*)
-cat config/wolf-strategies.json | python3 -c "import json,sys; d=json.load(sys.stdin); s=d['strategies']['wolf-primary']; print('wallet:', s['wallet'][:10] if not s['wallet'].startswith('REPLACE') else 'NEEDS_REAL_VALUE'); print('strategyId:', s['strategyId'][:12] if not s['strategyId'].startswith('REPLACE') else 'NEEDS_REAL_VALUE'); print('budget:', s['budget'])"
+waifu evaluate --dry-run  # Shows rejection reasons
 ```
 
-### Step 3: Create Paper Trading Strategy (if needed)
+### Regime stuck in RISK_OFF
+
+Either:
+1. Daily loss limit hit (10%) — resets at midnight UTC
+2. Manual RISK_OFF — run `waifu regime` to reclassify
+
+### Railway deployment failing
 
 ```bash
-mcporter call senpi strategy_create_custom_strategy --json '{"budgetUsd": 1000}'
-# Register the returned strategyId + wallet in config/wolf-strategies.json
+waifu debug status
+waifu debug deploy --trigger
 ```
 
-### Step 4: Set Initial Regime
+Check logs for the deploy:
+```bash
+waifu debug logs -n 100
+```
 
-Before enabling any scheduled agents, set the starting regime:
+### CLI can't find files
+
+Ensure SENPI_WAIFU_DIR is set:
 
 ```bash
-cd /home/kt/senpi-waifu
-python3 -c "
-import json
-from pathlib import Path
-f = Path('config/risk-regime.json')
-d = json.loads(f.read_text())
-d['riskMode'] = 'BASELINE'
-d['updatedAt'] = 'PAPER_TRADING_START'
- d['updatedBy'] = 'waifu-init'
-d['reason'] = 'Paper trading initialization — BASELINE mode'
-f.write_text(json.dumps(d, indent=2) + '\n')
-"
-git add config/risk-regime.json && git commit -m "init: set BASELINE for paper trading"
+export SENPI_WAIFU_DIR=/home/kt/senpi-waifu
+waifu status
 ```
 
-### Step 5: Bootstrap State Files
+---
 
-Ensure all output/state files exist with sane defaults:
+## File Reference
 
-```bash
-# Create empty trade journal if missing
-[ -f memory/trade-journal.json ] || echo '[]' > memory/trade-journal.json
-[ -f state/pending-entries.json ] || echo '[]' > state/pending-entries.json
-[ -f outputs/arbiter-state.json ] || echo '{"peakEquity":0,"dayStartEquity":0,"consecutiveStopOuts":0}' > outputs/arbiter-state.json
-[ -f outputs/autonomous-brain.json ] || echo '{}' > outputs/autonomous-brain.json
-[ -f outputs/playbook-state.json ] || echo '{}' > outputs/playbook-state.json
-[ -f outputs/latest-report.json ] || echo '{}' > outputs/latest-report.json
-[ -f outputs/arena-state.json ] || echo '{"predators":[],"insights":{}}' > outputs/arena-state.json
-[ -f outputs/arena-learnings.json ] || echo '{}' > outputs/arena-learnings.json
-[ -f outputs/health-state.json ] || echo '{}' > outputs/health-state.json
-[ -f outputs/cron-heartbeats.json ] || echo '{}' > outputs/cron-heartbeats.json
-[ -f outputs/whale-index-state.json ] || echo '{"slots":[],"watchlist":{},"notes":[]}' > outputs/whale-index-state.json
-```
-
-### Step 6: Enable Waifu Cron Jobs
-
-Activate the 6 strategic agent roles as Waifu cron jobs:
-
-| Agent | Schedule | Cron |
-|-------|----------|------|
-| Trade Evaluator | Every 15 min | `*/15 * * * *` |
-| Regime Classifier | Every hour | `0 * * * *` |
-| Portfolio Review | Every 6 hours | `0 */6 * * *` |
-| HOWL Nightly | Daily 23:55 | `55 23 * * *` |
-| Whale Index | Daily 01:00 | `0 1 * * *` |
-| Arena Learner | Every 4 hours | `0 */4 * * *` |
-
-**Recommended startup sequence:**
-1. Start with **Regime Classifier** and **Portfolio Review** first (read-only, no trade execution)
-2. After 1-2 hours of stable operation, add **Trade Evaluator** (starts executing trades)
-3. Add **Arena Learner** after first arena state is populated by Railway
-4. Add **HOWL** and **Whale Index** after first full day of trade data
-
-### Step 7: Monitor
-
-Check agent outputs after enabling:
-
-```bash
-# Latest brain state
-cat outputs/autonomous-brain.json | python3 -m json.tool | head -30
-
-# Latest portfolio review
-cat outputs/latest-report.json | python3 -m json.tool | head -30
-
-# Trade journal
-cat memory/trade-journal.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'{len(d)} trades total'); [print(t['action'], t.get('asset',''), t.get('realizedPnl',''), t.get('entrySource','')) for t in d[-10:]]"
-
-# Current regime
-cat config/risk-regime.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['riskMode'], '-', d.get('reason',''))"
-```
-
-## Risk Management — What Waifu MUST Do
-
-1. **Never execute trades when RISK_OFF** — check `config/risk-regime.json` before every trade
-2. **Never override hardcoded gates** — these are in the mechanical layer's Python code
-3. **Only auto-apply risk-reducing changes** — risk increases require explicit user approval
-4. **Preserve git audit trail** — every config change must be committed with a descriptive message
-5. **Respect brain policy** — read `outputs/autonomous-brain.json` and honor block directives
-
-## Emergency Procedures
-
-If something goes wrong:
-
-```bash
-# Immediate stop — set RISK_OFF via direct file edit
-cd /home/kt/senpi-waifu
-python3 -c "
-import json; from pathlib import Path
-f = Path('config/risk-regime.json'); d = json.loads(f.read_text())
- d['riskMode'] = 'RISK_OFF'; d['updatedBy'] = 'waifu-emergency'; d['reason'] = 'Manual emergency stop'
-f.write_text(json.dumps(d, indent=2) + '\n')
-"
-git add config/risk-regime.json && git commit -m "EMERGENCY: RISK_OFF" && git push
-
-# Then disable all Waifu cron jobs for the strategic layer
-```
+| Path | Purpose |
+|------|---------|
+| `config/risk-regime.json` | Current regime + guardrails |
+| `config/wolf-strategies.json` | Strategy registry |
+| `config/*-config.json` | Per-scanner configs |
+| `state/pending-entries.json` | Queued signals |
+| `state/*/dsl-*.json` | Position DSL state |
+| `outputs/autonomous-brain.json` | Brain policy |
+| `outputs/latest-report.json` | Last review |
+| `outputs/arbiter-state.json` | Peak/DD tracking |
+| `memory/trade-journal.json` | All trades |
+| `memory/MEMORY.md` | Persistent context |

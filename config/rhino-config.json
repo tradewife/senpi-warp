@@ -116,7 +116,7 @@
     "maxDrawdownPct": 20,
     "maxSingleLossPct": 8,
     "maxConsecutiveLosses": 2,
-    "cooldownMinutes": 90
+    "cooldownMinutes": 120
   },
   "execution": {
     "entryOrderType": "FEE_OPTIMIZED_LIMIT",
