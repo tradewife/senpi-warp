@@ -764,7 +764,7 @@ def main():
                 elif sig["mode"] == "STALKER" and sig["score"] >= 6:
                     try_auto_entry(sig)
 
-        # Queue non-auto-entered signals for Oz review
+        # Queue non-auto-entered signals for review (only when entries allowed)
         auto_entered_assets = set()
         if is_entries_allowed():
             for sig in combined[:2]:
@@ -772,9 +772,9 @@ def main():
                     sig["mode"] == "STALKER" and sig["score"] >= 6
                 ):
                     auto_entered_assets.add(sig["asset"])
-        for sig in combined:
-            if sig["asset"] not in auto_entered_assets:
-                add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
+            for sig in combined:
+                if sig["asset"] not in auto_entered_assets:
+                    add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
 
         git_sync("auto: ORCA scan")
 
