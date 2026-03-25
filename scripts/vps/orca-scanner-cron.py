@@ -482,8 +482,16 @@ def try_auto_entry(signal: dict):
     log(
         f"ORCA try_auto_entry: {signal['asset']} mode={signal['mode']} score={signal['score']}"
     )
+    from senpi_common import current_regime_params
+
+    params = current_regime_params()
+    log(
+        f"ORCA regime: autoEntryEnabled={params.get('autoEntryEnabled')} newEntriesAllowed={params.get('newEntriesAllowed')}"
+    )
     if not is_auto_entry_enabled():
         log(f"ORCA auto-entry: auto entry disabled for {signal['asset']}")
+        return
+    if signal["score"] < 6:
         return
     if signal["score"] < 6:
         return
