@@ -502,6 +502,12 @@ def try_auto_entry(signal: dict):
     log(
         f"ORCA debug: effective autoEntryEnabled={params.get('autoEntryEnabled')} newEntriesAllowed={params.get('newEntriesAllowed')}"
     )
+    log(
+        f"ORCA debug: regime BASELINE autoEntryEnabled={regime.get('regimes', {}).get('BASELINE', {}).get('autoEntryEnabled')}"
+    )
+    log(
+        f"ORCA debug: brain blockNewEntries={brain.get('executionPolicy', {}).get('blockNewEntries')} allowAutoEntry={brain.get('executionPolicy', {}).get('allowAutoEntry')}"
+    )
     if not is_auto_entry_enabled():
         log(f"ORCA auto-entry: auto entry disabled for {signal['asset']}")
         return
