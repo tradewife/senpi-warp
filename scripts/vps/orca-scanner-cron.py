@@ -690,6 +690,9 @@ def main():
             history = history_data
         else:
             history = history_data.get("scans", [])
+        # Log scan status periodically
+        if len(history) % 10 == 0 or len(history) < 4:
+            log(f"ORCA scan #{len(history)}: {len(current_scan['markets'])} markets")
         stalker_signals = detect_stalker_signals(current_scan, history)
         striker_signals = detect_striker_signals(current_scan, history)
 

@@ -290,6 +290,23 @@ def main():
     print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
 
+    # Periodic heartbeat to confirm scheduler is alive
+    import datetime as _dt
+
+    def _heartbeat():
+        print(
+            f"[{_dt.datetime.utcnow().strftime('%H:%M:%S')}] scheduler alive",
+            flush=True,
+        )
+
+    scheduler.add_job(
+        _heartbeat,
+        "interval",
+        minutes=5,
+        id="heartbeat",
+        next_run_time=_dt.datetime.utcnow(),
+    )
+
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):

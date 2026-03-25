@@ -265,6 +265,7 @@ def main():
             arb_state["dayStartDate"] = today
             arb_state["dayStartEquity"] = equity
             arb_state["consecutiveStopOuts"] = 0
+            log(f"Arbiter: day start equity=${equity:.2f}")
 
         # Track current equity and update peak
         arb_state["lastEquity"] = equity
