@@ -14,6 +14,7 @@ Integrates with the senpi-waifu hybrid scanner stack:
   compute_regime.py / arena-monitor.py / sm-flip-cron.py / orca / mantis /
   fox / komodo / condor / polar / sentinel / rhino / dsl-runner.py / risk-arbiter.py
 """
+
 import os
 import json
 import uuid
@@ -28,10 +29,26 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    load_json, save_json, mcporter_call, mcporter_call_retry,
-    send_telegram, log, now_iso, load_regime, load_pending_entries,
-    get_enabled_strategies, get_open_positions, acquire_lock, release_lock,
-    record_heartbeat, record_trade, git_sync, OUTPUTS_DIR, MEMORY_DIR, STATE_DIR, CONFIG_DIR
+    load_json,
+    save_json,
+    mcporter_call,
+    mcporter_call_retry,
+    send_telegram,
+    log,
+    now_iso,
+    load_regime,
+    load_pending_entries,
+    get_enabled_strategies,
+    get_open_positions,
+    acquire_lock,
+    release_lock,
+    record_heartbeat,
+    record_trade,
+    git_sync,
+    OUTPUTS_DIR,
+    MEMORY_DIR,
+    STATE_DIR,
+    CONFIG_DIR,
 )
 
 AEST = ZoneInfo("Australia/Sydney")
@@ -89,21 +106,24 @@ def append_graph_triples(triples: list):
     count = 0
     for t in triples:
         try:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO graph_edges
                 (subject, predicate, object, attrs_json, source_name, source_tier, source_link, ts_utc, confidence)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                t.get("subject", ""),
-                t.get("predicate", ""),
-                t.get("object", ""),
-                json.dumps(t.get("attrs", {})),
-                t.get("source_name", ""),
-                t.get("source_tier", ""),
-                t.get("source_link", ""),
-                t.get("ts_utc", now_iso()),
-                t.get("confidence", 0.5),
-            ))
+            """,
+                (
+                    t.get("subject", ""),
+                    t.get("predicate", ""),
+                    t.get("object", ""),
+                    json.dumps(t.get("attrs", {})),
+                    t.get("source_name", ""),
+                    t.get("source_tier", ""),
+                    t.get("source_link", ""),
+                    t.get("ts_utc", now_iso()),
+                    t.get("confidence", 0.5),
+                ),
+            )
             count += 1
         except Exception as e:
             log(f"Graph triple insert error: {e}")
@@ -141,27 +161,30 @@ def load_journal_db() -> sqlite3.Connection:
 def write_journal_row(row: dict):
     conn = load_journal_db()
     ts_aest = datetime.now(AEST).isoformat()
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO trade_journal
         (ts_aest, intent, symbol, setup, entry, stop, tp1, tp2, action_taken, result_R,
          max_fav_excursion, max_adv_excursion, exit_reason, provenance_tags)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        ts_aest,
-        row.get("intent", "ELITE_SCAN"),
-        row.get("symbol", ""),
-        json.dumps(row.get("setup", {})),
-        row.get("entry", 0),
-        row.get("stop", 0),
-        row.get("tp1", 0),
-        row.get("tp2", 0),
-        row.get("action_taken", "OPEN_ATTEMPT"),
-        row.get("result_R", 0),
-        row.get("max_fav_excursion", 0),
-        row.get("max_adv_excursion", 0),
-        row.get("exit_reason", ""),
-        json.dumps(row.get("provenance_tags", [])),
-    ))
+    """,
+        (
+            ts_aest,
+            row.get("intent", "ELITE_SCAN"),
+            row.get("symbol", ""),
+            json.dumps(row.get("setup", {})),
+            row.get("entry", 0),
+            row.get("stop", 0),
+            row.get("tp1", 0),
+            row.get("tp2", 0),
+            row.get("action_taken", "OPEN_ATTEMPT"),
+            row.get("result_R", 0),
+            row.get("max_fav_excursion", 0),
+            row.get("max_adv_excursion", 0),
+            row.get("exit_reason", ""),
+            json.dumps(row.get("provenance_tags", [])),
+        ),
+    )
     conn.commit()
     conn.close()
 
@@ -200,14 +223,16 @@ def count_open_slots() -> int:
 def fetch_sm_markets() -> dict:
     sm_raw = mcporter_call("leaderboard_get_markets", {})
     sm_markets = {}
-    for m in (sm_raw.get("data", {}).get("markets", []) or []):
+    for m in sm_raw.get("data", {}).get("markets", []) or []:
         asset = m.get("token", m.get("asset", ""))
         if asset:
             sm_markets[asset] = {
                 "direction": str(m.get("direction", "")).upper(),
                 "conviction": float(m.get("conviction", 0) or 0),
                 "traders": int(m.get("traderCount", m.get("traders", 0)) or 0),
-                "concentration": float(m.get("contribution", m.get("pctOfTotal", 0)) or 0),
+                "concentration": float(
+                    m.get("contribution", m.get("pctOfTotal", 0)) or 0
+                ),
             }
     return sm_markets
 
@@ -220,12 +245,19 @@ def build_scanner_bias(pending_entries: list) -> dict:
         priority = int(e.get("brainContext", {}).get("priority", 50) or 50)
         scanner = e.get("scanner", e.get("source", "unknown"))
         if asset not in scanner_bias:
-            scanner_bias[asset] = {"long": 0, "short": 0, "max_priority": 0, "scanners": []}
+            scanner_bias[asset] = {
+                "long": 0,
+                "short": 0,
+                "max_priority": 0,
+                "scanners": [],
+            }
         if direction == "LONG":
             scanner_bias[asset]["long"] += 1
         elif direction == "SHORT":
             scanner_bias[asset]["short"] += 1
-        scanner_bias[asset]["max_priority"] = max(scanner_bias[asset]["max_priority"], priority)
+        scanner_bias[asset]["max_priority"] = max(
+            scanner_bias[asset]["max_priority"], priority
+        )
         if scanner not in scanner_bias[asset]["scanners"]:
             scanner_bias[asset]["scanners"].append(scanner)
     return scanner_bias
@@ -248,11 +280,23 @@ def discover_universe(all_mkts: list, sm_markets: dict, scanner_bias: dict) -> l
 
         sm_dir = sm.get("direction", "")
         sm_score = 1.0 if sm_dir == "LONG" else (-1.0 if sm_dir == "SHORT" else 0.0)
-        scanner_score = 1.0 if sb.get("long", 0) > sb.get("short", 0) else (-1.0 if sb.get("short", 0) > sb.get("long", 0) else 0.0)
+        scanner_score = (
+            1.0
+            if sb.get("long", 0) > sb.get("short", 0)
+            else (-1.0 if sb.get("short", 0) > sb.get("long", 0) else 0.0)
+        )
         sc_score = sm_score * 0.5 + scanner_score * 0.5
 
         trend_score = (vol24 / 1e8) + (oi / 1e8) + (abs(fr) * 1000) + sc_score
-        candidates.append({"asset": asset, "trend_score": trend_score, "vol24": vol24, "oi": oi, "fr": fr})
+        candidates.append(
+            {
+                "asset": asset,
+                "trend_score": trend_score,
+                "vol24": vol24,
+                "oi": oi,
+                "fr": fr,
+            }
+        )
 
     candidates.sort(key=lambda x: x["trend_score"], reverse=True)
     trending = [c["asset"] for c in candidates[:5]]
@@ -313,15 +357,17 @@ def compute_gss(
     elif fr < -0.0001:
         direction = "SHORT"
 
-    kg_triples.append({
-        "subject": asset,
-        "predicate": "HAS_GSS",
-        "object": f"{gss:.2f}",
-        "attrs": {"sub_scores": score, "direction": direction},
-        "source_name": "elite_trader",
-        "source_tier": "internal",
-        "confidence": 0.7,
-    })
+    kg_triples.append(
+        {
+            "subject": asset,
+            "predicate": "HAS_GSS",
+            "object": f"{gss:.2f}",
+            "attrs": {"sub_scores": score, "direction": direction},
+            "source_name": "elite_trader",
+            "source_tier": "internal",
+            "confidence": 0.7,
+        }
+    )
 
     return {"asset": asset, "gss": gss, "direction": direction, "sub_scores": score}
 
@@ -331,16 +377,24 @@ def build_trade(candidate: dict, account_equity: float, kg_triples: list) -> dic
     direction = candidate["direction"]
     gss = candidate["gss"]
 
-    candles_1h = mcporter_call("market_get_candles", {"asset": asset, "interval": "1h", "limit": 20})
+    candles_1h = mcporter_call(
+        "market_get_candles", {"asset": asset, "interval": "1h", "limit": 20}
+    )
     c1h = candles_1h.get("data", candles_1h.get("candles", []))
     if not c1h or len(c1h) < 10:
         return None
 
-    closes = [float(c.get("close", c.get("c", 0))) for c in c1h[-14:] if c.get("close", c.get("c"))]
-    tr = [abs(closes[i] - closes[i-1]) / closes[i-1] for i in range(1, len(closes))]
+    closes = [
+        float(c.get("close", c.get("c", 0)))
+        for c in c1h[-14:]
+        if c.get("close", c.get("c"))
+    ]
+    tr = [abs(closes[i] - closes[i - 1]) / closes[i - 1] for i in range(1, len(closes))]
     atr = sum(tr) / len(tr) * closes[-1] if tr else closes[-1] * 0.01
 
-    candles_4h = mcporter_call("market_get_candles", {"asset": asset, "interval": "4h", "limit": 10})
+    candles_4h = mcporter_call(
+        "market_get_candles", {"asset": asset, "interval": "4h", "limit": 10}
+    )
     c4h = candles_4h.get("data", candles_4h.get("candles", []))
     if c4h and len(c4h) >= 5:
         closes_4h = [float(c.get("close", c.get("c", 0))) for c in c4h]
@@ -395,9 +449,21 @@ def build_trade(candidate: dict, account_equity: float, kg_triples: list) -> dic
 
     fee_cost = notional * 0.001
     tp1_dist = stop_dist * 2
-    tp1_price = round((alo_price + tp1_dist if direction == "LONG" else alo_price - tp1_dist) / tick) * tick
+    tp1_price = (
+        round(
+            (alo_price + tp1_dist if direction == "LONG" else alo_price - tp1_dist)
+            / tick
+        )
+        * tick
+    )
     tp2_dist = stop_dist * 4
-    tp2_price = round((alo_price + tp2_dist if direction == "LONG" else alo_price - tp2_dist) / tick) * tick
+    tp2_price = (
+        round(
+            (alo_price + tp2_dist if direction == "LONG" else alo_price - tp2_dist)
+            / tick
+        )
+        * tick
+    )
     net_rr = (tp1_dist - fee_cost) / stop_dist if stop_dist > 0 else 0
 
     trade = {
@@ -419,49 +485,63 @@ def build_trade(candidate: dict, account_equity: float, kg_triples: list) -> dic
         "feeCost": round(fee_cost, 2),
     }
 
-    kg_triples.append({
-        "subject": asset,
-        "predicate": "TRADE_BUILT",
-        "object": direction,
-        "attrs": trade,
-        "source_name": "elite_trader",
-        "source_tier": "internal",
-        "confidence": 0.0,
-    })
+    kg_triples.append(
+        {
+            "subject": asset,
+            "predicate": "TRADE_BUILT",
+            "object": direction,
+            "attrs": trade,
+            "source_name": "elite_trader",
+            "source_tier": "internal",
+            "confidence": 0.0,
+        }
+    )
 
     return trade
 
 
-def execute_trade(trade: dict, strategy_id: str, strategy_key: str, kg_triples: list) -> dict:
+def execute_trade(
+    trade: dict, strategy_id: str, strategy_key: str, kg_triples: list
+) -> dict:
     asset = trade["asset"]
     direction = trade["direction"]
 
-    result = mcporter_call("strategy_open_position", {
-        "strategyId": strategy_id,
-        "asset": asset,
-        "direction": direction,
-        "leverage": trade["leverage"],
-        "marginAmount": trade["marginUsd"],
-        "orderType": "LIMIT",
-        "price": trade["price"],
-        "timeInForce": "ALO",
-    }, timeout=30)
+    result = mcporter_call(
+        "strategy_open_position",
+        {
+            "strategyId": strategy_id,
+            "asset": asset,
+            "direction": direction,
+            "leverage": trade["leverage"],
+            "marginAmount": trade["marginUsd"],
+            "orderType": "LIMIT",
+            "price": trade["price"],
+            "timeInForce": "ALO",
+        },
+        timeout=30,
+    )
 
     if "error" in result:
         log(f"ELITE trade failed: {result['error']}")
         return None
 
-    mcporter_call("strategy_set_sl_tp", {
-        "strategyId": strategy_id,
-        "asset": asset,
-        "reduceOnly": True,
-        "stopLoss": trade["stopPrice"],
-        "takeProfit1": trade["tp1Price"],
-        "takeProfit2": trade["tp2Price"],
-    }, timeout=15)
+    mcporter_call(
+        "strategy_set_sl_tp",
+        {
+            "strategyId": strategy_id,
+            "asset": asset,
+            "reduceOnly": True,
+            "stopLoss": trade["stopPrice"],
+            "takeProfit1": trade["tp1Price"],
+            "takeProfit2": trade["tp2Price"],
+        },
+        timeout=15,
+    )
 
     now = datetime.now(UTC)
-    hard_exit = (now + timedelta(days=1)).replace(hour=22, minute=0, second=0, microsecond=0)
+    hard_exit = (now + timedelta(days=1)).replace(
+        hour=22, minute=0, second=0, microsecond=0
+    )
     hard_exit_aest = hard_exit.astimezone(AEST)
 
     dsl_state = {
@@ -508,9 +588,23 @@ def execute_trade(trade: dict, strategy_id: str, strategy_key: str, kg_triples: 
         "playbook": {
             "scanner": "elite-trader",
             "priority": 90,
-            "entry": {"score": trade["entryScore"], "marginUsd": trade["marginUsd"], "leverage": trade["leverage"]},
-            "collapse": {"minTraderRatio": 1, "minTraderCountFloor": 1, "minConvictionRatio": 1, "minConcentrationRatio": 1},
-            "rotation": {"eligible": True, "deadWeightMin": 20, "minHighWaterRoe": 2, "priorityGap": 8},
+            "entry": {
+                "score": trade["entryScore"],
+                "marginUsd": trade["marginUsd"],
+                "leverage": trade["leverage"],
+            },
+            "collapse": {
+                "minTraderRatio": 1,
+                "minTraderCountFloor": 1,
+                "minConvictionRatio": 1,
+                "minConcentrationRatio": 1,
+            },
+            "rotation": {
+                "eligible": True,
+                "deadWeightMin": 20,
+                "minHighWaterRoe": 2,
+                "priorityGap": 8,
+            },
             "smSnapshot": {},
         },
     }
@@ -520,32 +614,36 @@ def execute_trade(trade: dict, strategy_id: str, strategy_key: str, kg_triples: 
     save_json(dsl_path, dsl_state)
     dsl_state["_file"] = str(dsl_path)
 
-    record_trade({
-        "action": "OPEN",
-        "asset": asset,
-        "direction": direction,
-        "entryPrice": trade["price"],
-        "size": trade["qty"],
-        "leverage": trade["leverage"],
-        "margin": trade["marginUsd"],
-        "strategyKey": strategy_key,
-        "strategyId": strategy_id,
-        "entrySource": "elite-trader",
-        "entryScore": trade["entryScore"],
-        "entryMode": "elite-alo",
-    })
+    record_trade(
+        {
+            "action": "OPEN",
+            "asset": asset,
+            "direction": direction,
+            "entryPrice": trade["price"],
+            "size": trade["qty"],
+            "leverage": trade["leverage"],
+            "margin": trade["marginUsd"],
+            "strategyKey": strategy_key,
+            "strategyId": strategy_id,
+            "entrySource": "elite-trader",
+            "entryScore": trade["entryScore"],
+            "entryMode": "elite-alo",
+        }
+    )
 
-    write_journal_row({
-        "intent": "ELITE_ENTRY",
-        "symbol": asset,
-        "setup": trade,
-        "entry": trade["price"],
-        "stop": trade["stopPrice"],
-        "tp1": trade["tp1Price"],
-        "tp2": trade["tp2Price"],
-        "action_taken": "OPEN_ATTEMPT",
-        "provenance_tags": ["elite-trader", "alo", f"gss-{trade['entryScore']}"],
-    })
+    write_journal_row(
+        {
+            "intent": "ELITE_ENTRY",
+            "symbol": asset,
+            "setup": trade,
+            "entry": trade["price"],
+            "stop": trade["stopPrice"],
+            "tp1": trade["tp1Price"],
+            "tp2": trade["tp2Price"],
+            "action_taken": "OPEN_ATTEMPT",
+            "provenance_tags": ["elite-trader", "alo", f"gss-{trade['entryScore']}"],
+        }
+    )
 
     send_telegram(
         f"? ELITE TRADE: {direction} {asset}\n"
@@ -555,15 +653,17 @@ def execute_trade(trade: dict, strategy_id: str, strategy_key: str, kg_triples: 
         f"GSS: {trade['entryScore']} | RR: {trade['netRr']}"
     )
 
-    kg_triples.append({
-        "subject": asset,
-        "predicate": "TRADE_EXECUTED",
-        "object": direction,
-        "attrs": {"price": trade["price"], "leverage": trade["leverage"]},
-        "source_name": "elite_trader",
-        "source_tier": "internal",
-        "confidence": 1.0,
-    })
+    kg_triples.append(
+        {
+            "subject": asset,
+            "predicate": "TRADE_EXECUTED",
+            "object": direction,
+            "attrs": {"price": trade["price"], "leverage": trade["leverage"]},
+            "source_name": "elite_trader",
+            "source_tier": "internal",
+            "confidence": 1.0,
+        }
+    )
 
     return dsl_state
 
@@ -591,9 +691,13 @@ def check_stale_elite_orders():
             except (ValueError, TypeError):
                 age_min = 0
 
-            px_data = mcporter_call("market_get_asset_data", {"asset": asset}, timeout=10)
+            px_data = mcporter_call(
+                "market_get_asset_data", {"asset": asset}, timeout=10
+            )
             px = px_data.get("data", px_data)
-            current_px = float(px.get("markPrice", px.get("mark", entry_price)) or entry_price)
+            current_px = float(
+                px.get("markPrice", px.get("mark", entry_price)) or entry_price
+            )
             drift = abs(current_px - entry_price)
             stop_dist = abs(stop_price - entry_price)
 
@@ -604,23 +708,31 @@ def check_stale_elite_orders():
                 reason = f"drift {drift:.4f} > 80% stop_dist"
             elif hard_exit:
                 try:
-                    hard_dt = datetime.fromisoformat(hard_exit.replace("+10:00", "+00:00").replace("AEST", "+10:00"))
+                    hard_dt = datetime.fromisoformat(
+                        hard_exit.replace("+10:00", "+00:00").replace("AEST", "+10:00")
+                    )
                     if now_aest >= hard_dt:
                         reason = "hard exit time reached"
                 except (ValueError, TypeError):
                     pass
 
             if reason:
-                mcporter_call("strategy_close_position", {
-                    "strategyId": dsl.get("strategyId"),
-                    "asset": asset,
-                }, timeout=15)
+                mcporter_call(
+                    "strategy_close_position",
+                    {
+                        "strategyId": dsl.get("strategyId"),
+                        "asset": asset,
+                    },
+                    timeout=15,
+                )
                 dsl["active"] = False
                 dsl["closedAt"] = now_iso()
                 dsl["closeReason"] = f"elite_stale:{reason}"
                 save_json(dsl_file, dsl)
                 cancelled.append(asset)
-                send_telegram(f"?? ELITE STALE CANCEL: {dsl.get('direction', '')} {asset}\nReason: {reason}")
+                send_telegram(
+                    f"?? ELITE STALE CANCEL: {dsl.get('direction', '')} {asset}\nReason: {reason}"
+                )
 
         except Exception as e:
             log(f"Stale check error for {dsl_file}: {e}")
@@ -645,7 +757,14 @@ def main():
 
     run_id = str(uuid.uuid4())[:8]
     kg_triples = []
-    kg_frontier = ["funding", "OI_delta", "whale_flow", "orderbook", "basis", "catalyst"]
+    kg_frontier = [
+        "funding",
+        "OI_delta",
+        "whale_flow",
+        "orderbook",
+        "basis",
+        "catalyst",
+    ]
     kg_conflicts = []
     internal_memory_used = False
 
@@ -678,12 +797,23 @@ def main():
 
         scored = []
         for asset in universe:
-            mkt = next((m for m in all_mkts if m.get("token", m.get("symbol", m.get("asset", "")) == asset), None)
+            mkt = next(
+                (
+                    m
+                    for m in all_mkts
+                    if m.get("token", m.get("symbol", m.get("asset", ""))) == asset
+                ),
+                None,
+            )
             if not mkt:
                 continue
-            gss_result = compute_gss(asset, mkt, sm_markets, scanner_bias, risk_mode, kg_triples)
-            if gss_result["sub_scores"]["scanner_confluence"] < 0.15 and \
-               gss_result["sub_scores"]["SM_whale_bias"] < 0.35:
+            gss_result = compute_gss(
+                asset, mkt, sm_markets, scanner_bias, risk_mode, kg_triples
+            )
+            if (
+                gss_result["sub_scores"]["scanner_confluence"] < 0.15
+                and gss_result["sub_scores"]["SM_whale_bias"] < 0.35
+            ):
                 continue
             scored.append(gss_result)
 
@@ -722,7 +852,9 @@ def main():
         }
 
         save_json(OUTPUTS_DIR / "elite-trader-state.json", output)
-        log(f"ELITE-TRADER: {len(trades)} trades | GSS top={top3[0]['gss'] if top3 else 1:.2f}")
+        log(
+            f"ELITE-TRADER: {len(trades)} trades | GSS top={top3[0]['gss'] if top3 else 1:.2f}"
+        )
 
         git_sync("auto: elite-trader run")
 
@@ -731,4 +863,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "--stale":
+        check_stale_elite_orders()
+    else:
+        main()

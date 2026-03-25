@@ -186,6 +186,14 @@ def job_reconcile():
     run_py("scripts/vps/reconcile-closes.py")
 
 
+def job_elite_trader():
+    run_py("scripts/vps/elite_trader.py")
+
+
+def job_elite_stale():
+    run_py("scripts/vps/elite_trader.py --stale")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -282,6 +290,16 @@ def main():
     # Reconcile closes — every 15min
     scheduler.add_job(job_reconcile, "interval", minutes=15, id="reconcile", seconds=30)
 
+    # ELITE-TRADER — every 30min, offset 7min
+    scheduler.add_job(
+        job_elite_trader, "interval", minutes=30, id="elite_trader", seconds=420
+    )
+
+    # ELITE Stale Order Check — every 5min, offset 3min
+    scheduler.add_job(
+        job_elite_stale, "interval", minutes=5, id="elite_stale", seconds=180
+    )
+
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
     print("  🦗 MANTIS Scanner:  every 90s")
@@ -298,6 +316,8 @@ def main():
     print("  📊 Arena Monitor:   every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
+    print("  ⚡ ELITE-TRADER:    every 30min")
+    print("  ⏰ ELITE Stale:     every 5min")
     print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
 

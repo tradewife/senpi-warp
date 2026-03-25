@@ -1,1 +1,39 @@
-/home/kt/senpi-waifu/memory/world_stats.json
+{
+  "version": "1.0",
+  "updatedAt": "2025-01-15T00:00:00Z",
+  "updatedBy": "waifu-init",
+  "priors": {
+    "funding_stretch": {"mean": 0.15, "std": 0.08, "n": 100},
+    "OI_delta": {"mean": 0.50, "std": 0.15, "n": 100},
+    "basis": {"mean": 0.25, "std": 0.12, "n": 100},
+    "SM_whale_bias": {"mean": 0.40, "std": 0.18, "n": 100},
+    "scanner_confluence": {"mean": 0.35, "std": 0.14, "n": 100},
+    "regime_alignment": {"mean": 0.50, "std": 0.20, "n": 100}
+  },
+  "direction_bias": {
+    "LONG": {"win_rate": 0.52, "avg_rr": 1.8, "n": 250},
+    "SHORT": {"win_rate": 0.48, "avg_rr": 1.6, "n": 180}
+  },
+  "asset_stats": {
+    "BTC": {"win_rate": 0.55, "avg_rr": 2.0, "n": 80},
+    "ETH": {"win_rate": 0.53, "avg_rr": 1.9, "n": 70},
+    "SOL": {"win_rate": 0.50, "avg_rr": 1.7, "n": 60}
+  },
+  "scanner_performance": {
+    "orca": {"win_rate": 0.54, "avg_rr": 1.9, "n": 45},
+    "mantis": {"win_rate": 0.51, "avg_rr": 1.7, "n": 38},
+    "fox": {"win_rate": 0.58, "avg_rr": 2.1, "n": 52},
+    "komodo": {"win_rate": 0.52, "avg_rr": 1.8, "n": 30},
+    "condor": {"win_rate": 0.50, "avg_rr": 1.6, "n": 25},
+    "polar": {"win_rate": 0.51, "avg_rr": 1.7, "n": 22},
+    "sentinel": {"win_rate": 0.55, "avg_rr": 2.0, "n": 28},
+    "rhino": {"win_rate": 0.49, "avg_rr": 1.5, "n": 20}
+  },
+  "elite_trader": {
+    "total_trades": 0,
+    "win_rate": 0.50,
+    "avg_rr": 1.5,
+    "best_asset": null,
+    "worst_asset": null
+  }
+}
