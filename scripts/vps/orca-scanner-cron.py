@@ -479,41 +479,7 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
 
 def try_auto_entry(signal: dict):
-    log(
-        f"ORCA try_auto_entry: {signal['asset']} mode={signal['mode']} score={signal['score']}"
-    )
-    from senpi_common import (
-        current_regime_params,
-        load_regime,
-        load_brain_state,
-        BRAIN_STATE_FILE,
-        RISK_REGIME_FILE,
-    )
-
-    regime = load_regime()
-    brain = load_brain_state()
-    params = current_regime_params()
-    log(
-        f"ORCA debug: regime_mode={regime.get('riskMode')} regime_file={RISK_REGIME_FILE} exists={RISK_REGIME_FILE.exists()}"
-    )
-    log(
-        f"ORCA debug: brain_file={BRAIN_STATE_FILE} exists={BRAIN_STATE_FILE.exists()} brain_keys={list(brain.keys())[:5]}"
-    )
-    log(
-        f"ORCA debug: effective autoEntryEnabled={params.get('autoEntryEnabled')} newEntriesAllowed={params.get('newEntriesAllowed')}"
-    )
-    log(
-        f"ORCA debug: regime BASELINE autoEntryEnabled={regime.get('regimes', {}).get('BASELINE', {}).get('autoEntryEnabled')}"
-    )
-    log(
-        f"ORCA debug: brain blockNewEntries={brain.get('executionPolicy', {}).get('blockNewEntries')} allowAutoEntry={brain.get('executionPolicy', {}).get('allowAutoEntry')}"
-    )
     if not is_auto_entry_enabled():
-        log(f"ORCA auto-entry: auto entry disabled for {signal['asset']}")
-        return
-    if signal["score"] < 6:
-        return
-    if signal["score"] < 6:
         return
     if signal["score"] < 6:
         return
@@ -727,8 +693,8 @@ def main():
             history = history_data
         else:
             history = history_data.get("scans", [])
-        # Log scan status periodically
-        if len(history) % 10 == 0 or len(history) < 4:
+        # Log scan status every 10 scans
+        if len(history) % 10 == 0:
             log(f"ORCA scan #{len(history)}: {len(current_scan['markets'])} markets")
 
         history.append(current_scan)
