@@ -479,7 +479,11 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
 
 def try_auto_entry(signal: dict):
+    log(
+        f"ORCA try_auto_entry: {signal['asset']} mode={signal['mode']} score={signal['score']}"
+    )
     if not is_auto_entry_enabled():
+        log(f"ORCA auto-entry: auto entry disabled for {signal['asset']}")
         return
     if signal["score"] < 6:
         return
