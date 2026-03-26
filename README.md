@@ -1,6 +1,6 @@
 # waifu — Strategic Trading CLI
 
-A CLI for operating a Hyperliquid perps trading system. The mechanical layer (Railway) runs scanners and enforces safety. You run this CLI for strategic decisions, observability, and skill management.
+A CLI for operating a Hyperliquid perps trading system using Senpi strategies and MCP. The mechanical layer (Railway) runs scanners and enforces safety. You run this CLI for strategic decisions, observability, and skill management.
 
 ## Quick Start
 
