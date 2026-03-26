@@ -39,14 +39,10 @@ from senpi_common import (
     is_entries_allowed,
     is_auto_entry_enabled,
     get_enabled_strategies,
-    count_open_slots,
-    get_strategy_state_dir,
-    check_directional_exposure_limit,
-    attach_position_playbook,
     add_pending_entry,
     record_trade,
     send_telegram,
-    mcporter_call,
+    mcporter_read,
     record_heartbeat,
 )
 
@@ -83,7 +79,7 @@ MIN_VOL_RATIO = 0.5
 
 def fetch_momentum_events() -> list[dict]:
     """Fetch real-time momentum threshold crossing events."""
-    result = mcporter_call("leaderboard_get_momentum_events", {})
+    result = mcporter_read("leaderboard_get_momentum_events", {})
     if "error" in result:
         log(f"Momentum events fetch failed: {result['error']}")
         return []
@@ -165,7 +161,7 @@ def check_market_confirmation(asset: str) -> tuple[bool, int]:
     Check aggregate SM concentration on the asset.
     Returns (confirmed, trader_count).
     """
-    result = mcporter_call("leaderboard_get_markets", {})
+    result = mcporter_read("leaderboard_get_markets", {})
     if "error" in result:
         return False, 0
 
@@ -191,7 +187,7 @@ def check_volume_confirmation(asset: str) -> tuple[bool, float]:
     Check 1h volume vs 6h average.
     Returns (confirmed, volume_ratio).
     """
-    result = mcporter_call("market_get_asset_data", {"asset": asset})
+    result = mcporter_read("market_get_asset_data", {"asset": asset})
     if "error" in result:
         return False, 0.0
 
@@ -428,263 +424,6 @@ def increment_entry_count():
 
 
 # ============================================================================
-# DSL High Water Mode state
-# ============================================================================
-
-
-def create_dsl_state(
-    *,
-    asset,
-    direction,
-    leverage,
-    entry_price,
-    size,
-    wallet,
-    strategy_id,
-    strategy_key,
-    score,
-) -> dict:
-    """Create a DSL High Water Mode state file for KOMODO."""
-    # Conviction-scaled Phase 1 floor
-    if score >= 10:
-        absolute_floor_roe = 0  # Unrestricted
-    elif score >= 8:
-        absolute_floor_roe = -25
-    else:
-        absolute_floor_roe = -20
-
-    return {
-        "active": True,
-        "asset": asset,
-        "direction": direction,
-        "leverage": leverage,
-        "entryPrice": entry_price,
-        "size": size,
-        "wallet": wallet,
-        "strategyId": strategy_id,
-        "strategyKey": strategy_key,
-        "entrySource": "auto-komodo",
-        "score": score,
-        # Phase 1
-        "phase": 1,
-        "phase1": {
-            "retraceThreshold": 0.03,
-            "consecutiveBreachesRequired": 3,
-            "absoluteFloorRoe": absolute_floor_roe,
-            "hardTimeoutMin": 30,
-            "weakPeakCutMin": 15,
-            "deadWeightCutMin": 0,
-        },
-        # Phase 2 High Water Mode (aligned with KOMODO spec + extended tiers)
-        "phase2TriggerRoe": 8,
-        "lockMode": "pct_of_high_water",
-        "tiers": [
-            {"triggerPct": 8, "lockHwPct": 25, "consecutiveBreachesRequired": 3},
-            {"triggerPct": 15, "lockHwPct": 45, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 25, "lockHwPct": 65, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 40, "lockHwPct": 80, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 60, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 80, "lockHwPct": 88, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 1},
-        ],
-        # Tracking
-        "highWaterPrice": entry_price,
-        "highWaterRoe": 0,
-        "currentTierIndex": -1,
-        "consecutiveBreaches": 0,
-        "floorPrice": None,
-        "stagnation": {
-            "enabled": True,
-            "minRoePct": 10,
-            "maxStaleSec": 3600,
-        },
-        "createdAt": now_iso(),
-    }
-
-
-# ============================================================================
-# Auto-entry
-# ============================================================================
-
-
-def try_auto_entry(
-    asset: str, direction: str, events: list[dict], score: int, breakdown: dict
-):
-    """Attempt entry on a consensus signal that passed all five gates."""
-    if not is_auto_entry_enabled():
-        log(f"KOMODO: Auto-entry disabled by regime — skipping {asset}")
-        return
-
-    # Risk checks
-    allowed, reason = check_risk_limits()
-    if not allowed:
-        log(f"KOMODO: Risk limit blocked {asset}: {reason}")
-        return
-
-    if check_asset_cooldown(asset):
-        log(f"KOMODO: {asset} on cooldown — skipping")
-        return
-
-    if count_komodo_open_positions() >= MAX_POSITIONS:
-        log(f"KOMODO: Max positions ({MAX_POSITIONS}) reached — skipping {asset}")
-        return
-
-    # Find strategy with free slots
-    regime_params = current_regime_params()
-    strategies = get_enabled_strategies()
-    target_strategy = None
-
-    for strat in strategies:
-        state_dir = get_strategy_state_dir(strat["_key"])
-        dsl_file = state_dir / f"dsl-{asset}.json"
-        existing = load_json(dsl_file, default=None)
-        if existing and existing.get("active", False):
-            continue
-
-        if count_open_slots(strat) > 0:
-            target_strategy = strat
-            break
-
-    if not target_strategy:
-        log(f"KOMODO: No free slots for {asset}")
-        return
-
-    # Position sizing — hardcoded 7-10x leverage band (same as ORCA)
-    budget = target_strategy.get("budget", 1000)
-    alloc_pct = regime_params.get("allocPctPerSlot", 30) / 100
-    leverage = min(
-        max(target_strategy.get("defaultLeverage", 8), MIN_LEVERAGE),
-        MAX_LEVERAGE,
-        regime_params.get("maxLeverageCrypto", 10),
-    )
-    margin = budget * alloc_pct
-
-    allowed_exposure, exposure = check_directional_exposure_limit(
-        direction, margin, leverage
-    )
-    if not allowed_exposure:
-        log(
-            f"KOMODO: directional cap blocked {asset} {direction} "
-            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
-        )
-        return
-
-    # KOMODO: ALO (maker) orders for fee savings — patient ambush, not speed-critical
-    log(
-        f"🦎 KOMODO AUTO-ENTRY: {direction} {asset} | "
-        f"margin=${margin:.0f} lev={leverage}x order=ALO | "
-        f"score={score} traders={breakdown['traderCount']}"
-    )
-
-    entry_result = mcporter_call(
-        "create_position",
-        {
-            "strategyWalletAddress": target_strategy.get("wallet"),
-            "orders": [
-                {
-                    "coin": asset,
-                    "direction": direction,
-                    "leverage": int(leverage),
-                    "marginAmount": margin,
-                    "orderType": "MARKET",
-                }
-            ],
-        },
-    )
-
-    if "error" in entry_result:
-        log(f"KOMODO: Entry FAILED for {asset}: {entry_result['error']}")
-        return
-
-    entry_price = float(entry_result.get("entryPrice", 0))
-    size = float(entry_result.get("size", 0))
-
-    # Create DSL High Water Mode state
-    dsl_state = create_dsl_state(
-        asset=asset,
-        direction=direction,
-        leverage=leverage,
-        entry_price=entry_price,
-        size=size,
-        wallet=target_strategy.get("wallet"),
-        strategy_id=target_strategy.get("strategyId"),
-        strategy_key=target_strategy["_key"],
-        score=score,
-    )
-    attach_position_playbook(
-        dsl_state,
-        scanner="komodo",
-        margin=margin,
-        leverage=leverage,
-        score=score,
-        reasons=[
-            f"CONSENSUS {breakdown.get('traderCount', 0)}",
-            f"TIER {breakdown.get('avgTier', 0)}",
-            f"CONC {breakdown.get('avgConcentration', 0)}",
-        ],
-        sm_snapshot={
-            "traderCount": breakdown.get("traderCount"),
-            "concentration": breakdown.get("avgConcentration"),
-        },
-        setup={"breakdown": breakdown},
-    )
-    state_dir = get_strategy_state_dir(target_strategy["_key"])
-    save_json(state_dir / f"dsl-{asset}.json", dsl_state)
-
-    # Record trade
-    record_trade(
-        {
-            "action": "OPEN",
-            "asset": asset,
-            "direction": direction,
-            "entryPrice": entry_price,
-            "size": size,
-            "margin": margin,
-            "leverage": leverage,
-            "strategyKey": target_strategy["_key"],
-            "entrySource": "auto-komodo",
-            "entryMode": "KOMODO",
-            "entryScore": score,
-            "orderType": "limit",
-            "scoreBreakdown": breakdown,
-            "traderCount": breakdown["traderCount"],
-        }
-    )
-
-    # Queue for Oz review
-    add_pending_entry(
-        {
-            "asset": asset,
-            "direction": direction,
-            "autoEntered": True,
-            "strategyKey": target_strategy["_key"],
-            "entryPrice": entry_price,
-            "margin": margin,
-            "leverage": leverage,
-            "score": score,
-            "scoreBreakdown": breakdown,
-            "source": "komodo",
-        }
-    )
-
-    # Update tracking
-    increment_entry_count()
-    set_asset_cooldown(asset)
-
-    # Telegram alert
-    send_telegram(
-        f"🦎 KOMODO ENTRY: {direction} {asset}\n"
-        f"Score: {score} | Traders: {breakdown['traderCount']} | "
-        f"Avg Tier: {breakdown['avgTier']}\n"
-        f"Entry: ${entry_price:.4f} | Margin: ${margin:.0f} | Lev: {leverage}x\n"
-        f"Market: {breakdown['marketTraders']} SM traders | "
-        f"Vol ratio: {breakdown['volumeRatio']}x\n"
-        f"Regime: {'+' if breakdown['regimeAdj'] > 0 else ''}{breakdown['regimeAdj']}\n"
-        f"Strategy: {target_strategy.get('name', target_strategy['_key'])}"
-    )
-
-
-# ============================================================================
 # Main scan loop
 # ============================================================================
 
@@ -774,7 +513,22 @@ def scan():
 
         # All gates passed — attempt entry
         if is_entries_allowed():
-            try_auto_entry(asset, direction, group_events, score, breakdown)
+            add_pending_entry(
+                {
+                    "asset": asset,
+                    "direction": direction,
+                    "autoEntered": False,
+                    "score": score,
+                    "source": "komodo",
+                    "mode": "KOMODO",
+                    "reasons": [
+                        f"CONSENSUS {breakdown.get('traderCount', 0)}",
+                        f"TIER {breakdown.get('avgTier', 0)}",
+                        f"CONC {breakdown.get('avgConcentration', 0)}",
+                    ],
+                    "scoreBreakdown": breakdown,
+                }
+            )
             entries_this_scan += 1
 
 
