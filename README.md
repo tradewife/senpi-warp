@@ -1,171 +1,90 @@
-# waifu — Strategic Trading CLI
+As your Senior Developer, I have drafted a comprehensive, professional **README.md** for the **senpi-waifu** project. This version reflects the high-integrity, "Single Execution Path" architecture we just completed, moving away from the "Mechanical Wild West" and toward a professional **Tiered Governance Model**.
 
-A CLI for operating a Hyperliquid perps trading system using Senpi strategies and MCP. The mechanical layer (Railway) runs scanners and enforces safety. You run this CLI for strategic decisions, observability, and skill management.
+***
 
-## Quick Start
+# 🐺 senpi-waifu: Strategic Trading CLI
+### *Mechanical Strength. Strategic Sovereignty.*
 
+**senpi-waifu** is a high-integrity CLI and autonomous worker for operating a Hyperliquid perpetual futures trading system. It integrates **Senpi MCP strategies** with a hardened, tiered governance layer that separates mechanical safety from strategic decision-making.
+
+The system has been re-engineered to eliminate "ghost signals" and race conditions through a **Single Execution Path** architecture: scanners are passive probes, while all trade execution is centralized through the `TradeEvaluator` governance engine.
+
+---
+
+## 🏗 Core Architecture: Tiered Governance
+
+The system operates on three distinct layers of authority to ensure profitable selectivity and account safety:
+
+1.  **Passive Probes (Scanners):** ORCA, MANTIS, FOX, and others continuously scan the markets for signals. They have **zero trading authority** and only queue detections into `state/pending-entries.json`.
+2.  **Manual Gateway (`waifu evaluate`):** The primary Human-in-the-Loop (HITL) interface. It applies the **10 Hardcoded Safety Gates** and notifies you via Telegram for approval on valid signals.
+3.  **Autonomous Overlay (`waifu jido`):** A high-conviction wrapper that imports the evaluation engine. It executes trades automatically **only** if a signal passes your specific "Autonomous Rules" (e.g., Scanner ROI > 15% in `arena-learnings.json`).
+
+---
+
+## 🛡 Non-Negotiable Safety Gates
+These gates are hardcoded in the Python core (`senpi_common.py`) and cannot be overridden by strategic config or AI agents:
+
+| Gate | Value | Description |
+| :--- | :--- | :--- |
+| **Max Positions** | 3 | Concentration over diversification to beat fees. |
+| **Leverage Band** | 7–10x | Minimum to overcome fees; max to prevent blowups. |
+| **Daily Loss Limit** | 10% | Auto-triggers **RISK_OFF** regime if hit. |
+| **Catastrophic DD** | 20% | Immediate flattening of all positions from equity peak. |
+| **Asset Ban** | XYZ:* | Any assets prefixed with `xyz:` are strictly prohibited. |
+| **Cooldown** | 2 Hours | Mandatory per-asset waiting period after a position exit. |
+| **Trend Alignment** | 4H | No counter-trend entries allowed against the 4H window. |
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+Install the CLI in editable mode to link the `waifu_cli` package:
 ```bash
-# Check system state
-waifu status
-
-# Watch live logs from Railway
-waifu debug logs -f
-
-# Classify market regime
-waifu regime
-
-# Process pending signals (dry-run first)
-waifu evaluate --dry-run
-waifu evaluate
+pip install -e .
 ```
 
-## Installation
-
+### 2. Configuration
+The system uses a unified `/app` state directory for both local and Railway environments. Initialize your environment:
 ```bash
-git clone https://github.com/YOUR_USER/senpi-waifu.git
-cd senpi-waifu
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-
-# Configure (first-time setup)
-cp .env.example .env
-$EDITOR .env  # Add your tokens
 waifu config validate
-
-# Verify
-waifu --help
 ```
+**Required Variables:**
+*   `SENPI_AUTH_TOKEN`: Your Senpi MCP authentication.
+*   `GITHUB_TOKEN`: Fine-grained token for state synchronization.
 
-## Configuration
+### 3. Deploy to Railway
+Pushing to your repository triggers an automatic build. The `worker.py` will initialize the unified `/app` path and schedule the **JIDO Executor** to run every 5 minutes.
 
-Run `waifu config validate` to check your setup. Set required values:
+---
 
-```bash
-waifu config set SENPI_AUTH_TOKEN your_senpi_token
-waifu config set GITHUB_TOKEN your_github_token
-```
+## 🕹 Command Reference
 
-**Required variables:**
+| Command | Purpose | Path |
+| :--- | :--- | :--- |
+| `waifu status` | Snapshot of regime, positions, and cron health. | Read-Only |
+| `waifu evaluate` | **Manual Gateway:** Process queue and request approval. | HITL |
+| **`waifu jido`** | **Autonomous Wrapper:** Execute high-ROI signals. | Autonomous |
+| `waifu regime` | Classify market as RISK_ON, BASELINE, or RISK_OFF. | Strategic |
+| `waifu howl` | Nightly 10-pillar self-improvement and analysis. | Analytics |
+| `waifu arena` | Study winning predator strategies for ROI benchmarks. | Intelligence |
+| `waifu config rules` | View and edit user-defined strategic rules via chat [User Intent]. | Strategic |
 
-| Variable | Purpose |
-|----------|---------|
-| `SENPI_AUTH_TOKEN` | Senpi MCP authentication (get from senpi.ai) |
-| `GITHUB_TOKEN` | GitHub fine-grained token with repo read/write |
+---
 
-**Optional variables:**
+## 📡 Chat Integration
+The Telegram bot provides real-time control over your trading strategy:
+*   **`/status`**: Instant dashboard view.
+*   **`/rules`**: View current strategic thresholds for `jido`.
+*   **`/rules set <key> <val>`**: Dynamically update ROI or score requirements without a code push [User Intent].
+*   **`/flatten`**: Emergency close of all positions via the Oz strategic layer.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `SENPI_WAIFU_DIR` | Auto-detect | Project root |
-| `GITHUB_REPO` | `tradewife/senpi-waifu` | Repo for state sync |
-| `TELEGRAM_BOT_TOKEN` | None | Telegram alerts |
-| `TELEGRAM_CHAT_ID` | None | Telegram chat ID |
-| `RAILWAY_TOKEN` | None | Railway CLI |
+---
 
-For Railway deployment, export and copy to dashboard:
-```bash
-waifu config export
-```
+## 🛠 Developer Notes
+*   **Environment:** All state is persisted in `/app` on Railway.
+*   **Atomic Locking:** All position count modifications use the `acquire_trade_lock()` at `/tmp/senpi-trade.lock` to prevent race conditions.
+*   **Skills:** The system automatically pulls strategy updates via `update_skills()` in the health loop.
 
-## Commands
-
-| Command | Purpose | Schedule |
-|---------|---------|----------|
-| `waifu status` | System overview (read-only) | On-demand |
-| `waifu regime` | Classify RISK_ON/BASELINE/RISK_OFF | Hourly |
-| `waifu evaluate` | Process signals, execute trades | Every 15min |
-| `waifu review` | Portfolio health report | Every 6hr |
-| `waifu howl` | Nightly self-improvement | Daily 23:55 |
-| `waifu whale` | Copy-trade rebalance | Daily 01:00 |
-| `waifu arena` | Study top predators | Every 4hr |
-| `waifu emergency-stop` | Immediate RISK_OFF | On-demand |
-
-### Config Commands
-
-| Command | Purpose |
-|---------|---------|
-| `waifu config show` | View current config (secrets masked) |
-| `waifu config set <key> <val>` | Set a value (writes to .env) |
-| `waifu config validate` | Check required vars |
-| `waifu config export` | Export for Railway |
-
-### Debug Commands
-
-| Command | Purpose |
-|---------|---------|
-| `waifu debug logs [-f]` | Railway logs (follow mode with -f) |
-| `waifu debug status` | Deployment + local health |
-| `waifu debug tail <scanner>` | Filter logs to one scanner |
-| `waifu debug deploy --trigger` | Redeploy to Railway |
-
-### Dev Commands
-
-| Command | Purpose |
-|---------|---------|
-| `waifu dev list-skills` | Browse installable skills |
-| `waifu dev add-skill <name>` | Install a skill |
-| `waifu dev create-skill <name>` | Scaffold a new skill |
-| `waifu dev show-skill <name>` | Display skill documentation |
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│  Railway (Mechanical Layer)             │
-│  • Scanners hunt entries (60s-5min)     │
-│  • DSL trailing stops manage exits      │
-│  • Risk Arbiter enforces safety         │
-└───────────────┬─────────────────────────┘
-                │ git pull/push
-┌───────────────┴─────────────────────────┐
-│  waifu CLI (Strategic Layer)            │
-│  • Regime classification                │
-│  • Signal evaluation & execution        │
-│  • Reports & self-improvement           │
-└─────────────────────────────────────────┘
-```
-
-The mechanical layer is authoritative. This CLI can only influence config and execute trades through the same API — it cannot bypass hardcoded safety gates.
-
-## Safety Constraints (Non-Negotiable)
-
-These are enforced in Python code:
-
-| Gate | Value |
-|------|-------|
-| Max positions | 3 |
-| Leverage | 7–10x only |
-| Daily loss limit | 10% → auto RISK_OFF |
-| Catastrophic drawdown | 20% → auto flatten |
-| XYZ equities | BANNED |
-| Per-asset cooldown | 2 hours |
-
-## Cron Setup (Optional)
-
-For autonomous operation, schedule the commands:
-
-```cron
-*/15 * * * *  cd /home/kt/senpi-waifu && source venv/bin/activate && waifu evaluate
-0 * * * *     cd /home/kt/senpi-waifu && source venv/bin/activate && waifu regime
-0 */6 * * *   cd /home/kt/senpi-waifu && source venv/bin/activate && waifu review
-55 23 * * *   cd /home/kt/senpi-waifu && source venv/bin/activate && waifu howl
-0 1 * * *     cd /home/kt/senpi-waifu && source venv/bin/activate && waifu whale
-0 */4 * * *   cd /home/kt/senpi-waifu && source venv/bin/activate && waifu arena
-```
-
-## Emergency Stop
-
-```bash
-waifu emergency-stop --reason "Manual intervention"
-```
-
-Or edit directly:
-```bash
-echo '{"riskMode":"RISK_OFF",...}' > config/risk-regime.json
-git commit -am "RISK_OFF" && git push
-```
-
-## Further Reading
-
-- `AGENTS.md` — Full operating manual for AI and human operators
-- `senpi-skills/` — Available trading skills
+---
+*Built with ❤️ for the Senpi Ecosystem.*
