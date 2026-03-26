@@ -19,14 +19,21 @@ from waifu_cli.runtime import sync_before, sync_after, acquire_command_lock, rel
 
 def _classify_regime() -> tuple[str, str]:
     """Fetch BTC candles and classify regime. Returns (mode, reason)."""
-    btc_4h = sc.mcporter_call("market_get_candles", {"asset": "BTC", "interval": "4h", "limit": 10})
+    # Use market_get_asset_data with candle_intervals (market_get_candles doesn't exist)
+    btc_data = sc.mcporter_call("market_get_asset_data", {
+        "asset": "BTC",
+        "candle_intervals": ["4h"],
+        "include_order_book": False,
+        "include_funding": False
+    })
 
-    if not btc_4h.get("success", False) and "error" in btc_4h:
-        return "BASELINE", "No candle data available"
+    if btc_data.get("error") or not btc_data.get("candles"):
+        err = btc_data.get("error", "No candle data in response")
+        return "BASELINE", f"No candle data available ({err})"
 
-    candles = btc_4h.get("data", btc_4h.get("candles", []))
+    candles = btc_data.get("candles", {}).get("4h", [])
     if not candles or len(candles) < 5:
-        return "BASELINE", "Insufficient candle data"
+        return "BASELINE", f"Insufficient candle data ({len(candles)} candles)"
 
     # Extract close prices
     closes = [
