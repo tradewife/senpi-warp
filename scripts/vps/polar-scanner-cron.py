@@ -696,90 +696,33 @@ def scan():
     else:
         lev = lev_cfg.get("min", 12)
 
-    allowed_exposure, exposure = check_directional_exposure_limit(
-        thesis["direction"], margin, lev
-    )
-    if not allowed_exposure:
-        return
+    log(f"POLAR: Signal ETH {thesis['direction']} score {thesis['score']}")
 
-    log(f"POLAR: Entering ETH {thesis['direction']} at score {thesis['score']}")
-
-    res = mcporter_read(
-        "create_position",
+    add_pending_entry(
         {
-            "strategyWalletAddress": target_strat.get("wallet"),
-            "orders": [
-                {
-                    "coin": "ETH",
-                    "direction": thesis["direction"],
-                    "leverage": int(lev),
-                    "marginAmount": margin,
-                    "orderType": "MARKET",
-                }
-            ],
-        },
+            "asset": "ETH",
+            "direction": thesis["direction"],
+            "autoEntered": False,
+            "strategyKey": target_strat["_key"],
+            "margin": margin,
+            "leverage": lev,
+            "score": thesis["score"],
+            "source": "polar",
+            "mode": "POLAR_HUNT",
+            "reasons": thesis["reasons"],
+        }
     )
 
-    if "error" not in res:
-        eprice = float(res.get("entryPrice", 0))
-        dsl = build_dsl_state(thesis["direction"], thesis["score"], config, eprice)
-        dsl["wallet"] = target_strat.get("wallet")
-        dsl["strategyId"] = target_strat.get("strategyId")
-        dsl["strategyKey"] = target_strat["_key"]
+    state["currentMode"] = "RIDING"
+    state["lastDirection"] = thesis["direction"]
+    save_json(POLAR_STATE_FILE, state)
 
-        attach_position_playbook(
-            dsl,
-            scanner="polar",
-            margin=margin,
-            leverage=lev,
-            score=thesis["score"],
-            reasons=thesis["reasons"],
-            setup={"mode": "HUNTING"},
-        )
-
-        sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
-        save_json(sfile, dsl)
-
-        state["currentMode"] = "RIDING"
-        state["lastDirection"] = thesis["direction"]
-        save_json(POLAR_STATE_FILE, state)
-
-        send_telegram(
-            f"🐻‍❄️ POLAR ENTRY: {thesis['direction']} ETH\n"
-            f"Score: {thesis['score']}\n"
-            f"Reasons: {', '.join(thesis['reasons'])}\n"
-            f"Margin: ${margin:.0f} | Lev: {lev}x"
-        )
-
-        record_trade(
-            {
-                "action": "OPEN",
-                "asset": "ETH",
-                "direction": thesis["direction"],
-                "entryPrice": eprice,
-                "size": float(res.get("size", 0)),
-                "margin": margin,
-                "leverage": lev,
-                "strategyKey": target_strat["_key"],
-                "entrySource": "polar-hunting",
-                "entryMode": "HUNTING",
-                "entryScore": thesis["score"],
-            }
-        )
-
-        add_pending_entry(
-            {
-                "asset": "ETH",
-                "direction": thesis["direction"],
-                "autoEntered": True,
-                "strategyKey": target_strat["_key"],
-                "entryPrice": eprice,
-                "margin": margin,
-                "leverage": lev,
-                "score": thesis["score"],
-                "source": "polar",
-            }
-        )
+    send_telegram(
+        f"🐻‍❄️ POLAR SIGNAL: {thesis['direction']} ETH\n"
+        f"Score: {thesis['score']}\n"
+        f"Reasons: {', '.join(thesis['reasons'])}\n"
+        f"Margin: ${margin:.0f} | Lev: {lev}x"
+    )
 
 
 def main():

@@ -683,13 +683,76 @@ def mcporter_read(tool: str, args: dict, *, timeout: int = 30) -> dict:
     return mcporter_call(tool, args, timeout=timeout)
 
 
+def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
+    """
+    Direct HTTP JSON-RPC call to Senpi MCP server.
+    Bypasses mcporter CLI which is broken for Senpi.
+    """
+    import urllib.request
+    import urllib.error
+    import json
+
+    url = os.environ.get("SENPI_MCP_URL", "https://mcp.prod.senpi.ai/mcp")
+    api_key = os.environ.get("SENPI_API_KEY", "")
+
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": tool,
+            "arguments": args
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            # MCP returns content array with text items
+            if "result" in result and "content" in result["result"]:
+                for item in result["result"]["content"]:
+                    if item.get("type") == "text":
+                        try:
+                            return json.loads(item["text"])
+                        except json.JSONDecodeError:
+                            return {"data": item["text"], "success": True}
+            if "error" in result:
+                return {"error": result["error"], "success": False}
+            return result.get("result", {"success": True})
+    except urllib.error.HTTPError as e:
+        return {"error": f"HTTP {e.code}: {e.reason}", "success": False}
+    except urllib.error.URLError as e:
+        return {"error": f"URL error: {e.reason}", "success": False}
+    except Exception as e:
+        return {"error": str(e), "success": False}
+
+
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
     CENTRALIZED ENTRY POINT for all Senpi MCP server interactions.
 
-    Call a Senpi MCP tool via mcporter CLI.
+    Uses direct HTTP JSON-RPC (mcporter CLI bypassed for reliability).
     Returns parsed JSON response or dict with 'error' key on failure.
-    Retries up to 3 times on transient errors (connection closed, timeout).
+    """
+    return _senpi_mcp_request(tool, args, timeout=timeout)
+
+
+def _mcporter_call_legacy(tool: str, args: dict, *, timeout: int = 30) -> dict:
+    """
+    LEGACY: Call a Senpi MCP tool via mcporter CLI.
+    Kept for reference but not used - mcporter is broken for Senpi.
     """
     import subprocess
     import json

@@ -21,23 +21,17 @@ from senpi_common import (
     CONFIG_DIR,
     acquire_lock,
     add_pending_entry,
-    attach_position_playbook,
-    check_directional_exposure_limit,
-    count_open_slots,
     current_regime_params,
     get_enabled_strategies,
-    get_open_positions,
-    get_strategy_state_dir,
     git_sync,
     is_entries_allowed,
     is_rotation_cooled_down,
     load_json,
     load_trade_journal,
     log,
-    mcporter_call,
+    mcporter_read,
     now_iso,
     record_heartbeat,
-    record_trade,
     release_lock,
     save_json,
     send_telegram,
@@ -104,7 +98,7 @@ def _safe_int(value, default=0) -> int:
 
 
 def find_rising_assets() -> list[dict]:
-    result = mcporter_call("leaderboard_get_markets", {})
+    result = mcporter_read("leaderboard_get_markets", {})
     if "error" in result:
         log(f"SENTINEL: leaderboard_get_markets failed: {result.get('error')}")
         return []
@@ -178,7 +172,7 @@ def check_quality_traders(asset: str) -> list[dict]:
     seen_traders = set()
 
     for tier in (2, 1):
-        result = mcporter_call(
+        result = mcporter_read(
             "leaderboard_get_momentum_events",
             {
                 "tier": tier,
@@ -246,7 +240,7 @@ def check_quality_traders(asset: str) -> list[dict]:
 
 
 def fetch_top_traders() -> list[dict]:
-    result = mcporter_call("leaderboard_get_top", {"limit": TOP_TRADERS_LIMIT})
+    result = mcporter_read("leaderboard_get_top", {"limit": TOP_TRADERS_LIMIT})
     if "error" in result:
         return []
     return _as_top_trader_list(result)
@@ -425,30 +419,21 @@ def scan() -> bool:
     if not is_entries_allowed():
         return False
 
-    target_strategy = None
-    for strategy in get_enabled_strategies():
-        if count_open_slots(strategy) > 0:
-            target_strategy = strategy
-            break
-    if not target_strategy:
+    strategies = get_enabled_strategies()
+    if not strategies:
         return False
+    target_strategy = strategies[0]
 
     max_entries = config.get("risk", {}).get("maxEntriesPerDay", 5)
     if count_daily_entries(target_strategy["_key"]) >= max_entries:
         log("SENTINEL: daily entry cap reached")
         return False
 
-    active_assets = set()
-    for strategy in get_enabled_strategies():
-        for pos in get_open_positions(strategy["_key"]):
-            active_assets.add(pos.get("asset"))
-
     cooldown_min = config.get("risk", {}).get("cooldownMinutes", 120)
     candidates = [
         candidate
         for candidate in find_rising_assets()
-        if candidate["token"] not in active_assets
-        and not is_rotation_cooled_down(candidate["token"], cooldown_min)
+        if not is_rotation_cooled_down(candidate["token"], cooldown_min)
     ]
     if not candidates:
         return False
@@ -508,97 +493,13 @@ def scan() -> bool:
 
     asset = best["token"]
     direction = best["direction"]
-    allowed_exposure, exposure = check_directional_exposure_limit(
-        direction, margin, leverage
-    )
-    if not allowed_exposure:
-        log(
-            f"SENTINEL: directional cap blocked {asset} {direction} "
-            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
-        )
-        return False
-
-    log(f"SENTINEL: entering {asset} {direction} score={best['score']}")
-    result = mcporter_call(
-        "create_position",
-        {
-            "strategyWalletAddress": target_strategy.get("wallet"),
-            "orders": [
-                {
-                    "coin": asset,
-                    "direction": direction,
-                    "leverage": int(leverage),
-                    "marginAmount": margin,
-                    "orderType": "MARKET",
-                }
-            ],
-        },
-    )
-    if "error" in result:
-        log(f"SENTINEL: entry failed for {asset}: {result.get('error')}")
-        return False
-
-    entry_price = _safe_float(result.get("entryPrice", 0))
-    size = _safe_float(result.get("size", 0))
-    dsl = build_dsl_state(
-        asset, direction, best["score"], config, entry_price, leverage
-    )
-    dsl["wallet"] = target_strategy.get("wallet")
-    dsl["strategyId"] = target_strategy.get("strategyId")
-    dsl["strategyKey"] = target_strategy["_key"]
-    dsl["size"] = size
-    attach_position_playbook(
-        dsl,
-        scanner="sentinel",
-        margin=margin,
-        leverage=leverage,
-        score=best["score"],
-        reasons=best["reasons"],
-        sm_snapshot={
-            "traderCount": best["leaderboard"].get("trader_count"),
-            "concentration": best["quality_traders"][0]["concentration"]
-            if best["quality_traders"]
-            else None,
-        },
-        setup={
-            "qualityTraderCount": len(best["quality_traders"]),
-            "topTraderAppearances": best.get("top_trader_appearances", 0),
-        },
-    )
-
-    state_dir = get_strategy_state_dir(target_strategy["_key"])
-    save_json(state_dir / f"dsl-{asset}.json", dsl)
-
-    send_telegram(
-        f"🛡 SENTINEL ENTRY: {direction} {asset}\n"
-        f"Score: {best['score']} | Quality traders: {len(best['quality_traders'])}\n"
-        f"Reasons: {', '.join(best['reasons'][:4])}\n"
-        f"Margin: ${margin:.0f} | Lev: {leverage}x"
-    )
-
-    record_trade(
-        {
-            "action": "OPEN",
-            "asset": asset,
-            "direction": direction,
-            "entryPrice": entry_price,
-            "size": size,
-            "margin": margin,
-            "leverage": leverage,
-            "strategyKey": target_strategy["_key"],
-            "entrySource": "auto-sentinel",
-            "entryMode": "SENTINEL",
-            "entryScore": best["score"],
-        }
-    )
-
+    log(f"SENTINEL: signal {asset} {direction} score={best['score']}")
     add_pending_entry(
         {
             "asset": asset,
             "direction": direction,
-            "autoEntered": True,
+            "autoEntered": False,
             "strategyKey": target_strategy["_key"],
-            "entryPrice": entry_price,
             "margin": margin,
             "leverage": leverage,
             "score": best["score"],
