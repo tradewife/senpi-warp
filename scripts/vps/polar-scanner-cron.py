@@ -24,17 +24,14 @@ from senpi_common import (
     now_iso,
     load_json,
     save_json,
-    mcporter_call,
+    mcporter_read,
     send_telegram,
     current_regime_params,
-    check_directional_exposure_limit,
-    attach_position_playbook,
     count_open_slots,
     get_enabled_strategies,
     get_strategy_state_dir,
     POSITION_STATE_DIR,
     CONFIG_DIR,
-    record_trade,
     add_pending_entry,
     record_heartbeat,
 )
@@ -119,7 +116,7 @@ def calc_rsi(closes, period=14):
 
 
 def get_eth_full_picture():
-    result = mcporter_call(
+    result = mcporter_read(
         "market_get_asset_data",
         {
             "asset": "ETH",
@@ -133,7 +130,7 @@ def get_eth_full_picture():
 
 
 def get_btc_correlation():
-    result = mcporter_call(
+    result = mcporter_read(
         "market_get_asset_data",
         {"asset": "BTC", "candle_intervals": ["15m", "1h"], "include_funding": False},
     )
@@ -148,7 +145,7 @@ def get_btc_correlation():
 
 
 def get_eth_sm_direction():
-    result = mcporter_call("leaderboard_get_markets", {})
+    result = mcporter_read("leaderboard_get_markets", {})
     if "error" in result:
         return None, 0, 0
 
@@ -534,42 +531,6 @@ def evaluate_reload(exit_state, entry_cfg):
 # ─── DSL State Builder ───────────────────────────────────────
 
 
-def build_dsl_state(direction, score, config, price):
-    # Determine conviction tier for absolute floor + timeout settings
-    tier = config["dsl"]["convictionTiers"][-1]
-    for ct in config["dsl"]["convictionTiers"]:
-        if score >= ct["minScore"]:
-            tier = ct
-            break
-
-    return {
-        "active": True,
-        "asset": "ETH",
-        "direction": direction,
-        "score": score,
-        "entrySource": "polar-hunting",
-        "phase": 1,
-        "highWaterPrice": price,
-        "highWaterRoe": 0,
-        "currentTierIndex": -1,
-        "consecutiveBreaches": 0,
-        "floorPrice": None,
-        "lockMode": config["dsl"]["lockMode"],
-        "phase2TriggerRoe": config["dsl"]["phase2TriggerRoe"],
-        "phase1": {
-            "retraceThreshold": 0.03,
-            "consecutiveBreachesRequired": 3,
-            "absoluteFloorRoe": tier["absoluteFloorRoe"],
-            "hardTimeoutMinutes": tier["hardTimeoutMin"],
-            "weakPeakCutMinutes": tier["weakPeakCutMin"],
-            "deadWeightCutMinutes": tier["deadWeightCutMin"],
-        },
-        "tiers": config["dsl"]["tiers"],
-        "stagnationTp": config["dsl"]["stagnationTp"],
-        "createdAt": now_iso(),
-    }
-
-
 # ─── Main ────────────────────────────────────────────────────
 
 
@@ -612,23 +573,12 @@ def scan():
 
         if not valid:
             log(f"POLAR: Thesis failed for ETH {direction}: {reasons}")
-            mcporter_call(
-                "strategy_close_position",
-                {
-                    "strategyId": active_pos.get(
-                        "strategyId", target_strat.get("strategyId")
-                    ),
-                    "asset": "ETH",
-                },
-            )
             active_pos["active"] = False
             active_pos["closedAt"] = now_iso()
             active_pos["closeReason"] = "polar_thesis_exit"
             sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
             save_json(sfile, active_pos)
-
             send_telegram(f"🐻‍❄️ POLAR THESIS EXIT: ETH\nReasons: {', '.join(reasons)}")
-
             state["currentMode"] = "HUNTING"
             state.pop("exitState", None)
             save_json(POLAR_STATE_FILE, state)
@@ -664,77 +614,31 @@ def scan():
                 dirn = exst["exitDirection"]
                 budget = target_strat.get("budget", 1000)
                 alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
-                margin = budget * alloc * 1.3  # Reloads get slightly higher margin
+                margin = budget * alloc * 1.3
                 lev = config["leverage"]["default"]
 
-                allowed_exposure, exposure = check_directional_exposure_limit(
-                    dirn, margin, lev
-                )
-                if not allowed_exposure:
-                    log(f"POLAR: cap blocked reload ETH {dirn}")
-                    return
-
-                log(f"POLAR: Reload triggered for ETH {dirn}")
-                res = mcporter_call(
-                    "create_position",
+                log(f"POLAR: Reload signal for ETH {dirn}")
+                add_pending_entry(
                     {
-                        "strategyWalletAddress": target_strat.get("wallet"),
-                        "orders": [
-                            {
-                                "coin": "ETH",
-                                "direction": dirn,
-                                "leverage": int(lev),
-                                "marginAmount": margin,
-                                "orderType": "MARKET",
-                            }
-                        ],
-                    },
+                        "asset": "ETH",
+                        "direction": dirn,
+                        "autoEntered": False,
+                        "strategyKey": target_strat["_key"],
+                        "margin": margin,
+                        "leverage": lev,
+                        "score": 12,
+                        "source": "polar",
+                        "mode": "POLAR_RELOAD",
+                        "reasons": reasons,
+                    }
                 )
-
-                if "error" not in res:
-                    eprice = float(res.get("entryPrice", 0))
-                    dsl = build_dsl_state(dirn, 12, config, eprice)
-                    dsl["wallet"] = target_strat.get("wallet")
-                    dsl["strategyId"] = target_strat.get("strategyId")
-                    dsl["strategyKey"] = target_strat["_key"]
-                    dsl["entrySource"] = "polar-reload"
-                    attach_position_playbook(
-                        dsl,
-                        scanner="polar",
-                        margin=margin,
-                        leverage=lev,
-                        score=12,
-                        reasons=reasons,
-                        setup={"mode": "STALKING"},
-                    )
-
-                    sfile = (
-                        get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
-                    )
-                    save_json(sfile, dsl)
-
-                    state["currentMode"] = "RIDING"
-                    state["lastDirection"] = dirn
-                    state.pop("exitState", None)
-                    save_json(POLAR_STATE_FILE, state)
-
-                    send_telegram(
-                        f"🐻‍❄️ POLAR RELOAD: {dirn} ETH\nMargin: ${margin:.0f} | Lev: {lev}x"
-                    )
-                    record_trade(
-                        {
-                            "action": "OPEN",
-                            "asset": "ETH",
-                            "direction": dirn,
-                            "entryPrice": eprice,
-                            "size": float(res.get("size", 0)),
-                            "margin": margin,
-                            "leverage": lev,
-                            "strategyKey": target_strat["_key"],
-                            "entrySource": "polar-reload",
-                            "entryMode": "STALKING",
-                        }
-                    )
+                state["currentMode"] = "RIDING"
+                state["lastDirection"] = dirn
+                state.pop("exitState", None)
+                save_json(POLAR_STATE_FILE, state)
+                send_telegram(
+                    f"🐻‍❄️ POLAR RELOAD SIGNAL: {dirn} ETH\nMargin: ${margin:.0f} | Lev: {lev}x"
+                )
                 return
 
             kills = [
@@ -800,7 +704,7 @@ def scan():
 
     log(f"POLAR: Entering ETH {thesis['direction']} at score {thesis['score']}")
 
-    res = mcporter_call(
+    res = mcporter_read(
         "create_position",
         {
             "strategyWalletAddress": target_strat.get("wallet"),

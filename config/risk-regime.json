@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-24T22:26:04.000000Z",
+  "updatedAt": "2026-03-26T23:01:17Z",
   "updatedBy": "waifu-regime",
-  "reason": "Waifu GO LIVE. BTC $70,409 choppy (69.5k-71.4k range), ETH $2,148. No clear 4H trend. BASELINE: 2 slots, 7-10x, high conviction only.",
+  "reason": "No candle data available",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
@@ -12,7 +12,9 @@
     "maxLeverage": 10,
     "maxPositionsTotal": 3,
     "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": ["xyz:"]
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ]
   },
   "regimes": {
     "RISK_ON": {

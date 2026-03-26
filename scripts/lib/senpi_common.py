@@ -656,6 +656,33 @@ def check_hard_cooldown(asset: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+READ_ONLY_TOOLS = frozenset(
+    {
+        "leaderboard_get_markets",
+        "leaderboard_get_momentum_events",
+        "leaderboard_get_top",
+        "market_get_asset_data",
+        "market_get_candles",
+        "market_get_orderbook",
+        "market_get_instrument_specs",
+        "market_get_prices",
+        "market_list_instruments",
+        "market_get_all_instruments",
+        "account_get_portfolio",
+    }
+)
+
+
+def mcporter_read(tool: str, args: dict, *, timeout: int = 30) -> dict:
+    """Read-only MCP wrapper for scanner scripts. Blocks all write tools."""
+    if tool not in READ_ONLY_TOOLS:
+        return {
+            "error": f"mcporter_read: write tool '{tool}' blocked in scanner context",
+            "success": False,
+        }
+    return mcporter_call(tool, args, timeout=timeout)
+
+
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
     CENTRALIZED ENTRY POINT for all Senpi MCP server interactions.

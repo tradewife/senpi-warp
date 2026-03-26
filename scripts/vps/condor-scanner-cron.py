@@ -17,17 +17,14 @@ from senpi_common import (
     now_iso,
     load_json,
     save_json,
-    mcporter_call,
+    mcporter_read,
     send_telegram,
     current_regime_params,
-    check_directional_exposure_limit,
-    attach_position_playbook,
     count_open_slots,
     get_enabled_strategies,
     get_strategy_state_dir,
     POSITION_STATE_DIR,
     CONFIG_DIR,
-    record_trade,
     add_pending_entry,
     record_heartbeat,
 )
@@ -94,7 +91,7 @@ def trend_structure(candles, lookbacks=12):
 
 
 def get_asset_data(asset):
-    result = mcporter_call(
+    result = mcporter_read(
         "market_get_asset_data",
         {
             "asset": asset,
@@ -120,7 +117,7 @@ def get_correlation_data(asset, corr_map):
 
 
 def get_sm_direction(asset):
-    result = mcporter_call("leaderboard_get_markets", {})
+    result = mcporter_read("leaderboard_get_markets", {})
     if "error" in result:
         return None, 0, 0
 
@@ -373,41 +370,6 @@ def evaluate_reload(exit_state, config):
 # ─── DSL Builder ─────────────────────────────────────────────
 
 
-def build_dsl_state(asset, direction, score, config, details):
-    tier = config["dsl"]["convictionTiers"][-1]
-    for ct in config["dsl"]["convictionTiers"]:
-        if score >= ct["minScore"]:
-            tier = ct
-            break
-
-    return {
-        "active": True,
-        "asset": asset,
-        "direction": direction,
-        "score": score,
-        "entrySource": "auto-condor",
-        "phase": 1,
-        "highWaterPrice": details["price"],
-        "highWaterRoe": 0,
-        "currentTierIndex": -1,
-        "consecutiveBreaches": 0,
-        "floorPrice": None,
-        "lockMode": config["dsl"]["lockMode"],
-        "phase2TriggerRoe": config["dsl"]["phase2TriggerRoe"],
-        "phase1": {
-            "retraceThreshold": 0.03,
-            "consecutiveBreachesRequired": 3,
-            "hardTimeoutMinutes": tier["hardTimeoutMin"],
-            "weakPeakCutMinutes": tier["weakPeakCutMin"],
-            "deadWeightCutMinutes": tier["deadWeightCutMin"],
-            "absoluteFloorRoe": tier["absoluteFloorRoe"],
-        },
-        "tiers": config["dsl"]["tiers"],
-        "stagnation": config["dsl"]["stagnationTp"],
-        "createdAt": now_iso(),
-    }
-
-
 # ─── Main ────────────────────────────────────────────────────
 
 
@@ -456,25 +418,14 @@ def scan():
 
         if not valid:
             log(f"CONDOR: Thesis failed for {asset} {direction}: {reasons}")
-            mcporter_call(
-                "strategy_close_position",
-                {
-                    "strategyId": active_pos.get(
-                        "strategyId", condor_strat.get("strategyId")
-                    ),
-                    "asset": asset,
-                },
-            )
             active_pos["active"] = False
             active_pos["closedAt"] = now_iso()
             active_pos["closeReason"] = "condor_thesis_exit"
             sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{asset}.json"
             save_json(sfile, active_pos)
-
             send_telegram(
                 f"🦅 CONDOR THESIS EXIT: {asset}\nReasons: {', '.join(reasons)}"
             )
-
             state["currentMode"] = "HUNTING"
             state.pop("exitState", None)
             state.pop("activeAsset", None)
@@ -515,82 +466,32 @@ def scan():
 
                 budget = condor_strat.get("budget", 1000)
                 alloc = current_regime_params().get("allocPctPerSlot", 30) / 100
-                margin = (
-                    budget * alloc * 1.4
-                )  # Reloads get slightly higher margin 35% vs 25%
+                margin = budget * alloc * 1.4
                 lev = config["leverage"]["default"]
-                allowed_exposure, exposure = check_directional_exposure_limit(
-                    dirn, margin, lev
-                )
-                if not allowed_exposure:
-                    log(
-                        f"CONDOR: directional cap blocked reload {asset} {dirn} "
-                        f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
-                    )
-                    return
 
-                log(f"CONDOR: Reload triggered for {asset} {dirn}")
-                res = mcporter_call(
-                    "create_position",
+                log(f"CONDOR: Reload signal for {asset} {dirn}")
+                add_pending_entry(
                     {
-                        "strategyWalletAddress": condor_strat.get("wallet"),
-                        "orders": [
-                            {
-                                "coin": asset,
-                                "direction": dirn,
-                                "leverage": int(lev),
-                                "marginAmount": margin,
-                                "orderType": "MARKET",
-                            }
-                        ],
-                    },
+                        "asset": asset,
+                        "direction": dirn,
+                        "autoEntered": False,
+                        "strategyKey": condor_strat["_key"],
+                        "margin": margin,
+                        "leverage": lev,
+                        "score": 10,
+                        "source": "condor",
+                        "mode": "CONDOR_RELOAD",
+                        "reasons": reasons,
+                    }
                 )
-
-                if "error" not in res:
-                    eprice = float(res.get("entryPrice", 0))
-                    dsl = build_dsl_state(asset, dirn, 10, config, {"price": eprice})
-                    dsl["wallet"] = condor_strat.get("wallet")
-                    dsl["strategyId"] = condor_strat.get("strategyId")
-                    dsl["strategyKey"] = condor_strat["_key"]
-                    attach_position_playbook(
-                        dsl,
-                        scanner="condor",
-                        margin=margin,
-                        leverage=lev,
-                        score=10,
-                        reasons=reasons,
-                        setup={"reload": True},
-                    )
-                    sfile = (
-                        get_strategy_state_dir(condor_strat["_key"])
-                        / f"dsl-{asset}.json"
-                    )
-                    save_json(sfile, dsl)
-
-                    state["currentMode"] = "RIDING"
-                    state["activeAsset"] = asset
-                    state["lastDirection"] = dirn
-                    state.pop("exitState", None)
-                    save_json(CONDOR_STATE_FILE, state)
-
-                    send_telegram(
-                        f"🦅 CONDOR RELOAD: {dirn} {asset}\nMargin: ${margin:.0f} | Lev: {lev}x"
-                    )
-
-                    record_trade(
-                        {
-                            "action": "OPEN",
-                            "asset": asset,
-                            "direction": dirn,
-                            "entryPrice": eprice,
-                            "size": float(res.get("size", 0)),
-                            "margin": margin,
-                            "leverage": lev,
-                            "strategyKey": condor_strat["_key"],
-                            "entrySource": "auto-condor",
-                            "entryMode": "CONDOR_RELOAD",
-                        }
-                    )
+                state["currentMode"] = "RIDING"
+                state["activeAsset"] = asset
+                state["lastDirection"] = dirn
+                state.pop("exitState", None)
+                save_json(CONDOR_STATE_FILE, state)
+                send_telegram(
+                    f"🦅 CONDOR RELOAD SIGNAL: {dirn} {asset}\nMargin: ${margin:.0f} | Lev: {lev}x"
+                )
                 return
 
             kills = [
@@ -640,101 +541,35 @@ def scan():
     margin = budget * alloc * base_adj
     lev = config["leverage"]["default"]
 
-    allowed_exposure, exposure = check_directional_exposure_limit(
-        best["direction"], margin, lev
-    )
-    if not allowed_exposure:
-        log(
-            f"CONDOR: directional cap blocked {best['asset']} {best['direction']} "
-            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
-        )
-        return
+    log(f"CONDOR: Signal {best['asset']} {best['direction']} score {best['score']}")
 
-    log(
-        f"CONDOR: Entering {best['asset']} {best['direction']} at score {best['score']}"
-    )
-
-    res = mcporter_call(
-        "create_position",
+    add_pending_entry(
         {
-            "strategyWalletAddress": condor_strat.get("wallet"),
-            "orders": [
-                {
-                    "coin": best["asset"],
-                    "direction": best["direction"],
-                    "leverage": int(lev),
-                    "marginAmount": margin,
-                    "orderType": "MARKET",
-                }
-            ],
-        },
+            "asset": best["asset"],
+            "direction": best["direction"],
+            "autoEntered": False,
+            "strategyKey": condor_strat["_key"],
+            "margin": margin,
+            "leverage": lev,
+            "score": best["score"],
+            "source": "condor",
+            "mode": "CONDOR_HUNT",
+            "reasons": best["reasons"],
+        }
     )
 
-    if "error" not in res:
-        eprice = float(res.get("entryPrice", 0))
-        dsl = build_dsl_state(
-            best["asset"], best["direction"], best["score"], config, best
-        )
-        dsl["wallet"] = condor_strat.get("wallet")
-        dsl["strategyId"] = condor_strat.get("strategyId")
-        dsl["strategyKey"] = condor_strat["_key"]
-        attach_position_playbook(
-            dsl,
-            scanner="condor",
-            margin=margin,
-            leverage=lev,
-            score=best["score"],
-            reasons=best["reasons"],
-            setup={"asset": best["asset"]},
-        )
+    state["currentMode"] = "RIDING"
+    state["activeAsset"] = best["asset"]
+    state["lastDirection"] = best["direction"]
+    save_json(CONDOR_STATE_FILE, state)
 
-        sfile = (
-            get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{best['asset']}.json"
-        )
-        save_json(sfile, dsl)
-
-        state["currentMode"] = "RIDING"
-        state["activeAsset"] = best["asset"]
-        state["lastDirection"] = best["direction"]
-        save_json(CONDOR_STATE_FILE, state)
-
-        scores_str = ", ".join(f"{t['asset']}:{t['score']}" for t in theses)
-        send_telegram(
-            f"🦅 CONDOR ENTRY: {best['direction']} {best['asset']}\n"
-            f"Score: {best['score']} (Options: {scores_str})\n"
-            f"Reasons: {', '.join(best['reasons'])}\n"
-            f"Margin: ${margin:.0f} | Lev: {lev}x"
-        )
-
-        record_trade(
-            {
-                "action": "OPEN",
-                "asset": best["asset"],
-                "direction": best["direction"],
-                "entryPrice": eprice,
-                "size": float(res.get("size", 0)),
-                "margin": margin,
-                "leverage": lev,
-                "strategyKey": condor_strat["_key"],
-                "entrySource": "auto-condor",
-                "entryMode": "CONDOR_HUNT",
-                "entryScore": best["score"],
-            }
-        )
-
-        add_pending_entry(
-            {
-                "asset": best["asset"],
-                "direction": best["direction"],
-                "autoEntered": True,
-                "strategyKey": condor_strat["_key"],
-                "entryPrice": eprice,
-                "margin": margin,
-                "leverage": lev,
-                "score": best["score"],
-                "source": "condor",
-            }
-        )
+    scores_str = ", ".join(f"{t['asset']}:{t['score']}" for t in theses)
+    send_telegram(
+        f"🦅 CONDOR SIGNAL: {best['direction']} {best['asset']}\n"
+        f"Score: {best['score']} (Options: {scores_str})\n"
+        f"Reasons: {', '.join(best['reasons'])}\n"
+        f"Margin: ${margin:.0f} | Lev: {lev}x"
+    )
 
 
 def main():

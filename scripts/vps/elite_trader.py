@@ -38,6 +38,7 @@ from senpi_common import (
     now_iso,
     load_regime,
     load_pending_entries,
+    add_pending_entry,
     get_enabled_strategies,
     get_open_positions,
     acquire_lock,
@@ -506,157 +507,59 @@ def execute_trade(
     asset = trade["asset"]
     direction = trade["direction"]
 
-    result = mcporter_call(
-        "strategy_open_position",
+    add_pending_entry(
         {
-            "strategyId": strategy_id,
             "asset": asset,
             "direction": direction,
-            "leverage": trade["leverage"],
-            "marginAmount": trade["marginUsd"],
-            "orderType": "LIMIT",
-            "price": trade["price"],
-            "timeInForce": "ALO",
-        },
-        timeout=30,
-    )
-
-    if "error" in result:
-        log(f"ELITE trade failed: {result['error']}")
-        return None
-
-    mcporter_call(
-        "strategy_set_sl_tp",
-        {
-            "strategyId": strategy_id,
-            "asset": asset,
-            "reduceOnly": True,
-            "stopLoss": trade["stopPrice"],
-            "takeProfit1": trade["tp1Price"],
-            "takeProfit2": trade["tp2Price"],
-        },
-        timeout=15,
-    )
-
-    now = datetime.now(UTC)
-    hard_exit = (now + timedelta(days=1)).replace(
-        hour=22, minute=0, second=0, microsecond=0
-    )
-    hard_exit_aest = hard_exit.astimezone(AEST)
-
-    dsl_state = {
-        "active": True,
-        "asset": asset,
-        "direction": direction,
-        "entryPrice": trade["price"],
-        "stopPrice": trade["stopPrice"],
-        "tp1": trade["tp1Price"],
-        "tp2": trade["tp2Price"],
-        "size": trade["qty"],
-        "leverage": trade["leverage"],
-        "margin": trade["marginUsd"],
-        "strategyId": strategy_id,
-        "strategyKey": strategy_key,
-        "scanner": "elite-trader",
-        "entryMode": "elite-alo",
-        "entryScore": trade["entryScore"],
-        "createdAt": now_iso(),
-        "highWaterPrice": trade["price"],
-        "highWaterRoe": 1,
-        "highWaterUpdatedAt": now_iso(),
-        "hardExitAt": hard_exit_aest.isoformat(),
-        "phase": 1,
-        "phase2TriggerRoe": 5,
-        "phase1": {
-            "absoluteFloorRoe": -30,
-            "hardTimeoutSec": 3600,
-            "weakPeakCutSec": 2700,
-            "deadWeightCutMin": 20,
-        },
-        "tiers": [
-            {"triggerPct": 5, "lockHwPct": 20, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 10, "lockHwPct": 40, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 20, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 30, "lockHwPct": 70, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 50, "lockHwPct": 80, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 75, "lockHwPct": 85, "consecutiveBreachesRequired": 3},
-            {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 3},
-        ],
-        "stagnationTp": {"enabled": True, "roeMin": 10, "hwStaleMin": 45},
-        "currentTierIndex": -1,
-        "currentBreachCount": 0,
-        "playbook": {
-            "scanner": "elite-trader",
-            "priority": 90,
-            "entry": {
-                "score": trade["entryScore"],
-                "marginUsd": trade["marginUsd"],
-                "leverage": trade["leverage"],
-            },
-            "collapse": {
-                "minTraderRatio": 1,
-                "minTraderCountFloor": 1,
-                "minConvictionRatio": 1,
-                "minConcentrationRatio": 1,
-            },
-            "rotation": {
-                "eligible": True,
-                "deadWeightMin": 20,
-                "minHighWaterRoe": 2,
-                "priorityGap": 8,
-            },
-            "smSnapshot": {},
-        },
-    }
-
-    dsl_path = STATE_DIR / strategy_key / f"dsl-{asset.lower()}-elite.json"
-    dsl_path.parent.mkdir(parents=True, exist_ok=True)
-    save_json(dsl_path, dsl_state)
-    dsl_state["_file"] = str(dsl_path)
-
-    record_trade(
-        {
-            "action": "OPEN",
-            "asset": asset,
-            "direction": direction,
-            "entryPrice": trade["price"],
-            "size": trade["qty"],
-            "leverage": trade["leverage"],
+            "autoEntered": False,
             "margin": trade["marginUsd"],
-            "strategyKey": strategy_key,
-            "strategyId": strategy_id,
+            "leverage": trade["leverage"],
+            "score": trade["entryScore"],
+            "source": "elite-trader",
+            "mode": "elite-alo",
             "entrySource": "elite-trader",
-            "entryScore": trade["entryScore"],
-            "entryMode": "elite-alo",
-        }
-    )
-
-    write_journal_row(
-        {
-            "intent": "ELITE_ENTRY",
-            "symbol": asset,
-            "setup": trade,
-            "entry": trade["price"],
-            "stop": trade["stopPrice"],
-            "tp1": trade["tp1Price"],
-            "tp2": trade["tp2Price"],
-            "action_taken": "OPEN_ATTEMPT",
-            "provenance_tags": ["elite-trader", "alo", f"gss-{trade['entryScore']}"],
+            "strategyKey": strategy_key,
+            "reasons": [
+                f"gss={trade['entryScore']:.2f}",
+                f"rr={trade['netRr']:.2f}",
+                f"atr={trade['atr']:.6f}",
+            ],
+            "price": trade["price"],
+            "stopPrice": trade["stopPrice"],
+            "tp1Price": trade["tp1Price"],
+            "tp2Price": trade["tp2Price"],
+            "orderType": "LIMIT",
+            "timeInForce": "ALO",
+            "qty": trade["qty"],
         }
     )
 
     send_telegram(
-        f"? ELITE TRADE: {direction} {asset}\n"
+        f"⚡ ELITE SIGNAL: {direction} {asset}\n"
         f"Price: {trade['price']} | Size: {trade['qty']}\n"
         f"Leverage: {trade['leverage']}x | Margin: ${trade['marginUsd']}\n"
         f"SL: {trade['stopPrice']} | TP1: {trade['tp1Price']} | TP2: {trade['tp2Price']}\n"
         f"GSS: {trade['entryScore']} | RR: {trade['netRr']}"
     )
 
+    write_journal_row(
+        {
+            "intent": "ELITE_SIGNAL",
+            "symbol": asset,
+            "setup": trade,
+            "entry": trade["price"],
+            "stop": trade["stopPrice"],
+            "tp1": trade["tp1Price"],
+            "tp2": trade["tp2Price"],
+            "action_taken": "SIGNAL_QUEUED",
+            "provenance_tags": ["elite-trader", "alo", f"gss-{trade['entryScore']}"],
+        }
+    )
+
     kg_triples.append(
         {
             "subject": asset,
-            "predicate": "TRADE_EXECUTED",
+            "predicate": "SIGNAL_QUEUED",
             "object": direction,
             "attrs": {"price": trade["price"], "leverage": trade["leverage"]},
             "source_name": "elite_trader",
@@ -665,7 +568,7 @@ def execute_trade(
         }
     )
 
-    return dsl_state
+    return {"queued": True, "asset": asset}
 
 
 def check_stale_elite_orders():
