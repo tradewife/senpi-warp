@@ -29,7 +29,30 @@ from waifu_cli.safety import GateResult
 
 
 ARENA_LEARNINGS_FILE = sc.OUTPUTS_DIR / "arena-learnings.json"
-ROI_THRESHOLD_AUTO = 0.15
+USER_RULES_FILE = sc.CONFIG_DIR / "user-rules.json"
+DEFAULT_ROI_THRESHOLD = 0.15
+
+
+def _load_user_rules() -> dict:
+    """Hot-reload user rules from config/user-rules.json."""
+    try:
+        return sc.load_json(USER_RULES_FILE, default={})
+    except Exception:
+        return {}
+
+
+def _get_roi_threshold() -> float:
+    """Get Jido ROI threshold from user rules, with fallback to default."""
+    rules = _load_user_rules()
+    jido_rules = rules.get("jido", {})
+    return float(jido_rules.get("roi_threshold_auto", DEFAULT_ROI_THRESHOLD))
+
+
+def _get_jido_auto_execute_enabled() -> bool:
+    """Check if Jido auto-execute is enabled from user rules."""
+    rules = _load_user_rules()
+    jido_rules = rules.get("jido", {})
+    return bool(jido_rules.get("autoExecuteEnabled", True))
 
 
 @click.command()
@@ -52,6 +75,13 @@ def _run(dry_run: bool):
     click.echo(f"[jido] {sc.now_iso()} starting{' (dry-run)' if dry_run else ''}")
     sync_before()
 
+    # Hot-reload user rules at the start of every run
+    roi_threshold = _get_roi_threshold()
+    auto_execute_enabled = _get_jido_auto_execute_enabled()
+    click.echo(
+        f"[jido] rules: roi_threshold={roi_threshold:.2f}, auto_execute={auto_execute_enabled}"
+    )
+
     regime = sc.load_regime()
     mode = regime.get("riskMode", "BASELINE")
     click.echo(f"[jido] regime: {mode}")
@@ -59,6 +89,11 @@ def _run(dry_run: bool):
     if mode == "RISK_OFF":
         click.echo("[jido] RISK_OFF — skipping all entries")
         return
+
+    if not auto_execute_enabled:
+        click.echo(
+            "[jido] Auto-execute disabled by user rules — all signals require manual approval"
+        )
 
     evaluator = TradeEvaluator(dry_run=dry_run)
     decisions = evaluator.process_queue()
@@ -87,7 +122,7 @@ def _run(dry_run: bool):
         if decision.recommendation == Recommendation.APPROVE:
             scanner_roi = _get_scanner_roi(scanner, arena_learnings)
 
-            if scanner_roi and scanner_roi >= ROI_THRESHOLD_AUTO:
+            if auto_execute_enabled and scanner_roi and scanner_roi >= roi_threshold:
                 click.echo(
                     f"  AUTO-EXECUTE {signal.get('asset', signal.get('symbol', ''))} "
                     f"{signal.get('direction', signal.get('side', ''))} @ {gate_result.clamped_leverage}x "
@@ -101,9 +136,14 @@ def _run(dry_run: bool):
                 approved_count += 1
 
             else:
+                reason = (
+                    "auto-execute disabled"
+                    if not auto_execute_enabled
+                    else f"ROI {scanner_roi:.1% if scanner_roi else 'N/A'} < {roi_threshold:.0%}"
+                )
                 click.echo(
                     f"  MANUAL_REVIEW {signal.get('asset', signal.get('symbol', ''))} "
-                    f"(scanner={scanner}, ROI={scanner_roi:.1% if scanner_roi else 'N/A'})"
+                    f"(scanner={scanner}, {reason})"
                 )
                 _request_manual_approval(signal, gate_result, scanner)
                 manual_review_count += 1

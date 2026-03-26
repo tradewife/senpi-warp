@@ -1,0 +1,17 @@
+{
+  "evaluate": {
+    "minScore": 6,
+    "maxLeverage": 10,
+    "maxPositions": 3,
+    "cooldownMinutes": 120,
+    "description": "Manual evaluation thresholds (TradeEvaluator)"
+  },
+  "jido": {
+    "roi_threshold_auto": 0.15,
+    "minScore": 6,
+    "autoExecuteEnabled": true,
+    "description": "Autonomous execution thresholds (Jido)"
+  },
+  "updatedAt": "2026-03-26T00:00:00Z",
+  "updatedBy": "system"
+}

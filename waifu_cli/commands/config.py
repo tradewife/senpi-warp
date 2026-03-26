@@ -7,16 +7,20 @@ Usage:
     waifu config set <key> <val>   Set value (writes to .env)
     waifu config validate          Check required vars are set
     waifu config export            Export as .env format for Railway
+    waifu config rules             Display current user rules (thresholds)
 """
 
+import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
+USER_RULES_FILE = PROJECT_ROOT / "config" / "user-rules.json"
 
 REQUIRED_VARS = [
     ("SENPI_AUTH_TOKEN", "Senpi MCP authentication token"),
@@ -258,3 +262,83 @@ def export_config(fmt):
         for key, val in values.items():
             click.echo(f'{key}="{val}"')
     click.echo("\n# Copy above to Railway dashboard > Variables", err=True)
+
+
+@config.command("rules")
+def show_rules():
+    """Display current user rules (thresholds for evaluate and jido)."""
+    if not USER_RULES_FILE.exists():
+        click.echo(f"\n⚠️  No user rules file found at {USER_RULES_FILE}")
+        click.echo("   Creating default rules file...\n")
+        _create_default_rules()
+
+    rules = _load_user_rules()
+    _display_rules_table(rules)
+
+
+def _load_user_rules() -> dict:
+    """Load user rules from config/user-rules.json."""
+    try:
+        with open(USER_RULES_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_user_rules(rules: dict):
+    """Save user rules to config/user-rules.json."""
+    rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    tmp = USER_RULES_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(rules, f, indent=2)
+        f.write("\n")
+    tmp.rename(USER_RULES_FILE)
+
+
+def _create_default_rules():
+    """Create default user-rules.json."""
+    default = {
+        "evaluate": {
+            "minScore": 6,
+            "maxLeverage": 10,
+            "maxPositions": 3,
+            "cooldownMinutes": 120,
+            "description": "Manual evaluation thresholds (TradeEvaluator)",
+        },
+        "jido": {
+            "roi_threshold_auto": 0.15,
+            "minScore": 6,
+            "autoExecuteEnabled": True,
+            "description": "Autonomous execution thresholds (Jido)",
+        },
+        "updatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "updatedBy": "system",
+    }
+    _save_user_rules(default)
+
+
+def _display_rules_table(rules: dict):
+    """Display rules in a clean table format."""
+    click.echo(f"\n{'=' * 55}")
+    click.echo("  USER RULES — config/user-rules.json")
+    click.echo(f"{'=' * 55}")
+
+    # Evaluate (Manual) section
+    evaluate = rules.get("evaluate", {})
+    click.echo("\n📋 EVALUATE (Manual):")
+    click.echo(f"   minScore:         {evaluate.get('minScore', '?')}")
+    click.echo(f"   maxLeverage:      {evaluate.get('maxLeverage', '?')}x")
+    click.echo(f"   maxPositions:     {evaluate.get('maxPositions', '?')}")
+    click.echo(f"   cooldownMinutes:  {evaluate.get('cooldownMinutes', '?')}")
+
+    # Jido (Autonomous) section
+    jido = rules.get("jido", {})
+    click.echo("\n⚡ JIDO (Autonomous):")
+    click.echo(f"   roi_threshold_auto:  {jido.get('roi_threshold_auto', '?')}")
+    click.echo(f"   minScore:            {jido.get('minScore', '?')}")
+    click.echo(f"   autoExecuteEnabled:  {jido.get('autoExecuteEnabled', '?')}")
+
+    # Metadata
+    click.echo(f"\n📅 Updated: {rules.get('updatedAt', 'unknown')}")
+    click.echo(f"   By: {rules.get('updatedBy', 'unknown')}")
+    click.echo(f"\n{'=' * 55}\n")

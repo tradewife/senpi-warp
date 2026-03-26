@@ -39,6 +39,7 @@ CONFIG_DIR = STATE_DIR / "config"
 POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"
 OUTPUTS_DIR = STATE_DIR / "outputs"
+USER_RULES_FILE = CONFIG_DIR / "user-rules.json"
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -49,72 +50,148 @@ CHILD_ENV = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
 # Each tuple: (command, short_desc_for_menu, detailed_desc_for_help)
 COMMANDS = [
     # Status & Monitoring
-    ("status",   "Dashboard snapshot",
-     "Regime, open positions, daily PnL, equity, and arbiter status — everything at a glance."),
-    ("positions", "Open position details",
-     "Each position's direction, asset, entry price, leverage, DSL tier, high-water mark, breach count, and age."),
-    ("trades",   "Recent trade history",
-     "Last 10 trades with PnL, close reason, and entry source (ORCA STALKER/STRIKER or KOMODO)."),
-    ("equity",   "Equity & drawdown",
-     "Current equity, day-start equity, peak, drawdown from peak, and daily change percentage."),
-    ("regime",   "Risk regime details",
-     "Active regime (RISK\\_ON / BASELINE / RISK\\_OFF), who set it, why, and the parameter block (slots, leverage, alloc)."),
-    ("brain",    "Autonomous brain state",
-     "Show the current in-container brain policy: entry status, risk caps, preferred scanners, blocked scanners, and the reasons behind them."),
-    ("pending",  "Queued scanner signals",
-     "Queued scanner signals with in-container brain priority context and auto-entry status."),
-
+    (
+        "status",
+        "Dashboard snapshot",
+        "Regime, open positions, daily PnL, equity, and arbiter status — everything at a glance.",
+    ),
+    (
+        "positions",
+        "Open position details",
+        "Each position's direction, asset, entry price, leverage, DSL tier, high-water mark, breach count, and age.",
+    ),
+    (
+        "trades",
+        "Recent trade history",
+        "Last 10 trades with PnL, close reason, and entry source (ORCA STALKER/STRIKER or KOMODO).",
+    ),
+    (
+        "equity",
+        "Equity & drawdown",
+        "Current equity, day-start equity, peak, drawdown from peak, and daily change percentage.",
+    ),
+    (
+        "regime",
+        "Risk regime details",
+        "Active regime (RISK\\_ON / BASELINE / RISK\\_OFF), who set it, why, and the parameter block (slots, leverage, alloc).",
+    ),
+    (
+        "brain",
+        "Autonomous brain state",
+        "Show the current in-container brain policy: entry status, risk caps, preferred scanners, blocked scanners, and the reasons behind them.",
+    ),
+    (
+        "pending",
+        "Queued scanner signals",
+        "Queued scanner signals with in-container brain priority context and auto-entry status.",
+    ),
     # Control
-    ("risk_on",  "⚡ Set RISK_ON",
-     "Unlock max 3 slots, 7-10x leverage, 35% allocation per slot. Use when macro trend is clear."),
-    ("risk_off", "🛑 Set RISK_OFF",
-     "Block all new entries immediately. Existing positions are still managed by DSL trailing stops."),
-    ("baseline", "Set BASELINE",
-     "Default regime: 2 slots, 7-10x leverage, 30% allocation. Balanced risk."),
-    ("flatten",  "🚨 Emergency close ALL",
-     "Sets RISK\\_OFF locally and dispatches an Oz cloud agent to close every open position via mcporter."),
-
+    (
+        "risk_on",
+        "⚡ Set RISK_ON",
+        "Unlock max 3 slots, 7-10x leverage, 35% allocation per slot. Use when macro trend is clear.",
+    ),
+    (
+        "risk_off",
+        "🛑 Set RISK_OFF",
+        "Block all new entries immediately. Existing positions are still managed by DSL trailing stops.",
+    ),
+    (
+        "baseline",
+        "Set BASELINE",
+        "Default regime: 2 slots, 7-10x leverage, 30% allocation. Balanced risk.",
+    ),
+    (
+        "flatten",
+        "🚨 Emergency close ALL",
+        "Sets RISK\\_OFF locally and dispatches an Oz cloud agent to close every open position via mcporter.",
+    ),
     # Manual Triggers
-    ("scan",     "Run ORCA scanner now",
-     "Manually trigger the ORCA dual-mode scanner (STALKER accumulation + STRIKER explosion detection). Normally runs every 60s."),
-    ("komodo",   "Run KOMODO scanner now",
-     "Manually trigger the KOMODO momentum event consensus scanner. Normally runs every 5 minutes."),
-    ("condor",   "Run CONDOR scanner now",
-     "Manually trigger the CONDOR multi-asset alpha hunter. Normally runs every 3 minutes."),
-    ("barracuda", "Run BARRACUDA scanner now",
-     "Manually trigger the BARRACUDA funding decay collector. Normally runs every 15 minutes."),
-    ("bison",    "Run BISON scanner now",
-     "Manually trigger the BISON conviction trend holder. Normally runs every 30 minutes."),
-    ("shark",    "Run SHARK scanner now",
-     "Manually trigger the SHARK liquidation cascade front-runner. Normally runs every 2 minutes."),
-    ("sentinel", "Run SENTINEL scanner now",
-     "Manually trigger the SENTINEL quality trader convergence scanner. Normally runs every 3 minutes."),
-    ("rhino",    "Run RHINO scanner now",
-     "Manually trigger the RHINO momentum pyramider. Normally runs every 3 minutes."),
-    ("arbiter",  "Run Risk Arbiter now",
-     "Check daily loss limits, catastrophic drawdown, and consecutive stop-outs. Normally runs every 30s."),
-    ("health",   "Run health check + git sync",
-     "Pull latest config, reconcile closed positions into trade journal, push state. Normally runs every 10 minutes."),
-    ("arena",    "Run arena monitor now",
-     "Poll the Senpi Predators performance tracker and update arena-state.json. Normally runs every 15 minutes."),
-
+    (
+        "scan",
+        "Run ORCA scanner now",
+        "Manually trigger the ORCA dual-mode scanner (STALKER accumulation + STRIKER explosion detection). Normally runs every 60s.",
+    ),
+    (
+        "komodo",
+        "Run KOMODO scanner now",
+        "Manually trigger the KOMODO momentum event consensus scanner. Normally runs every 5 minutes.",
+    ),
+    (
+        "condor",
+        "Run CONDOR scanner now",
+        "Manually trigger the CONDOR multi-asset alpha hunter. Normally runs every 3 minutes.",
+    ),
+    (
+        "barracuda",
+        "Run BARRACUDA scanner now",
+        "Manually trigger the BARRACUDA funding decay collector. Normally runs every 15 minutes.",
+    ),
+    (
+        "bison",
+        "Run BISON scanner now",
+        "Manually trigger the BISON conviction trend holder. Normally runs every 30 minutes.",
+    ),
+    (
+        "shark",
+        "Run SHARK scanner now",
+        "Manually trigger the SHARK liquidation cascade front-runner. Normally runs every 2 minutes.",
+    ),
+    (
+        "sentinel",
+        "Run SENTINEL scanner now",
+        "Manually trigger the SENTINEL quality trader convergence scanner. Normally runs every 3 minutes.",
+    ),
+    (
+        "rhino",
+        "Run RHINO scanner now",
+        "Manually trigger the RHINO momentum pyramider. Normally runs every 3 minutes.",
+    ),
+    (
+        "arbiter",
+        "Run Risk Arbiter now",
+        "Check daily loss limits, catastrophic drawdown, and consecutive stop-outs. Normally runs every 30s.",
+    ),
+    (
+        "health",
+        "Run health check + git sync",
+        "Pull latest config, reconcile closed positions into trade journal, push state. Normally runs every 10 minutes.",
+    ),
+    (
+        "arena",
+        "Run arena monitor now",
+        "Poll the Senpi Predators performance tracker and update arena-state.json. Normally runs every 15 minutes.",
+    ),
     # Reports
-    ("howl",     "Last HOWL nightly report",
-     "The most recent Hunt-Optimize-Win-Learn analysis: win rates, scanner comparison, fee drag, arena benchmarking."),
-    ("journal",  "Trade journal statistics",
-     "Lifetime stats: total PnL, win rate, profit factor, avg win/loss, and breakdown by entry source."),
-    ("arena_insights", "Arena leaderboard analysis",
-     "Top 5 predator strategies, winning/losing traits, and data-driven recommendations from the arena."),
-
+    (
+        "howl",
+        "Last HOWL nightly report",
+        "The most recent Hunt-Optimize-Win-Learn analysis: win rates, scanner comparison, fee drag, arena benchmarking.",
+    ),
+    (
+        "journal",
+        "Trade journal statistics",
+        "Lifetime stats: total PnL, win rate, profit factor, avg win/loss, and breakdown by entry source.",
+    ),
+    (
+        "arena_insights",
+        "Arena leaderboard analysis",
+        "Top 5 predator strategies, winning/losing traits, and data-driven recommendations from the arena.",
+    ),
     # Meta
-    ("help",     "Show all commands",
-     "This message."),
+    ("help", "Show all commands", "This message."),
+    (
+        "rules",
+        "User sovereignty rules",
+        "Display or set trading thresholds: evaluate (Manual) and jido (Autonomous). Use /rules or /rules set <key> <value>.",
+    ),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def load_json(path: Path, default=None):
     try:
@@ -158,6 +235,7 @@ def authorized(func):
             )
             return
         return await func(update, context)
+
     return wrapper
 
 
@@ -198,18 +276,26 @@ def _count_open_positions() -> tuple[int, list[dict]]:
 def _daily_stats(journal: list[dict]) -> dict:
     """Compute today's trading stats from the journal."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    closes = [t for t in journal
-              if t.get("recordedAt", "").startswith(today) and t.get("action") == "CLOSE"]
+    closes = [
+        t
+        for t in journal
+        if t.get("recordedAt", "").startswith(today) and t.get("action") == "CLOSE"
+    ]
     pnl = sum(float(t.get("realizedPnl", 0)) for t in closes)
     wins = sum(1 for t in closes if float(t.get("realizedPnl", 0)) > 0)
     count = len(closes)
-    return {"pnl": pnl, "wins": wins, "count": count,
-            "wr": round(wins / count * 100, 1) if count > 0 else 0}
+    return {
+        "pnl": pnl,
+        "wins": wins,
+        "count": count,
+        "wr": round(wins / count * 100, 1) if count > 0 else 0,
+    }
 
 
 # ---------------------------------------------------------------------------
 # /start — Onboarding
 # ---------------------------------------------------------------------------
+
 
 @authorized
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -263,6 +349,7 @@ Tip: Start with /status for a quick dashboard snapshot."""
 # /help — Full command reference
 # ---------------------------------------------------------------------------
 
+
 @authorized
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sections = {
@@ -274,21 +361,33 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
 
     section_map = {
-        "status": "📊 Status & Monitoring", "positions": "📊 Status & Monitoring",
-        "trades": "📊 Status & Monitoring", "equity": "📊 Status & Monitoring",
-        "regime": "📊 Status & Monitoring", "brain": "📊 Status & Monitoring",
+        "status": "📊 Status & Monitoring",
+        "positions": "📊 Status & Monitoring",
+        "trades": "📊 Status & Monitoring",
+        "equity": "📊 Status & Monitoring",
+        "regime": "📊 Status & Monitoring",
+        "brain": "📊 Status & Monitoring",
         "pending": "📊 Status & Monitoring",
-        "risk_on": "🎛 Control", "risk_off": "🎛 Control",
-        "baseline": "🎛 Control", "flatten": "🎛 Control",
-        "scan": "▶️ Manual Triggers", "komodo": "▶️ Manual Triggers",
-        "condor": "▶️ Manual Triggers", "barracuda": "▶️ Manual Triggers",
-        "bison": "▶️ Manual Triggers", "shark": "▶️ Manual Triggers",
-        "sentinel": "▶️ Manual Triggers", "rhino": "▶️ Manual Triggers",
-        "arbiter": "▶️ Manual Triggers", "health": "▶️ Manual Triggers",
+        "risk_on": "🎛 Control",
+        "risk_off": "🎛 Control",
+        "baseline": "🎛 Control",
+        "flatten": "🎛 Control",
+        "scan": "▶️ Manual Triggers",
+        "komodo": "▶️ Manual Triggers",
+        "condor": "▶️ Manual Triggers",
+        "barracuda": "▶️ Manual Triggers",
+        "bison": "▶️ Manual Triggers",
+        "shark": "▶️ Manual Triggers",
+        "sentinel": "▶️ Manual Triggers",
+        "rhino": "▶️ Manual Triggers",
+        "arbiter": "▶️ Manual Triggers",
+        "health": "▶️ Manual Triggers",
         "arena": "▶️ Manual Triggers",
-        "howl": "📜 Reports", "journal": "📜 Reports",
+        "howl": "📜 Reports",
+        "journal": "📜 Reports",
         "arena_insights": "📜 Reports",
         "help": "ℹ️ Meta",
+        "rules": "ℹ️ Meta",
     }
 
     for cmd_name, short_desc, detail in COMMANDS:
@@ -304,13 +403,125 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lines.append(c)
 
     lines.append("\n_Any non-command text is sent to Oz as a free-text prompt._")
-    lines.append("_Oz can execute mcporter calls, read state, and push config changes._")
+    lines.append(
+        "_Oz can execute mcporter calls, read state, and push config changes._"
+    )
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+
+
+# ---------------------------------------------------------------------------
+# /rules — User Sovereignty
+# ---------------------------------------------------------------------------
+
+RULES_KEY_MAP = {
+    "jido_roi": ("jido", "roi_threshold_auto", float),
+    "jido_minscore": ("jido", "minScore", int),
+    "jido_auto": ("jido", "autoExecuteEnabled", lambda v: v.lower() == "true"),
+    "eval_minscore": ("evaluate", "minScore", int),
+    "eval_maxlev": ("evaluate", "maxLeverage", int),
+    "eval_maxpos": ("evaluate", "maxPositions", int),
+    "eval_cooldown": ("evaluate", "cooldownMinutes", int),
+}
+
+
+@authorized
+async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display or set user sovereignty rules."""
+    args = context.args
+
+    # /rules set <key> <value>
+    if args and args[0].lower() == "set":
+        if len(args) < 3:
+            valid_keys = ", ".join(RULES_KEY_MAP.keys())
+            await update.message.reply_text(
+                f"Usage: `/rules set <key> <value>`\n\n"
+                f"*Valid keys:*\n"
+                f"• `jido_roi` — Jido auto-execute ROI threshold (e.g., 0.20)\n"
+                f"• `jido_minscore` — Jido minimum score\n"
+                f"• `jido_auto` — Jido auto-execute enabled (true/false)\n"
+                f"• `eval_minscore` — Evaluate minimum score\n"
+                f"• `eval_maxlev` — Evaluate max leverage\n"
+                f"• `eval_maxpos` — Evaluate max positions\n"
+                f"• `eval_cooldown` — Evaluate cooldown minutes",
+                parse_mode="Markdown",
+            )
+            return
+
+        key = args[1].lower()
+        value = args[2]
+
+        if key not in RULES_KEY_MAP:
+            await update.message.reply_text(
+                f"❌ Unknown key: `{key}`\n\nValid: {', '.join(RULES_KEY_MAP.keys())}",
+                parse_mode="Markdown",
+            )
+            return
+
+        section, field, converter = RULES_KEY_MAP[key]
+        try:
+            converted = converter(value)
+        except (ValueError, TypeError):
+            await update.message.reply_text(
+                f"❌ Invalid value: `{value}` for key `{key}`",
+                parse_mode="Markdown",
+            )
+            return
+
+        # Load, update, save
+        rules = load_json(USER_RULES_FILE, default={})
+        if section not in rules:
+            rules[section] = {}
+        rules[section][field] = converted
+        rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rules["updatedBy"] = "telegram-bot"
+
+        tmp = USER_RULES_FILE.with_suffix(".tmp")
+        with open(tmp, "w") as f:
+            json.dump(rules, f, indent=2)
+            f.write("\n")
+        tmp.rename(USER_RULES_FILE)
+
+        await update.message.reply_text(
+            f"✅ *Rule updated*\n\n"
+            f"`{key}` → `{value}`\n"
+            f"Section: {section}.{field}\n\n"
+            f"_Changes take effect on next Jido run (within 5 min)._",
+            parse_mode="Markdown",
+        )
+        return
+
+    # /rules — display current rules
+    rules = load_json(USER_RULES_FILE, default={})
+    if not rules:
+        await update.message.reply_text(
+            "⚠️ No user rules found.\n\n_Default rules will be created on next config load._"
+        )
+        return
+
+    evaluate = rules.get("evaluate", {})
+    jido = rules.get("jido", {})
+
+    text = (
+        f"📋 *User Rules*\n\n"
+        f"*Evaluate (Manual):*\n"
+        f"  minScore: {evaluate.get('minScore', '?')}\n"
+        f"  maxLeverage: {evaluate.get('maxLeverage', '?')}x\n"
+        f"  maxPositions: {evaluate.get('maxPositions', '?')}\n"
+        f"  cooldown: {evaluate.get('cooldownMinutes', '?')}min\n\n"
+        f"*Jido (Autonomous):*\n"
+        f"  roi_threshold: {jido.get('roi_threshold_auto', '?')}\n"
+        f"  minScore: {jido.get('minScore', '?')}\n"
+        f"  autoExecute: {jido.get('autoExecuteEnabled', '?')}\n\n"
+        f"Updated: {rules.get('updatedAt', '?')} by {rules.get('updatedBy', '?')}\n\n"
+        f"_Use /rules set <key> <value> to change._"
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
 
 
 # ---------------------------------------------------------------------------
 # Status & Monitoring
 # ---------------------------------------------------------------------------
+
 
 @authorized
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -342,7 +553,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🧠 *Brain:* {brain_mode} · entries {entries_state}\n"
         f"↳ {relative_time(brain.get('generatedAt', ''))}\n\n"
         f"📊 *Positions:* {pos_count}/3 open · {len(pending)} signals pending\n"
-        f"{pnl_emoji} *Daily PnL:* {'+'if daily['pnl']>=0 else ''}${daily['pnl']:.2f} · "
+        f"{pnl_emoji} *Daily PnL:* {'+' if daily['pnl'] >= 0 else ''}${daily['pnl']:.2f} · "
         f"{daily['count']} trades · {daily['wr']}% WR\n\n"
         f"🏦 *Equity:* ${equity:,.2f}\n"
         f"↳ Day start: ${day_start:,.2f} · Peak: ${peak:,.2f}\n"
@@ -403,7 +614,7 @@ async def cmd_trades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     daily = _daily_stats(journal)
     lines = [
         f"📒 *Last 10 Trades*\n"
-        f"Today: {'+'if daily['pnl']>=0 else ''}${daily['pnl']:.2f} · {daily['count']} closed · {daily['wr']}% WR\n"
+        f"Today: {'+' if daily['pnl'] >= 0 else ''}${daily['pnl']:.2f} · {daily['count']} closed · {daily['wr']}% WR\n"
     ]
     for t in reversed(recent):
         action = t.get("action", "?")
@@ -421,7 +632,9 @@ async def cmd_trades(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "risk_arbiter_flatten": "Risk Arbiter",
                 "manual": "Manual close",
             }.get(reason, reason)
-            lines.append(f"{emoji} {direction} *{asset}* {'+'if pnl>=0 else ''}${pnl:.2f} · {reason_label} · {age}")
+            lines.append(
+                f"{emoji} {direction} *{asset}* {'+' if pnl >= 0 else ''}${pnl:.2f} · {reason_label} · {age}"
+            )
         else:
             source = t.get("entrySource", t.get("entryMode", "?"))
             score = t.get("entryScore", t.get("signal", {}).get("score", ""))
@@ -449,7 +662,7 @@ async def cmd_equity(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         f"🏦 *Equity Snapshot*\n\n"
         f"*Current:* ${equity:,.2f}\n"
-        f"*Day start:* ${day_start:,.2f} ({'+'if daily_chg>=0 else ''}{daily_pct:.1f}%)\n"
+        f"*Day start:* ${day_start:,.2f} ({'+' if daily_chg >= 0 else ''}{daily_pct:.1f}%)\n"
         f"*Peak:* ${peak:,.2f}\n"
         f"*Drawdown:* {dd_peak:.1f}%\n\n"
         f"🛡 *Safety Limits*\n"
@@ -514,7 +727,11 @@ async def cmd_brain(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"*Preferred:* {', '.join(signal_policy.get('preferredScanners', [])) or 'none'}\n"
         f"*Blocked:* {', '.join(signal_policy.get('blockedScanners', [])) or 'none'}\n\n"
         f"*Reasons:*\n"
-        + ("\n".join(f"• {reason}" for reason in reasons[:5]) if reasons else "• No cautions active")
+        + (
+            "\n".join(f"• {reason}" for reason in reasons[:5])
+            if reasons
+            else "• No cautions active"
+        )
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
@@ -560,6 +777,7 @@ async def cmd_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Control
 # ---------------------------------------------------------------------------
 
+
 def _set_regime(mode: str, reason: str):
     regime = load_json(CONFIG_DIR / "risk-regime.json")
     regime["riskMode"] = mode
@@ -595,7 +813,8 @@ async def cmd_risk_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pos_note = (
         f"\n⚠️ *{pos_count} position(s) still open* — DSL trailing stops continue managing them.\n"
         f"Use /flatten to close everything immediately."
-        if pos_count > 0 else ""
+        if pos_count > 0
+        else ""
     )
     await update.message.reply_text(
         f"🔴 *RISK\\_OFF activated*\n\n"
@@ -634,7 +853,9 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    pos_list = ", ".join(f"{p.get('direction','?')} {p.get('asset','?')}" for p in positions)
+    pos_list = ", ".join(
+        f"{p.get('direction', '?')} {p.get('asset', '?')}" for p in positions
+    )
     await update.message.reply_text(
         f"🚨 *EMERGENCY FLATTEN*\n\n"
         f"Closing {pos_count} position(s): {pos_list}\n\n"
@@ -658,6 +879,7 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         import httpx
+
         payload = {
             "prompt": (
                 "EMERGENCY: Close ALL open positions immediately via mcporter. "
@@ -672,7 +894,10 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 "https://app.warp.dev/api/v1/agent/run",
-                headers={"Authorization": f"Bearer {warp_key}", "Content-Type": "application/json"},
+                headers={
+                    "Authorization": f"Bearer {warp_key}",
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
             if resp.status_code in (200, 201):
@@ -686,7 +911,9 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="Markdown",
                 )
             else:
-                await update.message.reply_text(f"❌ Oz API error {resp.status_code}: {resp.text[:200]}")
+                await update.message.reply_text(
+                    f"❌ Oz API error {resp.status_code}: {resp.text[:200]}"
+                )
     except Exception as e:
         await update.message.reply_text(f"❌ Oz dispatch failed: {e}")
 
@@ -695,6 +922,7 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Manual Triggers
 # ---------------------------------------------------------------------------
 
+
 @authorized
 async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -702,11 +930,18 @@ async def cmd_scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Dual-mode: STALKER (accumulation) + STRIKER (explosion)_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/orca-scanner-cron.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/orca-scanner-cron.py")]
+    )
     if output == "(no output)":
-        await update.message.reply_text("🐋 ORCA scan complete — no signals detected this cycle.")
+        await update.message.reply_text(
+            "🐋 ORCA scan complete — no signals detected this cycle."
+        )
     else:
-        await update.message.reply_text(f"🐋 *ORCA scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🐋 *ORCA scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -716,11 +951,18 @@ async def cmd_komodo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Momentum event consensus: 2+ elite traders, same asset/direction_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/komodo-scanner-cron.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/komodo-scanner-cron.py")]
+    )
     if output == "(no output)":
-        await update.message.reply_text("🦎 KOMODO scan complete — no momentum consensus detected.")
+        await update.message.reply_text(
+            "🦎 KOMODO scan complete — no momentum consensus detected."
+        )
     else:
-        await update.message.reply_text(f"🦎 *KOMODO scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🦎 *KOMODO scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -730,11 +972,16 @@ async def cmd_condor(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Multi-asset hunter (BTC, ETH, SOL, HYPE): HUNTING / RIDING / STALKING_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/condor-scanner-cron.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/condor-scanner-cron.py")]
+    )
     if output == "(no output)":
         await update.message.reply_text("🦅 CONDOR scan complete — no action taken.")
     else:
-        await update.message.reply_text(f"🦅 *CONDOR scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🦅 *CONDOR scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -744,11 +991,18 @@ async def cmd_barracuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Funding decay collector (30%+ ann funding, 6+ hour persistence)_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/barracuda-scanner-cron.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/barracuda-scanner-cron.py")]
+    )
     if output == "(no output)":
-        await update.message.reply_text("🎣 BARRACUDA scan complete — no extreme persistent funding found.")
+        await update.message.reply_text(
+            "🎣 BARRACUDA scan complete — no extreme persistent funding found."
+        )
     else:
-        await update.message.reply_text(f"🎣 *BARRACUDA scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🎣 *BARRACUDA scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -758,11 +1012,18 @@ async def cmd_bison(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Conviction Top 10 Trend Holder (4H/1H aligned)_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/bison-scanner-cron.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/bison-scanner-cron.py")]
+    )
     if output == "(no output)":
-        await update.message.reply_text("🦬 BISON scan complete — no conviction trends found.")
+        await update.message.reply_text(
+            "🦬 BISON scan complete — no conviction trends found."
+        )
     else:
-        await update.message.reply_text(f"🦬 *BISON scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🦬 *BISON scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -772,11 +1033,18 @@ async def cmd_shark(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Liquidation cascade front-runner: OI tracker -> liq mapper -> proximity -> strike_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/shark-scanner-cron.py")], timeout=90)
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/shark-scanner-cron.py")], timeout=90
+    )
     if output == "(no output)":
-        await update.message.reply_text("🦈 SHARK scan complete — no cascade setups firing.")
+        await update.message.reply_text(
+            "🦈 SHARK scan complete — no cascade setups firing."
+        )
     else:
-        await update.message.reply_text(f"🦈 *SHARK scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🦈 *SHARK scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -786,11 +1054,18 @@ async def cmd_sentinel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Quality trader convergence: rising SM -> momentum-event quality check -> top-trader bonus_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/sentinel-scanner-cron.py")], timeout=90)
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/sentinel-scanner-cron.py")], timeout=90
+    )
     if output == "(no output)":
-        await update.message.reply_text("🛡 SENTINEL scan complete — no qualified convergence setups.")
+        await update.message.reply_text(
+            "🛡 SENTINEL scan complete — no qualified convergence setups."
+        )
     else:
-        await update.message.reply_text(f"🛡 *SENTINEL scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🛡 *SENTINEL scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -800,11 +1075,18 @@ async def cmd_rhino(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Momentum pyramider: scout small, then add to winners at +10% / +20% ROE_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/rhino-scanner-cron.py")], timeout=90)
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/rhino-scanner-cron.py")], timeout=90
+    )
     if output == "(no output)":
-        await update.message.reply_text("🦏 RHINO scan complete — no scout or pyramid-add setup qualified.")
+        await update.message.reply_text(
+            "🦏 RHINO scan complete — no scout or pyramid-add setup qualified."
+        )
     else:
-        await update.message.reply_text(f"🦏 *RHINO scan complete:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🦏 *RHINO scan complete:*\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
 
 @authorized
@@ -814,11 +1096,15 @@ async def cmd_arbiter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Checks: daily loss limit, catastrophic drawdown, consecutive stop-outs_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/risk-arbiter.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/risk-arbiter.py")]
+    )
     if output == "(no output)":
         await update.message.reply_text("🚨 Risk Arbiter: all clear ✅")
     else:
-        await update.message.reply_text(f"🚨 *Arbiter result:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🚨 *Arbiter result:*\n```\n{output[:3000]}\n```", parse_mode="Markdown"
+        )
 
 
 @authorized
@@ -828,11 +1114,17 @@ async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_git pull → reconcile closes → health validation → git push_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/health-check-cron.py")], timeout=90)
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/health-check-cron.py")], timeout=90
+    )
     if output == "(no output)":
-        await update.message.reply_text("🏥 Health check complete ✅ — state synced to GitHub.")
+        await update.message.reply_text(
+            "🏥 Health check complete ✅ — state synced to GitHub."
+        )
     else:
-        await update.message.reply_text(f"🏥 *Health check:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"🏥 *Health check:*\n```\n{output[:3000]}\n```", parse_mode="Markdown"
+        )
 
 
 @authorized
@@ -842,16 +1134,24 @@ async def cmd_arena(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "_Polling Senpi Predators performance tracker (24 competing strategies)_",
         parse_mode="Markdown",
     )
-    output = await run_script_async(["python3", str(STATE_DIR / "scripts/vps/arena-monitor.py")])
+    output = await run_script_async(
+        ["python3", str(STATE_DIR / "scripts/vps/arena-monitor.py")]
+    )
     if output == "(no output)":
-        await update.message.reply_text("📊 Arena monitor complete. Run /arena\\_insights to see results.", parse_mode="Markdown")
+        await update.message.reply_text(
+            "📊 Arena monitor complete. Run /arena\\_insights to see results.",
+            parse_mode="Markdown",
+        )
     else:
-        await update.message.reply_text(f"📊 *Arena monitor:*\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await update.message.reply_text(
+            f"📊 *Arena monitor:*\n```\n{output[:3000]}\n```", parse_mode="Markdown"
+        )
 
 
 # ---------------------------------------------------------------------------
 # Reports
 # ---------------------------------------------------------------------------
+
 
 @authorized
 async def cmd_howl(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -888,9 +1188,19 @@ async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     wins = [t for t in closes if float(t.get("realizedPnl", 0)) > 0]
     losses = [t for t in closes if float(t.get("realizedPnl", 0)) < 0]
     wr = round(len(wins) / len(closes) * 100, 1) if closes else 0
-    avg_win = sum(float(t.get("realizedPnl", 0)) for t in wins) / len(wins) if wins else 0
-    avg_loss = sum(float(t.get("realizedPnl", 0)) for t in losses) / len(losses) if losses else 0
-    pf = abs(avg_win * len(wins)) / abs(avg_loss * len(losses)) if losses and avg_loss != 0 else 0
+    avg_win = (
+        sum(float(t.get("realizedPnl", 0)) for t in wins) / len(wins) if wins else 0
+    )
+    avg_loss = (
+        sum(float(t.get("realizedPnl", 0)) for t in losses) / len(losses)
+        if losses
+        else 0
+    )
+    pf = (
+        abs(avg_win * len(wins)) / abs(avg_loss * len(losses))
+        if losses and avg_loss != 0
+        else 0
+    )
 
     # By source
     by_source = {}
@@ -906,12 +1216,14 @@ async def cmd_journal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     source_lines = []
     for src, data in sorted(by_source.items(), key=lambda x: x[1]["pnl"], reverse=True):
         src_wr = round(data["wins"] / data["count"] * 100) if data["count"] else 0
-        source_lines.append(f"  {src}: {data['count']} trades · {'+'if data['pnl']>=0 else ''}${data['pnl']:.2f} · {src_wr}% WR")
+        source_lines.append(
+            f"  {src}: {data['count']} trades · {'+' if data['pnl'] >= 0 else ''}${data['pnl']:.2f} · {src_wr}% WR"
+        )
 
     text = (
         f"📒 *Trade Journal — Lifetime Stats*\n\n"
         f"Entries: {len(opens)} · Exits: {len(closes)}\n"
-        f"*Total PnL:* {'+'if total_pnl>=0 else ''}${total_pnl:.2f}\n"
+        f"*Total PnL:* {'+' if total_pnl >= 0 else ''}${total_pnl:.2f}\n"
         f"*Win rate:* {wr}% ({len(wins)}W / {len(losses)}L)\n"
         f"*Avg win:* +${avg_win:.2f} · *Avg loss:* ${avg_loss:.2f}\n"
         f"*Profit factor:* {pf:.2f}\n"
@@ -950,7 +1262,9 @@ async def cmd_arena_insights(update: Update, context: ContextTypes.DEFAULT_TYPE)
         top_lines.append(f"  {medal} *{slug}* · {roi:+.1f}% ROI · {trades} trades")
 
     recs = insights.get("recommendations", [])
-    rec_lines = [f"  • {r}" for r in recs] if recs else ["  • Continue current approach"]
+    rec_lines = (
+        [f"  • {r}" for r in recs] if recs else ["  • Continue current approach"]
+    )
 
     text = (
         f"📊 *Arena Insights* (updated {updated})\n\n"
@@ -967,6 +1281,7 @@ async def cmd_arena_insights(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ---------------------------------------------------------------------------
 # Free text → Oz
 # ---------------------------------------------------------------------------
+
 
 @authorized
 async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -988,6 +1303,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         import httpx
+
         oz_env = os.environ.get("OZ_ENVIRONMENT_ID", "")
         payload = {"prompt": message, "config": {}}
         if oz_env:
@@ -996,7 +1312,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
                 "https://app.warp.dev/api/v1/agent/run",
-                headers={"Authorization": f"Bearer {warp_key}", "Content-Type": "application/json"},
+                headers={
+                    "Authorization": f"Bearer {warp_key}",
+                    "Content-Type": "application/json",
+                },
                 json=payload,
             )
             if resp.status_code in (200, 201):
@@ -1010,7 +1329,9 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="Markdown",
                 )
             else:
-                await update.message.reply_text(f"❌ Oz API error {resp.status_code}: {resp.text[:200]}")
+                await update.message.reply_text(
+                    f"❌ Oz API error {resp.status_code}: {resp.text[:200]}"
+                )
     except Exception as e:
         await update.message.reply_text(f"❌ Oz dispatch failed: {e}")
 
@@ -1018,6 +1339,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 # Bot setup
 # ---------------------------------------------------------------------------
+
 
 def create_bot_application() -> Optional[Application]:
     """Create and configure the Telegram bot. Returns None if token not set."""
@@ -1031,6 +1353,7 @@ def create_bot_application() -> Optional[Application]:
 
     # Status & monitoring
     app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("rules", cmd_rules))
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("positions", cmd_positions))
     app.add_handler(CommandHandler("trades", cmd_trades))
@@ -1075,9 +1398,7 @@ async def start_polling(app: Application):
     await app.start()
 
     # Register command menu — appears when user types "/" in the chat
-    bot_commands = [
-        BotCommand(cmd, short) for cmd, short, _ in COMMANDS
-    ]
+    bot_commands = [BotCommand(cmd, short) for cmd, short, _ in COMMANDS]
     try:
         await app.bot.set_my_commands(bot_commands)
     except Exception:
