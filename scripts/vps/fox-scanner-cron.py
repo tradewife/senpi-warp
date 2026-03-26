@@ -22,23 +22,11 @@ from senpi_common import (
     now_iso,
     load_json,
     save_json,
-    mcporter_call,
-    send_telegram,
-    current_regime_params,
-    check_directional_exposure_limit,
-    attach_position_playbook,
-    count_open_slots,
-    get_enabled_strategies,
-    get_strategy_state_dir,
-    is_entries_allowed,
-    is_auto_entry_enabled,
     is_rotation_cooled_down,
     POSITION_STATE_DIR,
     CONFIG_DIR,
-    record_trade,
     add_pending_entry,
     record_heartbeat,
-    get_all_open_positions,
 )
 
 FOX_CONFIG_FILE = CONFIG_DIR / "fox-config.json"
@@ -93,14 +81,8 @@ STAGNATION_TP = {"enabled": True, "roeMin": 10, "hwStaleMin": 45}
 
 
 def fetch_markets():
-    result = mcporter_call("leaderboard_get_markets", {"limit": 100})
-    if "error" in result:
-        return None
-    data = result.get("data", result)
-    raw = data.get("markets", data)
-    if isinstance(raw, dict):
-        raw = raw.get("markets", [])
-    return raw
+    """Scanner depowered — market fetching disabled. Only evaluator may call MCP."""
+    return None
 
 
 def parse_scan(raw_markets):
@@ -138,22 +120,8 @@ def get_market_in_scan(scan, token, dex=""):
 
 
 def check_asset_volume(token, dex=""):
-    asset = f"{dex}:{token}" if dex else token
-    res = mcporter_call(
-        "market_get_asset_data",
-        {"asset": asset, "candle_intervals": ["1h"], "include_funding": False},
-    )
-    if "error" in res:
-        return 0, False
-    d = res.get("data", res)
-    candles = d.get("candles", {}).get("1h", []) if isinstance(d, dict) else []
-    if len(candles) < 6:
-        return 0, False
-    vols = [float(c.get("volume", c.get("v", 0))) for c in candles[-6:]]
-    avg_vol = sum(vols[:-1]) / len(vols[:-1]) if len(vols) > 1 else 1
-    latest_vol = vols[-1] if vols else 0
-    ratio = latest_vol / avg_vol if avg_vol > 0 else 0
-    return ratio, ratio >= 1.5
+    """Scanner depowered — volume check disabled. Only evaluator may call MCP."""
+    return 0, False
 
 
 def is_erratic_history(rank_history, exclude_last=False):
@@ -403,129 +371,6 @@ def detect_striker_signals(current_scan, history, striker_cfg):
 # ─── Entry Processing ─────────────────────────────────────────────────
 
 
-def build_dsl_state(sig, config, price):
-    score = sig.get("score", 6)
-    tier = CONVICTION_TIERS[0]
-    for ct in CONVICTION_TIERS:
-        if score >= ct["minScore"]:
-            tier = ct
-
-    return {
-        "active": True,
-        "asset": sig["token"],
-        "direction": sig["direction"],
-        "mode": sig["mode"],
-        "score": score,
-        "phase": 1,
-        "highWaterPrice": price,
-        "highWaterRoe": 0,
-        "currentTierIndex": -1,
-        "consecutiveBreaches": 0,
-        "lockMode": "pct_of_high_water",
-        "phase2TriggerRoe": 7,
-        "phase1": {
-            "enabled": True,
-            "retraceThreshold": 0.03,
-            "consecutiveBreachesRequired": 3,
-            "phase1MaxMinutes": tier["hardTimeoutMin"],
-            "weakPeakCutMinutes": tier["weakPeakCutMin"],
-            "deadWeightCutMin": tier["deadWeightCutMin"],
-            "absoluteFloorRoe": tier["absoluteFloorRoe"],
-        },
-        "phase2": {
-            "enabled": True,
-            "retraceThreshold": 0.015,
-            "consecutiveBreachesRequired": 2,
-        },
-        "tiers": DSL_TIERS,
-        "stagnationTp": STAGNATION_TP,
-        "convictionTiers": CONVICTION_TIERS,
-        "createdAt": now_iso(),
-    }
-
-
-def try_auto_entry(sig, strategies, config):
-    if len(get_all_open_positions()) >= MAX_POSITIONS:
-        return
-
-    target_strat = None
-    for strat in strategies:
-        if count_open_slots(strat) > 0:
-            target_strat = strat
-            break
-    if not target_strat:
-        return
-
-    regime = current_regime_params()
-    budget = target_strat.get("budget", 1000)
-    alloc = regime.get("allocPctPerSlot", 30) / 100
-    margin = budget * alloc
-    lev = min(MAX_LEVERAGE, max(MIN_LEVERAGE, strat.get("leverage", 10)))
-
-    allowed, exp = check_directional_exposure_limit(sig["direction"], margin, lev)
-    if not allowed:
-        return
-
-    res = mcporter_call(
-        "create_position",
-        {
-            "strategyWalletAddress": target_strat.get("wallet"),
-            "orders": [
-                {
-                    "coin": sig["token"],
-                    "direction": sig["direction"],
-                    "leverage": int(lev),
-                    "marginAmount": margin,
-                    "orderType": "MARKET",
-                }
-            ],
-        },
-    )
-
-    if "error" not in res:
-        eprice = float(res.get("entryPrice", 0))
-        dsl = build_dsl_state(sig, config, eprice)
-        dsl["wallet"] = target_strat.get("wallet")
-        dsl["strategyId"] = target_strat.get("strategyId")
-        dsl["strategyKey"] = target_strat["_key"]
-        dsl["entrySource"] = f"fox-{sig['mode'].lower()}"
-
-        attach_position_playbook(
-            dsl,
-            scanner="fox",
-            margin=margin,
-            leverage=lev,
-            score=sig["score"],
-            reasons=sig["reasons"],
-        )
-        sfile = (
-            get_strategy_state_dir(target_strat["_key"]) / f"dsl-{sig['token']}.json"
-        )
-        save_json(sfile, dsl)
-
-        log(
-            f"FOX: Auto-entered {sig['mode']} {sig['direction']} {sig['token']} @ ${eprice:.2f}"
-        )
-        send_telegram(
-            f"🦊 FOX ENTRY: {sig['mode']} {sig['direction']} {sig['token']}\nScore: {sig['score']}\nMargin: ${margin:.0f}"
-        )
-
-        record_trade(
-            {
-                "action": "OPEN",
-                "asset": sig["token"],
-                "direction": sig["direction"],
-                "entryPrice": eprice,
-                "size": float(res.get("size", 0)),
-                "margin": margin,
-                "leverage": lev,
-                "strategyKey": target_strat["_key"],
-                "entrySource": f"fox-{sig['mode'].lower()}",
-                "entryMode": sig["mode"],
-            }
-        )
-
-
 def run():
     config = load_json(FOX_CONFIG_FILE)
     if not config:
@@ -538,22 +383,8 @@ def run():
 
     hist = load_json(SCAN_HISTORY_FILE, default={"scans": []})
 
-    # Check streak
-    tr_hist = load_json(TRADE_JOURNAL_FILE, default=[])
-    sr = []
-    for t in reversed(tr_hist):
-        if t.get("action") == "CLOSE" and t.get("entrySource") == "fox-stalker":
-            sr.append("W" if t.get("realizedPnl", 0) > 0 else "L")
-        if len(sr) >= 3:
-            break
-    sr.reverse()
-    streak_active = len(sr) >= 3 and all(r == "L" for r in sr[-3:])
-
     stalker = detect_stalker_signals(cur, hist, config.get("entry", {}))
     striker = detect_striker_signals(cur, hist, config.get("entry", {}))
-
-    if streak_active:
-        stalker = [s for s in stalker if s["score"] >= 9]
 
     hist["scans"].append(cur)
     if len(hist["scans"]) > 20:
@@ -571,22 +402,21 @@ def run():
     comb = striker + [s for s in stalker if s["token"] not in st_tk]
     comb.sort(key=lambda x: x["score"], reverse=True)
 
-    if is_entries_allowed() and comb:
-        strats = get_enabled_strategies()
-        for sig in comb:
-            if is_auto_entry_enabled():
-                try_auto_entry(sig, strats, config)
-            else:
-                add_pending_entry(
-                    {
-                        "asset": sig["token"],
-                        "direction": sig["direction"],
-                        "autoEntered": False,
-                        "score": sig["score"],
-                        "source": "fox",
-                        "mode": sig["mode"],
-                    }
-                )
+    for sig in comb:
+        log(
+            f"FOX {sig['mode']}: {sig['direction']} {sig['token']} "
+            f"score={sig['score']} reasons={sig['reasons']}"
+        )
+        add_pending_entry(
+            {
+                "asset": sig["token"],
+                "direction": sig["direction"],
+                "autoEntered": False,
+                "score": sig["score"],
+                "source": "fox",
+                "mode": sig["mode"],
+            }
+        )
 
 
 if __name__ == "__main__":

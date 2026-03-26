@@ -5,11 +5,13 @@ Handles: config loading, state read/write, mcporter calls, git sync,
 Telegram alerts, and position management.
 """
 
+import fcntl
 import json
 import os
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -39,7 +41,7 @@ def _load_env_file():
 _load_env_file()
 
 
-STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/opt/senpi/senpi-waifu"))
+STATE_DIR = Path(os.environ.get("SENPI_WAIFU_DIR", "/app"))
 CONFIG_DIR = STATE_DIR / "config"
 POSITION_STATE_DIR = STATE_DIR / "state"
 MEMORY_DIR = STATE_DIR / "memory"
@@ -58,6 +60,7 @@ CODEBASE_INDEX_FILE = OUTPUTS_DIR / "codebase-index.json"
 PLAYBOOK_STATE_FILE = OUTPUTS_DIR / "playbook-state.json"
 
 LOCKFILE_DIR = Path("/tmp/senpi-locks")
+TRADE_LOCK_FILE = Path("/tmp/senpi-trade.lock")
 
 
 # ---------------------------------------------------------------------------
@@ -645,13 +648,19 @@ def check_hard_cooldown(asset: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Senpi MCP direct HTTP calls (bypasses mcporter)
+# Senpi MCP interface (CENTRALIZED ENTRY POINT)
+# ---------------------------------------------------------------------------
+# IMPORTANT: mcporter_call() is the ONLY function that should interact with
+# the Senpi MCP server. All components must use this wrapper for MCP calls.
+# Do NOT create alternative MCP interfaces or direct HTTP calls to Senpi.
 # ---------------------------------------------------------------------------
 
 
 def mcporter_call(tool: str, args: dict, *, timeout: int = 30) -> dict:
     """
-    Call a Senpi MCP tool via mcporter CLI (bypassing direct HTTP to match upstream).
+    CENTRALIZED ENTRY POINT for all Senpi MCP server interactions.
+
+    Call a Senpi MCP tool via mcporter CLI.
     Returns parsed JSON response or dict with 'error' key on failure.
     Retries up to 3 times on transient errors (connection closed, timeout).
     """
@@ -737,6 +746,32 @@ def mcporter_call_retry(
         if attempt < max_attempts - 1:
             time.sleep(delay)
     return last_result
+
+
+# ---------------------------------------------------------------------------
+# Atomic trade locking (position count modifications)
+# ---------------------------------------------------------------------------
+
+
+@contextmanager
+def acquire_trade_lock():
+    """Acquire exclusive file lock for position count operations.
+
+    Ensures only one component can check or modify the position count at a time.
+    Uses flock(LOCK_EX) for atomic locking across processes.
+
+    Usage:
+        with acquire_trade_lock():
+            count = len(get_all_open_positions())
+            # ... modify positions ...
+    """
+    TRADE_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(TRADE_LOCK_FILE, "w") as f:
+        try:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
 # ---------------------------------------------------------------------------

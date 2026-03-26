@@ -15,6 +15,7 @@ Usage:
 import click
 
 from waifu_cli.commands.evaluate import evaluate
+from waifu_cli.commands.jido import jido
 from waifu_cli.commands.regime import regime
 from waifu_cli.commands.review import review
 from waifu_cli.commands.howl import howl
@@ -34,6 +35,7 @@ def cli():
 
 
 cli.add_command(evaluate)
+cli.add_command(jido)
 cli.add_command(regime)
 cli.add_command(review)
 cli.add_command(howl)

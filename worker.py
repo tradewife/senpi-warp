@@ -179,6 +179,18 @@ def job_watchdog():
 
 def job_health():
     run_py("scripts/vps/health-check-cron.py")
+    update_skills()
+
+
+def update_skills():
+    """Pull latest senpi-skills (called periodically by health check)."""
+    if SKILLS_DIR.exists():
+        subprocess.run(
+            ["git", "pull", "--rebase", "--quiet"],
+            cwd=SKILLS_DIR,
+            capture_output=True,
+            timeout=30,
+        )
 
 
 def job_arena():
@@ -203,6 +215,18 @@ def job_elite_trader():
 
 def job_elite_stale():
     run_py("scripts/vps/elite_trader.py", ["--stale"])
+
+
+def job_jido():
+    """Autonomous trade executor with tiered governance (replaces evaluate)."""
+    result = subprocess.run(
+        ["python3", "-m", "waifu_cli", "jido"],
+        capture_output=True,
+        text=True,
+        env=CHILD_ENV,
+    )
+    if result.stderr.strip():
+        print(result.stderr.rstrip())
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +324,9 @@ def main():
         job_elite_stale, "interval", minutes=5, id="elite_stale", seconds=180
     )
 
+    # JIDO Autonomous Trade Executor — every 5min, offset 90s
+    scheduler.add_job(job_jido, "interval", minutes=5, id="jido", seconds=90)
+
     print("\nSchedule:")
     print("  🐋 ORCA Scanner:    every 60s")
     print("  🦗 MANTIS Scanner:  every 90s")
@@ -318,6 +345,7 @@ def main():
     print("  🔃 Reconcile:       every 15min")
     print("  ⚡ ELITE-TRADER:    every 30min")
     print("  ⏰ ELITE Stale:     every 5min")
+    print("  ⚡ JIDO Executor:   every 5min")
     print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
 

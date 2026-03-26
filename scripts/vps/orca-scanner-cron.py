@@ -34,20 +34,7 @@ from senpi_common import (
     load_json,
     save_json,
     POSITION_STATE_DIR,
-    SCANNER_CONFIG_FILE,
-    load_regime,
-    current_regime_params,
-    is_entries_allowed,
-    is_auto_entry_enabled,
-    get_enabled_strategies,
-    count_open_slots,
-    get_strategy_state_dir,
-    check_directional_exposure_limit,
-    attach_position_playbook,
     add_pending_entry,
-    record_trade,
-    send_telegram,
-    mcporter_call,
     record_heartbeat,
 )
 
@@ -77,15 +64,8 @@ COOLDOWN_FILE = POSITION_STATE_DIR / "orca-cooldowns.json"
 
 
 def fetch_markets() -> list[dict] | None:
-    result = mcporter_call("leaderboard_get_markets", {})
-    if "error" in result:
-        log(f"Leaderboard fetch failed: {result['error']}")
-        return None
-    data = result.get("data", result)
-    raw = data.get("markets", data)
-    if isinstance(raw, dict):
-        raw = raw.get("markets", [])
-    return raw if isinstance(raw, list) else None
+    """Scanner depowered — market fetching disabled. Only evaluator may call MCP."""
+    return None
 
 
 def parse_scan(raw_markets: list[dict]) -> dict:
@@ -191,23 +171,8 @@ def set_asset_cooldown(token: str):
 
 
 def check_asset_volume(token: str, dex: str = "") -> tuple[float, bool]:
-    """Check if raw 1h volume is ≥ 1.5x of 6h average."""
-    asset_name = f"{dex}:{token}" if dex else token
-    data = mcporter_call("market_get_asset_data", {"asset": asset_name})
-    if "error" in data:
-        return 0, False
-    candle_data = data.get("data", data)
-    if isinstance(candle_data, dict):
-        candles = candle_data.get("candles", {}).get("1h", [])
-    else:
-        return 0, False
-    if len(candles) < 6:
-        return 0, False
-    vols = [float(c.get("volume", c.get("v", c.get("vlm", 0)))) for c in candles[-6:]]
-    avg_vol = sum(vols[:-1]) / max(len(vols) - 1, 1)
-    latest_vol = vols[-1] if vols else 0
-    ratio = latest_vol / avg_vol if avg_vol > 0 else 0
-    return ratio, ratio >= 1.5
+    """Scanner depowered — volume check disabled. Only evaluator may call MCP."""
+    return 0, False
 
 
 # ---------------------------------------------------------------------------
@@ -474,203 +439,6 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
 
 # ---------------------------------------------------------------------------
-# Auto-entry (with High Water DSL)
-# ---------------------------------------------------------------------------
-
-
-def try_auto_entry(signal: dict):
-    if not is_auto_entry_enabled():
-        return
-    if signal["score"] < 6:
-        return
-
-    regime_params = current_regime_params()
-    strategies = get_enabled_strategies()
-    target_strategy = None
-
-    for strat in strategies:
-        state_dir = get_strategy_state_dir(strat["_key"])
-        dsl_file = state_dir / f"dsl-{signal['asset']}.json"
-        existing = load_json(dsl_file, default=None)
-        if existing and existing.get("active", False):
-            continue
-        if count_open_slots(strat) > 0:
-            target_strategy = strat
-            break
-
-    if not target_strategy:
-        log(f"ORCA auto-entry: no free slots for {signal['asset']}")
-        return
-
-    # Check global position limit
-    from senpi_common import get_open_positions
-
-    total_open = sum(len(get_open_positions(s["_key"])) for s in strategies)
-    if total_open >= MAX_POSITIONS:
-        log(f"ORCA: max {MAX_POSITIONS} positions reached")
-        return
-
-    budget = target_strategy.get("budget", 1000)
-    alloc_pct = regime_params.get("allocPctPerSlot", 30) / 100
-    leverage = min(
-        max(target_strategy.get("defaultLeverage", 10), MIN_LEVERAGE),
-        MAX_LEVERAGE,
-        regime_params.get("maxLeverageCrypto", 10),
-    )
-    margin = budget * alloc_pct
-
-    allowed_exposure, exposure = check_directional_exposure_limit(
-        signal["direction"], margin, leverage
-    )
-    if not allowed_exposure:
-        log(
-            f"ORCA: directional cap blocked {signal['asset']} {signal['direction']} "
-            f"projected={exposure['offendingPct']:.1f}% cap={exposure['capPct']:.1f}%"
-        )
-        return
-
-    # STALKER: ALO (maker) for fee savings. STRIKER: MARKET for speed.
-    order_type = "ALO" if signal["mode"] == "STALKER" else "MARKET"
-
-    log(
-        f"🐋 ORCA {signal['mode']}: {signal['direction']} {signal['asset']} | "
-        f"score={signal['score']} margin=${margin:.0f} lev={leverage}x order={order_type} | "
-        f"reasons={signal['reasons']}"
-    )
-
-    entry_params = {
-        "strategyWalletAddress": target_strategy.get("wallet"),
-        "orders": [
-            {
-                "coin": signal["asset"],
-                "direction": signal["direction"],
-                "leverage": int(leverage),
-                "marginAmount": margin,
-                "orderType": "MARKET",
-            }
-        ],
-    }
-
-    entry_result = mcporter_call("create_position", entry_params)
-
-    if "error" in entry_result:
-        log(f"ORCA entry FAILED for {signal['asset']}: {entry_result['error']}")
-        return
-
-    entry_price = float(entry_result.get("entryPrice", 0))
-    size = float(entry_result.get("size", 0))
-
-    # Conviction-scaled Phase 1
-    s = signal["score"]
-    if s >= 10:
-        abs_floor_roe = -30
-        hard_timeout = 3600
-        weak_peak = 1800
-    elif s >= 8:
-        abs_floor_roe = -25
-        hard_timeout = 2700
-        weak_peak = 1200
-    else:
-        abs_floor_roe = -20
-        hard_timeout = 1800
-        weak_peak = 900
-
-    dsl_state = {
-        "active": True,
-        "asset": signal["asset"],
-        "direction": signal["direction"],
-        "leverage": leverage,
-        "entryPrice": entry_price,
-        "size": size,
-        "wallet": target_strategy.get("wallet"),
-        "strategyWalletAddress": target_strategy.get("wallet"),
-        "strategyKey": target_strategy["_key"],
-        "phase": 1,
-        "lockMode": "pct_of_high_water",
-        "phase1": {
-            "absoluteFloorRoe": abs_floor_roe,
-            "hardTimeoutSec": hard_timeout,
-            "weakPeakCutSec": weak_peak,
-        },
-        "phase2TriggerRoe": 5,
-        "tiers": [
-            {"triggerPct": 5, "lockHwPct": 20, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 10, "lockHwPct": 40, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 20, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 30, "lockHwPct": 70, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 50, "lockHwPct": 80, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 75, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 100, "lockHwPct": 90, "consecutiveBreachesRequired": 1},
-        ],
-        "stagnationTp": dict(STAGNATION_TP),
-        "currentTierIndex": -1,
-        "highWaterPrice": entry_price,
-        "floorPrice": None,
-        "currentBreachCount": 0,
-        "entryScore": signal["score"],
-        "entryMode": signal["mode"],
-        "entryReasons": signal["reasons"],
-        "createdAt": now_iso(),
-    }
-    attach_position_playbook(
-        dsl_state,
-        scanner="orca",
-        margin=margin,
-        leverage=leverage,
-        score=signal["score"],
-        reasons=signal["reasons"],
-        sm_snapshot={
-            "traderCount": signal.get("traderCount"),
-            "concentration": signal.get("contribution"),
-        },
-        setup={
-            "mode": signal.get("mode"),
-            "rank": signal.get("rank"),
-            "signalType": signal.get("signalType"),
-        },
-    )
-    state_dir = get_strategy_state_dir(target_strategy["_key"])
-    save_json(state_dir / f"dsl-{signal['asset']}.json", dsl_state)
-
-    record_trade(
-        {
-            "action": "OPEN",
-            "asset": signal["asset"],
-            "direction": signal["direction"],
-            "entryPrice": entry_price,
-            "size": size,
-            "margin": margin,
-            "leverage": leverage,
-            "strategyKey": target_strategy["_key"],
-            "entrySource": f"orca-{signal['mode'].lower()}",
-            "entryMode": signal["mode"],
-            "entryScore": signal["score"],
-            "orderType": order_type,
-            "signal": signal,
-        }
-    )
-
-    add_pending_entry(
-        {
-            **signal,
-            "autoEntered": True,
-            "strategyKey": target_strategy["_key"],
-            "entryPrice": entry_price,
-            "margin": margin,
-            "leverage": leverage,
-        }
-    )
-
-    mode_emoji = "🔍" if signal["mode"] == "STALKER" else "⚡"
-    send_telegram(
-        f"🐋 ORCA {mode_emoji} {signal['mode']}: {signal['direction']} {signal['asset']}\n"
-        f"Score: {signal['score']} | {', '.join(signal['reasons'][:4])}\n"
-        f"Entry: ${entry_price:.4f} | Margin: ${margin:.0f} | Lev: {leverage}x\n"
-        f"Strategy: {target_strategy.get('name', target_strategy['_key'])}"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -693,7 +461,6 @@ def main():
             history = history_data
         else:
             history = history_data.get("scans", [])
-        # Log scan status every 10 scans
         if len(history) % 10 == 0:
             log(f"ORCA scan #{len(history)}: {len(current_scan['markets'])} markets")
 
@@ -706,7 +473,6 @@ def main():
 
         save_json(SCAN_HISTORY_FILE, {"scans": history})
 
-        # Combine — STRIKER takes priority for same asset
         striker_assets = {s["asset"] for s in striker_signals}
         combined = striker_signals + [
             s for s in stalker_signals if s["asset"] not in striker_assets
@@ -721,26 +487,7 @@ def main():
                 f"ORCA {sig['mode']}: {sig['direction']} {sig['asset']} "
                 f"score={sig['score']} reasons={sig['reasons']}"
             )
-
-        # Auto-enter on highest-conviction signals
-        if is_entries_allowed():
-            for sig in combined[:2]:
-                if sig["mode"] == "STRIKER" and sig["score"] >= 9:
-                    try_auto_entry(sig)
-                elif sig["mode"] == "STALKER" and sig["score"] >= 6:
-                    try_auto_entry(sig)
-
-        # Queue non-auto-entered signals for review (only when entries allowed)
-        auto_entered_assets = set()
-        if is_entries_allowed():
-            for sig in combined[:2]:
-                if (sig["mode"] == "STRIKER" and sig["score"] >= 9) or (
-                    sig["mode"] == "STALKER" and sig["score"] >= 6
-                ):
-                    auto_entered_assets.add(sig["asset"])
-            for sig in combined:
-                if sig["asset"] not in auto_entered_assets:
-                    add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
+            add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
 
         git_sync("auto: ORCA scan")
 
