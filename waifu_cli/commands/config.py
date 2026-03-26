@@ -311,6 +311,29 @@ def _create_default_rules():
             "autoExecuteEnabled": True,
             "description": "Autonomous execution thresholds (Jido)",
         },
+        "fixed_tp_roe": {
+            "enabled": False,
+            "tpRoePct": None,
+            "description": "Fixed take-profit ROE. Overrides DSL trailing stop with a fixed ROE exit.",
+        },
+        "partial_tp": {
+            "enabled": False,
+            "tp1RoePct": None,
+            "tp1ClosePct": 50,
+            "tp2RoePct": None,
+            "tp2ClosePct": 25,
+            "description": "Partial take-profit. Close N% of position at TP1, rest at TP2.",
+        },
+        "fixed_sl_roe": {
+            "enabled": False,
+            "slRoePct": None,
+            "description": "Fixed stop-loss ROE. Overrides DSL floor with a fixed ROE stop.",
+        },
+        "dsl_override": {
+            "enabled": False,
+            "overrides": {},
+            "description": "Override DSL parameters (phases, tiers, stagnation) for all new positions.",
+        },
         "updatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "updatedBy": "system",
     }
@@ -319,11 +342,10 @@ def _create_default_rules():
 
 def _display_rules_table(rules: dict):
     """Display rules in a clean table format."""
-    click.echo(f"\n{'=' * 55}")
+    click.echo(f"\n{'=' * 60}")
     click.echo("  USER RULES — config/user-rules.json")
-    click.echo(f"{'=' * 55}")
+    click.echo(f"{'=' * 60}")
 
-    # Evaluate (Manual) section
     evaluate = rules.get("evaluate", {})
     click.echo("\n📋 EVALUATE (Manual):")
     click.echo(f"   minScore:         {evaluate.get('minScore', '?')}")
@@ -331,14 +353,52 @@ def _display_rules_table(rules: dict):
     click.echo(f"   maxPositions:     {evaluate.get('maxPositions', '?')}")
     click.echo(f"   cooldownMinutes:  {evaluate.get('cooldownMinutes', '?')}")
 
-    # Jido (Autonomous) section
     jido = rules.get("jido", {})
     click.echo("\n⚡ JIDO (Autonomous):")
     click.echo(f"   roi_threshold_auto:  {jido.get('roi_threshold_auto', '?')}")
     click.echo(f"   minScore:            {jido.get('minScore', '?')}")
     click.echo(f"   autoExecuteEnabled:  {jido.get('autoExecuteEnabled', '?')}")
 
-    # Metadata
+    fixed_tp = rules.get("fixed_tp_roe", {})
+    tp_status = "ON" if fixed_tp.get("enabled") else "OFF"
+    click.echo(f"\n🎯 FIXED TP ROE: [{tp_status}]")
+    if fixed_tp.get("enabled"):
+        click.echo(f"   tpRoePct:           {fixed_tp.get('tpRoePct', '?')}")
+    else:
+        click.echo(f"   (disabled — uses DSL trailing stop)")
+
+    partial_tp = rules.get("partial_tp", {})
+    tp_status = "ON" if partial_tp.get("enabled") else "OFF"
+    click.echo(f"\n📊 PARTIAL TP: [{tp_status}]")
+    if partial_tp.get("enabled"):
+        click.echo(f"   tp1RoePct:           {partial_tp.get('tp1RoePct', '?')}")
+        click.echo(f"   tp1ClosePct:        {partial_tp.get('tp1ClosePct', '?')}")
+        click.echo(f"   tp2RoePct:           {partial_tp.get('tp2RoePct', '?')}")
+        click.echo(f"   tp2ClosePct:        {partial_tp.get('tp2ClosePct', '?')}")
+    else:
+        click.echo(f"   (disabled — uses DSL tiers)")
+
+    fixed_sl = rules.get("fixed_sl_roe", {})
+    sl_status = "ON" if fixed_sl.get("enabled") else "OFF"
+    click.echo(f"\n🛑 FIXED SL ROE: [{sl_status}]")
+    if fixed_sl.get("enabled"):
+        click.echo(f"   slRoePct:           {fixed_sl.get('slRoePct', '?')}")
+    else:
+        click.echo(f"   (disabled — uses DSL floor)")
+
+    dsl = rules.get("dsl_override", {})
+    dsl_status = "ON" if dsl.get("enabled") else "OFF"
+    click.echo(f"\n🔧 DSL OVERRIDE: [{dsl_status}]")
+    if dsl.get("enabled"):
+        overrides = dsl.get("overrides", {})
+        if overrides:
+            for key, val in overrides.items():
+                click.echo(f"   {key}: {val}")
+        else:
+            click.echo("   (no overrides defined)")
+    else:
+        click.echo(f"   (disabled — uses scanner defaults)")
+
     click.echo(f"\n📅 Updated: {rules.get('updatedAt', 'unknown')}")
     click.echo(f"   By: {rules.get('updatedBy', 'unknown')}")
-    click.echo(f"\n{'=' * 55}\n")
+    click.echo(f"\n{'=' * 60}\n")

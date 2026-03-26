@@ -12,6 +12,29 @@
     "autoExecuteEnabled": true,
     "description": "Autonomous execution thresholds (Jido)"
   },
-  "updatedAt": "2026-03-26T00:00:00Z",
+  "fixed_tp_roe": {
+    "enabled": false,
+    "tpRoePct": null,
+    "description": "Fixed take-profit ROE. Overrides DSL trailing stop with a fixed ROE exit."
+  },
+  "partial_tp": {
+    "enabled": false,
+    "tp1RoePct": null,
+    "tp1ClosePct": 50,
+    "tp2RoePct": null,
+    "tp2ClosePct": 25,
+    "description": "Partial take-profit. Close N% of position at TP1, rest at TP2."
+  },
+  "fixed_sl_roe": {
+    "enabled": false,
+    "slRoePct": null,
+    "description": "Fixed stop-loss ROE. Overrides DSL floor with a fixed ROE stop."
+  },
+  "dsl_override": {
+    "enabled": false,
+    "overrides": {},
+    "description": "Override DSL parameters (phases, tiers, stagnation) for all new positions."
+  },
+  "updatedAt": "2026-03-27T00:00:00Z",
   "updatedBy": "system"
 }
