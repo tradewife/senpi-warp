@@ -1457,7 +1457,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         **CHILD_ENV,
         "HERMES_HOME": os.environ.get("HERMES_HOME", "/root/.hermes"),
         "HERMES_INFERENCE_PROVIDER": os.environ.get(
-            "HERMES_INFERENCE_PROVIDER", "auto"
+            "HERMES_INFERENCE_PROVIDER", "z.ai coding plan"
         ),
         "TERM": "dumb",
     }
