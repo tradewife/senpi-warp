@@ -97,7 +97,7 @@ def setup_mcporter():
 
 
 def run_py(script: str, args: Optional[list] = None):
-    """Run a Python script from the repo, printing stderr."""
+    """Run a Python script from the repo, printing output."""
     cmd = ["python3", str(STATE_DIR / script)]
     if args:
         cmd.extend(args)
@@ -107,8 +107,10 @@ def run_py(script: str, args: Optional[list] = None):
         text=True,
         env=CHILD_ENV,
     )
-    if result.stderr.strip():
-        print(result.stderr.rstrip())
+    output = (result.stdout + "\n" + result.stderr).strip()
+    if output:
+        for line in output.split("\n"):
+            print(line)
 
 
 def run_sh(script: str):
@@ -225,8 +227,10 @@ def job_jido():
         text=True,
         env=CHILD_ENV,
     )
-    if result.stderr.strip():
-        print(result.stderr.rstrip())
+    output = (result.stdout + "\n" + result.stderr).strip()
+    if output:
+        for line in output.split("\n"):
+            print(line)
 
 
 # ---------------------------------------------------------------------------
