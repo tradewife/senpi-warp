@@ -693,30 +693,27 @@ def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
     import json
 
     url = os.environ.get("SENPI_MCP_URL", "https://mcp.prod.senpi.ai/mcp")
-    api_key = os.environ.get("SENPI_API_KEY", "")
+    auth_token = os.environ.get("SENPI_AUTH_TOKEN", "")
 
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "tools/call",
-        "params": {
-            "name": tool,
-            "arguments": args
-        }
+        "params": {"name": tool, "arguments": args},
     }
 
     headers = {
         "Content-Type": "application/json",
     }
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    if auth_token:
+        headers["Authorization"] = auth_token
 
     try:
         req = urllib.request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
             headers=headers,
-            method="POST"
+            method="POST",
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))

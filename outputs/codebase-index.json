@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-27T00:00:00Z",
+  "generatedAt": "2026-03-27T12:00:00Z",
   "root": "/home/kt/senpi-waifu",
-  "version": "post-tiered-governance-v3",
+  "version": "post-single-execution-path-v4",
   "counts": {
     "entrypoints": 3,
     "shared_lib": 2,
@@ -363,24 +363,64 @@
   },
   "governance": {
     "tradeEntryPath": {
-      "description": "Post-Phase-3: All trade entries flow through waifu_cli via strategy_open_position",
+      "description": "Phase-3 COMPLETE: All trade entries flow exclusively through waifu_cli via strategy_open_position",
       "executors": [
-        "waifu_cli/commands/evaluate.py:TradeEvaluator._handle_approval()",
-        "waifu_cli/commands/jido.py:_execute_approved_trade()"
+        "waifu_cli/commands/evaluate.py:369 — TradeEvaluator._handle_approval()",
+        "waifu_cli/commands/jido.py:280 — _execute_approved_trade()"
       ],
       "gatePipeline": "waifu_cli/safety.py:evaluate_entry() — 10 hard gates",
-      "legacyNote": "VPS scanners (komodo, sentinel, rhino, condor, polar, barracuda, bison) still contain create_position calls that bypass the 10-gate pipeline. These need migration to add_pending_entry-only."
+      "emergencyClosures": [
+        "scripts/vps/risk-arbiter.py:118,359 — strategy_close_position (mechanical safety)",
+        "scripts/vps/watchdog-cron.py:63 — strategy_close_position (margin/liq watchdog)"
+      ],
+      "legacyNote": "RESOLVED — No strategy_open_position or create_position calls remain in scripts/vps/*.py. All VPS scanners are passive-only (queue via add_pending_entry)."
     },
     "passiveScanners": {
-      "fullyPassive": ["orca", "fox", "mantis", "shark"],
-      "hasLegacyDirectEntry": ["sentinel", "rhino", "condor", "polar", "komodo", "barracuda", "bison", "emerging-movers"]
+      "fullyPassive": ["orca", "fox", "mantis", "shark", "komodo", "sentinel", "rhino", "condor", "polar", "barracuda", "bison"],
+      "hasLegacyDirectEntry": []
     },
-    "pathUnification": {
-      "STATE_DIR": "Consistently defaults to /app via SENPI_WAIFU_DIR env var",
-      "sources": [
-        "scripts/lib/senpi_common.py:44",
-        "worker.py:36",
-        "dashboard/telegram_bot.py:37"
+    "pathAuthority": {
+      "canonicalSource": "scripts/lib/senpi_common.py:44-48",
+      "STATE_DIR": "Path(os.environ.get('SENPI_WAIFU_DIR', '/app'))",
+      "CONFIG_DIR": "STATE_DIR / 'config'",
+      "POSITION_STATE_DIR": "STATE_DIR / 'state'",
+      "MEMORY_DIR": "STATE_DIR / 'memory'",
+      "OUTPUTS_DIR": "STATE_DIR / 'outputs'",
+      "adopters": {
+        "senpi_common.py": "Lines 44-63 — canonical definitions, all constants derived from STATE_DIR",
+        "worker.py": "Line 36 — mirrors STATE_DIR via SENPI_WAIFU_DIR env var",
+        "dashboard/telegram_bot.py": "Lines 37-42 — mirrors all 5 path constants via SENPI_WAIFU_DIR",
+        "waifu_cli/commands/*.py": "11 files import senpi_common as sc, use sc.CONFIG_DIR/sc.POSITION_STATE_DIR/sc.OUTPUTS_DIR/sc.MEMORY_DIR",
+        "waifu_cli/commands/config.py": "Line 21 — uses Path(__file__) for PROJECT_ROOT (CLI-local .env editing only, no runtime state)",
+        "waifu_cli/commands/dev.py": "Line 20 — uses Path(__file__) for PROJECT_ROOT (skill management only, no runtime state)",
+        "waifu_cli/commands/debug.py": "Line 20 — uses SENPI_WAIFU_DIR env var with Path(__file__) fallback (compliant)"
+      },
+      "hardcodedPathsFound": false,
+      "auditDate": "2026-03-27T12:00:00Z"
+    },
+    "mcporterWrapper": {
+      "location": "scripts/lib/senpi_common.py:676",
+      "function": "mcporter_read(tool, args, timeout=30)",
+      "purpose": "Read-only safety wrapper — whitelists 11 read-only MCP tools, blocks all write operations",
+      "whitelistedTools": [
+        "leaderboard_get_markets", "leaderboard_get_momentum_events", "leaderboard_get_top",
+        "market_get_asset_data", "market_get_candles", "market_get_orderbook",
+        "market_get_instrument_specs", "market_get_prices", "market_list_instruments",
+        "market_get_all_instruments", "account_get_portfolio"
+      ]
+    },
+    "TradeEvaluator": {
+      "location": "waifu_cli/commands/evaluate.py:164",
+      "classAttrs": {
+        "PENDING_ENTRIES_FILE": "sc.POSITION_STATE_DIR / 'pending-entries.json'",
+        "MIN_SCORES": "scanner->threshold mapping (orca:6, mantis:7, fox:7, komodo:10, condor:10, polar:10, sentinel:5, rhino:5)"
+      },
+      "methods": [
+        "__init__(dry_run=False) — line 187",
+        "process_queue() -> List[DecisionObject] — line 194",
+        "_determine_recommendation(entry, gate, strategy) -> Recommendation — line 265",
+        "_handle_approval(entry, strategy, gate, strat_key, strategy_id, strategic) — line 302",
+        "_handle_manual_review(entry, gate) — line 410"
       ]
     }
   }
