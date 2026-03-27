@@ -12,9 +12,78 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "lib"))
 import senpi_common as sc
 
 
+def _show_rules():
+    rules = sc.load_json(sc.CONFIG_DIR / "user-rules.json", default={})
+    if not rules:
+        click.echo("No user-rules.json found.")
+        return
+
+    click.echo(f"\n{'=' * 50}")
+    click.echo(f"  STRATEGIC CEILING — user-rules.json")
+    click.echo(f"{'=' * 50}")
+
+    ev = rules.get("evaluate", {})
+    click.echo(f"\n📋 Evaluate (Manual):")
+    click.echo(f"   minScore: {ev.get('minScore', '?')}")
+    click.echo(f"   maxLeverage: {ev.get('maxLeverage', '?')}x (hardcoded 7-10x)")
+    click.echo(f"   maxPositions: {ev.get('maxPositions', '?')} (hardcoded cap 3)")
+    click.echo(f"   cooldown: {ev.get('cooldownMinutes', '?')}min")
+
+    jido = rules.get("jido", {})
+    click.echo(f"\n🤖 Jido (Autonomous):")
+    click.echo(f"   roi_threshold: {jido.get('roi_threshold_auto', '?')}")
+    click.echo(f"   minScore: {jido.get('minScore', '?')}")
+    click.echo(f"   autoExecute: {jido.get('autoExecuteEnabled', '?')}")
+
+    tp = rules.get("fixed_tp_roe", {})
+    click.echo(f"\n🎯 Fixed TP: {'ON' if tp.get('enabled') else 'OFF'}")
+    if tp.get("enabled") and tp.get("tpRoePct"):
+        click.echo(f"   tpRoePct: {tp['tpRoePct']}%")
+
+    sl = rules.get("fixed_sl_roe", {})
+    click.echo(f"\n🛑 Fixed SL: {'ON' if sl.get('enabled') else 'OFF'}")
+    if sl.get("enabled") and sl.get("slRoePct"):
+        click.echo(f"   slRoePct: {sl['slRoePct']}%")
+
+    ptp = rules.get("partial_tp", {})
+    click.echo(f"\n📊 Partial TP: {'ON' if ptp.get('enabled') else 'OFF'}")
+    if ptp.get("enabled"):
+        click.echo(
+            f"   TP1: {ptp.get('tp1RoePct', '?')}% / close {ptp.get('tp1ClosePct', '?')}%"
+        )
+        click.echo(
+            f"   TP2: {ptp.get('tp2RoePct', '?')}% / close {ptp.get('tp2ClosePct', '?')}%"
+        )
+
+    psl = rules.get("partial_sl", {})
+    click.echo(f"📉 Partial SL: {'ON' if psl.get('enabled') else 'OFF'}")
+    if psl.get("enabled"):
+        click.echo(
+            f"   SL1: {psl.get('sl1RoePct', '?')}% / close {psl.get('sl1ClosePct', '?')}%"
+        )
+        click.echo(
+            f"   SL2: {psl.get('sl2RoePct', '?')}% / close {psl.get('sl2ClosePct', '?')}%"
+        )
+
+    dsl = rules.get("dsl_override", {})
+    click.echo(f"\n🔧 DSL Override: {'ON' if dsl.get('enabled') else 'OFF'}")
+
+    click.echo(
+        f"\n   Updated: {rules.get('updatedAt', '?')} by {rules.get('updatedBy', '?')}"
+    )
+    click.echo(f"\n{'=' * 50}")
+
+
 @click.command()
-def status():
+@click.option(
+    "--rules", is_flag=True, help="Show strategic parameters from user-rules.json."
+)
+def status(rules: bool):
     """Show current system state (read-only)."""
+    if rules:
+        _show_rules()
+        return
+
     # Regime
     regime = sc.load_regime()
     mode = regime.get("riskMode", "UNKNOWN")
@@ -42,7 +111,9 @@ def status():
     # Guardrails
     guardrails = sc.load_global_guardrails()
     click.echo(f"\n🛡  Guardrails:")
-    click.echo(f"   Leverage: {guardrails.get('minLeverage', 7)}-{guardrails.get('maxLeverage', 10)}x")
+    click.echo(
+        f"   Leverage: {guardrails.get('minLeverage', 7)}-{guardrails.get('maxLeverage', 10)}x"
+    )
     click.echo(f"   Max positions: {guardrails.get('maxPositionsTotal', 3)}")
     click.echo(f"   Daily loss limit: {guardrails.get('dailyLossLimitPct', 10)}%")
     click.echo(f"   Catastrophic DD: {guardrails.get('catastrophicDrawdownPct', 20)}%")

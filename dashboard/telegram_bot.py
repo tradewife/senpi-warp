@@ -559,6 +559,29 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f.write("\n")
         tmp.rename(USER_RULES_FILE)
 
+        git_sync_msg = ""
+        try:
+            sync_proc = await asyncio.create_subprocess_exec(
+                "python3",
+                "-c",
+                "import sys; sys.path.insert(0,'scripts/lib'); "
+                "import senpi_common as sc; "
+                "sc.git_sync('strat: rule update via telegram')",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=CHILD_ENV,
+                cwd=str(STATE_DIR),
+            )
+            _, sync_err = await asyncio.wait_for(sync_proc.communicate(), timeout=30)
+            if sync_err:
+                git_sync_msg = (
+                    f"\n\n⚠️ Git sync warning: {sync_err.decode().strip()[:200]}"
+                )
+            else:
+                git_sync_msg = "\n\n✅ Synced to GitHub."
+        except Exception:
+            git_sync_msg = "\n\n⚠️ Git sync failed (non-fatal)."
+
         confirmation_fn = RULES_CONFIRMATIONS.get(key)
         confirmation = (
             confirmation_fn(value) if confirmation_fn else f"`{key}` → `{value}`"
@@ -567,7 +590,7 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"✅ {confirmation}\n\n"
             f"_Changes take effect on next Jido run (within 5 min)._\n"
-            f"_Use /rules to verify._",
+            f"_Use /rules to verify._{git_sync_msg}",
             parse_mode="Markdown",
         )
         return
@@ -1453,13 +1476,33 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             env=env,
             cwd=str(STATE_DIR),
         )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
-        output = (stdout.decode().strip() or stderr.decode().strip()).strip()
+        stdout_raw, stderr_raw = await asyncio.wait_for(proc.communicate(), timeout=120)
+        stdout_text = stdout_raw.decode().strip()
+        stderr_text = stderr_raw.decode().strip()
+        returncode = proc.returncode
 
-        if not output:
-            await update.message.reply_text("🧠 Brain returned no output.")
+        if returncode != 0:
+            err_detail = (
+                stderr_text[:2000] if stderr_text else f"exit code {returncode}"
+            )
+            await update.message.reply_text(
+                f"❌ *Brain Error*\n\n```\n{err_detail}\n```\n\n"
+                f"_Return code: {returncode}_",
+                parse_mode="Markdown",
+            )
             return
 
+        if not stdout_text:
+            stderr_hint = f"\n\n_stderr: {stderr_text[:500]}_" if stderr_text else ""
+            await update.message.reply_text(
+                f"⚠️ *Brain returned no output.*{stderr_hint}\n\n"
+                f"_Check that `OPENAI_API_KEY` and `OPENAI_BASE_URL` "
+                f"are set in Railway._",
+                parse_mode="Markdown",
+            )
+            return
+
+        output = stdout_text
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"
 

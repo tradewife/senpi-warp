@@ -1,6 +1,6 @@
 {
   "evaluate": {
-    "minScore": 6,
+    "minScore": 7,
     "maxLeverage": 10,
     "maxPositions": 3,
     "cooldownMinutes": 120,
