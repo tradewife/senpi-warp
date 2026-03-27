@@ -35,7 +35,12 @@ def _run(dry_run: bool):
     sync_before()
 
     # Fetch leaderboard
-    leaderboard = sc.mcporter_call("discovery_get_top_traders", {"limit": 50, "timeframe": "30d"})
+    leaderboard = sc.mcporter_call("discovery_get_top_traders", {"limit": 50, "time_frame": "MONTHLY"})
+
+    # Check for API errors
+    if not leaderboard.get("success", False):
+        click.echo(f"  Leaderboard API error: {leaderboard.get('error', 'Unknown error')}")
+        return
 
     # Our stats
     journal = sc.load_trade_journal()
@@ -47,7 +52,7 @@ def _run(dry_run: bool):
     click.echo(f"  Our stats: {len(our_closes)} closes, {our_wr:.1f}% WR, ${our_pnl:,.2f} PnL")
 
     # Analyze leaderboard
-    top_traders = leaderboard.get("data", leaderboard.get("traders", []))
+    top_traders = leaderboard.get("data", {}).get("traders", [])
     recommendations = []
 
     if not top_traders:

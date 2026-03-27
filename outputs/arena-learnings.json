@@ -1,5 +1,24 @@
 {
-  "generatedAt": "2026-03-27T09:13:09Z",
-  "recommendations": [],
-  "note": "No leaderboard data available"
+  "generatedAt": "2026-03-27T21:04:11Z",
+  "ourStats": {
+    "closes": 0,
+    "winRate": 0,
+    "totalPnl": 0
+  },
+  "arenaTop5AvgWinRate": 93.0,
+  "recommendations": [
+    {
+      "action": "study_top_strategies",
+      "confidence": "medium",
+      "reason": "Arena top 5 avg WR (93%) exceeds ours (0%). Study their patterns.",
+      "risk": "neutral"
+    },
+    {
+      "action": "reminder_max_leverage",
+      "confidence": "absolute",
+      "reason": "Max leverage is 10x. Never increase. Proven across 22 agents.",
+      "risk": "rule"
+    }
+  ],
+  "appliedChanges": []
 }
