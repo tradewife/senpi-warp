@@ -7,7 +7,7 @@
     "description": "Manual evaluation thresholds (TradeEvaluator)"
   },
   "jido": {
-    "roi_threshold_auto": 0.15,
+    "roi_threshold_auto": 0.16,
     "minScore": 6,
     "autoExecuteEnabled": true,
     "description": "Autonomous execution thresholds (Jido)"
