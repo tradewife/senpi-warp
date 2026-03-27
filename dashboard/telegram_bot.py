@@ -767,10 +767,14 @@ async def cmd_positions(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not positions:
         regime = load_json(CONFIG_DIR / "risk-regime.json")
         mode = regime.get("riskMode", "UNKNOWN")
-        await update.message.reply_text(
-            f"No open positions.\n\n"
-            f"Regime is *{mode}* — "
-            f"{'scanners are hunting for entries.' if mode != 'RISK_OFF' else 'entries are blocked. Use /baseline or /risk\\_on to re-enable.'}",
+        no_entries_msg = (
+            "scanners are hunting for entries."
+            if mode != "RISK_OFF"
+            else "entries are blocked. Use /baseline or /risk_on to re-enable."
+        )
+        await _safe_reply(
+            update,
+            f"No open positions.\n\nRegime is *{mode}* — {no_entries_msg}",
             parse_mode="Markdown",
         )
         return
