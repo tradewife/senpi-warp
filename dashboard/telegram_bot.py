@@ -4,19 +4,21 @@ Senpi Telegram Bot — full control interface for the ORCA hybrid trading agent.
 Runs as an async background task inside the dashboard FastAPI app.
 On startup, registers the command menu with BotFather automatically.
 
-Architecture:
-  VPS (Railway) runs mechanical cron jobs — ORCA scanner, KOMODO momentum,
-  DSL trailing stops, Risk Arbiter. No LLM, sub-2s execution.
+   Architecture:
+   VPS (Railway) runs mechanical cron jobs — ORCA scanner, KOMODO momentum,
+   DSL trailing stops, Risk Arbiter. No LLM, sub-2s execution.
 
-  Oz Cloud (Warp) runs strategic LLM agents — regime classification,
-  trade evaluation, portfolio review, nightly HOWL self-improvement.
+   Strategic Brain (Hermes Apollo) runs in-container via the `hermes ask`
+   command. Dispatched from Telegram free-text messages. Can read state,
+   modify user-rules.json and scanner configs, and sync changes to GitHub.
 
-  This bot gives you full visibility and manual override from your phone.
+   This bot gives you full visibility and manual override from your phone.
 """
 
 import asyncio
 import json
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -338,10 +340,10 @@ These are in the code, not config — agents cannot override them:
 • 2-hour per-asset cooldown after exits
 • Stagnation TP mandatory (10% ROE / 45 min)
 
-━━━━━━━━━━━━━━━━━━━━
-Type /help to see all commands, or just send a message to talk to Oz.
+ ━━━━━━━━━━━━━━━━━━━━
+ Type /help to see all commands, or just send a message to talk to the Strategic Brain.
 
-Tip: Start with /status for a quick dashboard snapshot."""
+ Tip: Start with /status for a quick dashboard snapshot."""
     await update.message.reply_text(text, parse_mode="Markdown")
 
 
@@ -402,9 +404,11 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for c in cmds:
             lines.append(c)
 
-    lines.append("\n_Any non-command text is sent to Oz as a free-text prompt._")
     lines.append(
-        "_Oz can execute mcporter calls, read state, and push config changes._"
+        "\n_Any non-command text is sent to the Strategic Brain (Hermes Apollo) as a free-text prompt._"
+    )
+    lines.append(
+        "_The Brain can read state, modify user-rules.json and scanner configs, and push changes to GitHub._"
     )
     await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
@@ -1400,7 +1404,7 @@ async def cmd_arena_insights(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 # ---------------------------------------------------------------------------
-# Free text → Oz
+# Free text → Strategic Brain (Hermes Apollo)
 # ---------------------------------------------------------------------------
 
 
@@ -1410,16 +1414,67 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not message:
         return
 
-    warp_key = os.environ.get("WARP_API_KEY", "")
-    if not warp_key:
+    hermes_bin = shutil.which("hermes")
+    if not hermes_bin:
+        warp_key = os.environ.get("WARP_API_KEY", "")
+        if not warp_key:
+            await update.message.reply_text(
+                "⚠️ *Brain not available*\n\n"
+                "Neither Hermes nor Oz is configured.\n"
+                "Set `OPENROUTER_API_KEY` or `OPENAI_API_KEY` for Hermes, "
+                "or `WARP_API_KEY` for Oz.",
+                parse_mode="Markdown",
+            )
+            return
+        return await _handle_oz_fallback(update, message)
+
+    await update.message.reply_text("🧠 Thinking...")
+
+    env = {
+        **CHILD_ENV,
+        "HERMES_HOME": os.environ.get("HERMES_HOME", "/root/.hermes"),
+        "TERM": "dumb",
+    }
+
+    soul_path = CONFIG_DIR / "hermes-soul.md"
+    if soul_path.exists():
+        env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            hermes_bin,
+            "ask",
+            message,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+            cwd=str(STATE_DIR),
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+        output = (stdout.decode().strip() or stderr.decode().strip()).strip()
+
+        if not output:
+            await update.message.reply_text("🧠 Brain returned no output.")
+            return
+
+        if len(output) > 4000:
+            output = output[:3900] + "\n\n_(truncated)_"
+
         await update.message.reply_text(
-            "⚠️ *Oz not configured*\n\n"
-            "Set `WARP_API_KEY` and optionally `OZ_ENVIRONMENT_ID` in Railway to enable free-text prompts.\n\n"
-            "_Oz cloud agents can execute mcporter API calls, analyze positions, and push config changes._",
+            f"🧠 *Strategic Waifu*\n\n```\n{output}\n```",
             parse_mode="Markdown",
         )
-        return
 
+    except asyncio.TimeoutError:
+        await update.message.reply_text(
+            "⏱ Brain timed out (120s limit).\n_Try a shorter query or retry._"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ Brain error: {e}")
+
+
+async def _handle_oz_fallback(update: Update, message: str):
+    warp_key = os.environ.get("WARP_API_KEY", "")
     await update.message.reply_text("🧠 Dispatching to Oz cloud agent...")
 
     try:
@@ -1507,7 +1562,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("journal", cmd_journal))
     app.add_handler(CommandHandler("arena_insights", cmd_arena_insights))
 
-    # Free text → Oz
+    # Free text → Strategic Brain (Hermes Apollo)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_free_text))
 
     return app

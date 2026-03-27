@@ -125,13 +125,8 @@ def list_skills():
             risk = skill.get("risk_level", "moderate")
             risk_str = click.style(risk, fg=RISK_COLORS.get(risk, "white"))
 
-            click.echo(
-                f"  {skill['emoji']}  {skill['name']:<16} "
-                f"[{badge}]"
-            )
-            click.echo(
-                f"     {skill['tagline']}"
-            )
+            click.echo(f"  {skill['emoji']}  {skill['name']:<16} [{badge}]")
+            click.echo(f"     {skill['tagline']}")
             click.echo(
                 f"     Risk: {risk_str}  |  "
                 f"Min budget: ${skill['min_budget']}  |  "
@@ -167,7 +162,8 @@ def add_skill(name):
     click.echo("   Pulling latest senpi-skills...")
     result = subprocess.run(
         ["git", "-C", str(SKILLS_DIR), "pull"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         click.echo(f"   ⚠️  git pull failed: {result.stderr.strip()}")
@@ -178,7 +174,8 @@ def add_skill(name):
         click.echo(f"   Checking out branch '{branch}'...")
         subprocess.run(
             ["git", "-C", str(SKILLS_DIR), "checkout", branch],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
 
     # Verify SKILL.md exists
@@ -191,7 +188,11 @@ def add_skill(name):
     skill_config = skill_dir / "config" / f"{skill_id}-config.json"
     if not skill_config.exists():
         # Try without the id prefix
-        configs = list((skill_dir / "config").glob("*-config.json")) if (skill_dir / "config").exists() else []
+        configs = (
+            list((skill_dir / "config").glob("*-config.json"))
+            if (skill_dir / "config").exists()
+            else []
+        )
         if configs:
             skill_config = configs[0]
 
@@ -375,7 +376,7 @@ def show_skill(name):
     content = text
     if text.startswith("---"):
         end_idx = text.index("---", 3)
-        content = text[end_idx + 3:].strip()
+        content = text[end_idx + 3 :].strip()
 
     # Show first section (up to second ## heading or 60 lines)
     lines = content.splitlines()
@@ -403,3 +404,85 @@ def show_skill(name):
             f"Full file: senpi-skills/{skill_id}/SKILL.md"
         )
     click.echo()
+
+
+@dev.command("brain-check")
+def brain_check():
+    """Verify Strategic Brain (Hermes) health — LLM key and binary status."""
+    import os
+
+    click.echo(f"\n{'=' * 60}")
+    click.echo("  🧠 STRATEGIC BRAIN HEALTH CHECK")
+    click.echo(f"{'=' * 60}\n")
+
+    checks_passed = 0
+    checks_total = 0
+
+    hermes_bin = shutil.which("hermes")
+    checks_total += 1
+    if hermes_bin:
+        click.echo(f"  ✅ Hermes binary: {hermes_bin}")
+        checks_passed += 1
+    else:
+        click.echo("  ❌ Hermes binary: not found on PATH")
+
+    checks_total += 1
+    or_key = os.environ.get("OPENROUTER_API_KEY", "")
+    if or_key:
+        click.echo(f"  ✅ OPENROUTER_API_KEY: {or_key[:12]}...{or_key[-6:]}")
+        checks_passed += 1
+    else:
+        click.echo("  ⚠️  OPENROUTER_API_KEY: not set")
+
+    checks_total += 1
+    oai_key = os.environ.get("OPENAI_API_KEY", "")
+    if oai_key:
+        click.echo(f"  ✅ OPENAI_API_KEY: {oai_key[:12]}...{oai_key[-6:]}")
+        checks_passed += 1
+    else:
+        click.echo("  ⚠️  OPENAI_API_KEY: not set")
+
+    checks_total += 1
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if anthropic_key:
+        click.echo(
+            f"  ✅ ANTHROPIC_API_KEY: {anthropic_key[:12]}...{anthropic_key[-6:]}"
+        )
+        checks_passed += 1
+    else:
+        click.echo("  ⚠️  ANTHROPIC_API_KEY: not set")
+
+    checks_total += 1
+    hermes_home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
+    soul_path = os.path.join(hermes_home, "SOUL.md")
+    if os.path.isfile(soul_path):
+        click.echo(f"  ✅ SOUL.md: {soul_path}")
+        checks_passed += 1
+    else:
+        click.echo(f"  ⚠️  SOUL.md: not found at {soul_path}")
+
+    checks_total += 1
+    project_soul = PROJECT_ROOT / "config" / "hermes-soul.md"
+    if project_soul.exists():
+        click.echo(f"  ✅ hermes-soul.md (project): {project_soul}")
+        checks_passed += 1
+    else:
+        click.echo(f"  ⚠️  hermes-soul.md: not found at {project_soul}")
+
+    click.echo(f"\n{'─' * 60}")
+    if checks_passed >= 3:
+        click.echo(
+            f"  Result: {checks_passed}/{checks_total} checks passed — "
+            + click.style("BRAIN READY", fg="green")
+        )
+    elif checks_passed >= 1:
+        click.echo(
+            f"  Result: {checks_passed}/{checks_total} checks passed — "
+            + click.style("PARTIAL (check LLM keys)", fg="yellow")
+        )
+    else:
+        click.echo(
+            f"  Result: {checks_passed}/{checks_total} checks passed — "
+            + click.style("BRAIN OFFLINE", fg="red")
+        )
+    click.echo(f"{'=' * 60}\n")

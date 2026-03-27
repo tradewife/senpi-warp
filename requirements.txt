@@ -13,3 +13,6 @@ python-telegram-bot>=21.0
 
 # CLI
 click>=8.1
+
+# Apollo installer
+pyyaml>=6.0
