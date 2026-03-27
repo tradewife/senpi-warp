@@ -243,13 +243,16 @@ def _daily_stats(journal: list[dict]) -> dict:
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    text = """🐺 *Senpi — Strategic Remote*
-
-This bot is a pure remote for the waifu-cli strategic suite.
-
-_Send any non-command text to talk to the Strategic Brain (Hermes Apollo)._
-
-Use /help to see all commands."""
+    text = (
+        "🐺 *Senpi — Strategic Remote*\n\n"
+        "This bot is a pure remote for the waifu-cli strategic suite.\n\n"
+        "⚙️ *Mechanical Layer* (Railway)\n"
+        "Scanners, DSL trailing stops, Risk Arbiter. No LLM.\n\n"
+        "🧠 *Strategic Layer*\n"
+        "Powered by local Hermes Apollo agent on Railway.\n\n"
+        "_Send any non-command text to talk to the Strategic Brain._\n\n"
+        "Use /help to see all commands."
+    )
     await _safe_reply(update, text, parse_mode="Markdown")
 
 
@@ -615,18 +618,14 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         hermes_bin = shutil.which("hermes") or ""
 
     if not hermes_bin:
-        warp_key = os.environ.get("WARP_API_KEY", "")
-        if not warp_key:
-            await _safe_reply(
-                update,
-                "⚠️ *Brain not available*\n\n"
-                "Neither Hermes nor Oz is configured.\n"
-                "Set `OPENAI_API_KEY` and `OPENAI_BASE_URL` for Hermes, "
-                "or `WARP_API_KEY` for Oz.",
-                parse_mode="Markdown",
-            )
-            return
-        return await _handle_oz_fallback(update, message)
+        await _safe_reply(
+            update,
+            "⚠️ *Brain not available*\n\n"
+            "Hermes binary not found.\n"
+            "Set `OPENAI\\_API\\_KEY` and `OPENAI\\_BASE\\_URL` for Hermes.",
+            parse_mode="Markdown",
+        )
+        return
 
     logger.info("brain dispatch: hermes=%s query=%r", hermes_bin, message[:80])
     await _safe_reply(update, "🧠 Thinking...")
@@ -634,9 +633,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     env = {
         **CHILD_ENV,
         "HERMES_HOME": os.environ.get("HERMES_HOME", "/root/.hermes"),
-        "HERMES_INFERENCE_PROVIDER": os.environ.get(
-            "HERMES_INFERENCE_PROVIDER", "z.ai coding plan"
-        ),
+        "HERMES_INFERENCE_PROVIDER": os.environ.get("HERMES_INFERENCE_PROVIDER", "zai"),
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", ""),
         "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", ""),
         "TERM": "dumb",
@@ -650,7 +647,9 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         proc = await asyncio.create_subprocess_exec(
             hermes_bin,
             "chat",
+            "-q",
             message,
+            "-Q",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=env,
@@ -672,6 +671,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             err_detail = (
                 stderr_text[:2000] if stderr_text else f"exit code {returncode}"
             )
+            logger.error("brain error: rc=%d stderr=%s", returncode, err_detail[:500])
             await _safe_reply(
                 update,
                 f"❌ *Brain Error*\n\n```\n{err_detail}\n```\n\n"
@@ -682,6 +682,8 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not stdout_text:
             stderr_hint = f"\n\n_stderr: {stderr_text[:500]}_" if stderr_text else ""
+            if stderr_text and not stdout_text:
+                logger.error("brain empty output: stderr=%s", stderr_text[:300])
             await _safe_reply(
                 update,
                 f"⚠️ *Brain returned no output.*{stderr_hint}\n\n"
@@ -694,6 +696,9 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         output = stdout_text
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"
+
+        if stderr_text and returncode == 0:
+            logger.warning("brain stderr (rc=0): %s", stderr_text[:500])
 
         await _safe_reply(
             update,
@@ -709,47 +714,6 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error("brain exception: %s", e, exc_info=True)
         await _safe_reply(update, f"❌ Brain error: {e}")
-
-
-async def _handle_oz_fallback(update: Update, message: str):
-    warp_key = os.environ.get("WARP_API_KEY", "")
-    await _safe_reply(update, "🧠 Dispatching to Oz cloud agent...")
-
-    try:
-        import httpx
-
-        oz_env = os.environ.get("OZ_ENVIRONMENT_ID", "")
-        payload = {"prompt": message, "config": {}}
-        if oz_env:
-            payload["config"]["environment_id"] = oz_env
-
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(
-                "https://app.warp.dev/api/v1/agent/run",
-                headers={
-                    "Authorization": f"Bearer {warp_key}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-            )
-            if resp.status_code in (200, 201):
-                data = resp.json()
-                run_id = data.get("id", data.get("run_id", "?"))
-                await _safe_reply(
-                    update,
-                    f"✅ *Oz agent dispatched*\n\n"
-                    f"Run ID: `{run_id}`\n\n"
-                    f"_Oz will read state, execute your request, and push any changes. "
-                    f"Results appear in the next /status or /trades update._",
-                    parse_mode="Markdown",
-                )
-            else:
-                await _safe_reply(
-                    update,
-                    f"❌ Oz API error {resp.status_code}: {resp.text[:200]}",
-                )
-    except Exception as e:
-        await _safe_reply(update, f"❌ Oz dispatch failed: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -792,8 +756,10 @@ async def start_polling(app: Application):
     bot_commands = [BotCommand(cmd, short) for cmd, short, _ in COMMANDS]
     try:
         await app.bot.set_my_commands(bot_commands)
-    except Exception:
-        pass  # Non-fatal if menu registration fails
+        cmd_names = ", ".join(cmd for cmd, _, _ in COMMANDS)
+        logger.info("Telegram commands registered: %s", cmd_names)
+    except Exception as e:
+        logger.error("Failed to register Telegram commands: %s", e)
 
     await app.updater.start_polling(drop_pending_updates=True)
 

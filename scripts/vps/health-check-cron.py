@@ -19,10 +19,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
 
 from senpi_common import (
-    acquire_lock, release_lock, log, now_iso,
-    load_json, save_json, git_pull, git_sync,
-    mcporter_call, send_telegram, check_stale_heartbeats,
-    CONFIG_DIR, STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
+    acquire_lock,
+    release_lock,
+    log,
+    now_iso,
+    load_json,
+    save_json,
+    git_pull,
+    git_sync,
+    mcporter_call,
+    send_telegram,
+    check_stale_heartbeats,
+    CONFIG_DIR,
+    STRATEGIES_FILE,
+    RISK_REGIME_FILE,
+    SCANNER_CONFIG_FILE,
     OUTPUTS_DIR,
 )
 
@@ -47,9 +58,16 @@ def check_mcporter() -> bool:
 def check_config_files() -> list[str]:
     """Validate all config JSON files are parseable."""
     issues = []
-    for config_file in [STRATEGIES_FILE, RISK_REGIME_FILE, SCANNER_CONFIG_FILE,
-                        SENTINEL_CONFIG_FILE, RHINO_CONFIG_FILE,
-                        POLAR_CONFIG_FILE, MANTIS_CONFIG_FILE, FOX_CONFIG_FILE]:
+    for config_file in [
+        STRATEGIES_FILE,
+        RISK_REGIME_FILE,
+        SCANNER_CONFIG_FILE,
+        SENTINEL_CONFIG_FILE,
+        RHINO_CONFIG_FILE,
+        POLAR_CONFIG_FILE,
+        MANTIS_CONFIG_FILE,
+        FOX_CONFIG_FILE,
+    ]:
         if not config_file.exists():
             issues.append(f"Missing: {config_file.name}")
             continue
@@ -66,7 +84,10 @@ def run_reconcile():
         reconcile_path = Path(__file__).resolve().parent / "reconcile-closes.py"
         if reconcile_path.exists():
             import importlib.util
-            spec = importlib.util.spec_from_file_location("reconcile", str(reconcile_path))
+
+            spec = importlib.util.spec_from_file_location(
+                "reconcile", str(reconcile_path)
+            )
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
             mod.reconcile()
@@ -98,7 +119,9 @@ def main():
         # 3. Check mcporter connectivity
         health["mcporterOk"] = check_mcporter()
         if not health["mcporterOk"]:
-            send_telegram("⚠️ HEALTH: mcporter cannot reach Senpi API. Check SENPI_API_KEY.")
+            send_telegram(
+                "⚠️ HEALTH: mcporter cannot reach Senpi API. Check SENPI_AUTH_TOKEN."
+            )
 
         # 4. Validate config files
         health["configIssues"] = check_config_files()
@@ -120,8 +143,10 @@ def main():
 
         # Save health state
         save_json(HEALTH_STATE_FILE, health)
-        log(f"Health: mcporter={'OK' if health['mcporterOk'] else 'FAIL'} "
-            f"config_issues={len(health['configIssues'])}")
+        log(
+            f"Health: mcporter={'OK' if health['mcporterOk'] else 'FAIL'} "
+            f"config_issues={len(health['configIssues'])}"
+        )
 
         # 6. Git sync any state changes
         git_sync("auto: health check")

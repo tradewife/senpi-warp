@@ -406,88 +406,102 @@ def show_skill(name):
     click.echo()
 
 
-@dev.command("brain-check")
-def brain_check():
-    """Verify Strategic Brain (Hermes) health — LLM key and binary status."""
+@dev.command("brain-ping")
+def brain_ping():
+    """Ping the LLM provider and report exact HTTP status + error."""
     import os
+    import urllib.request
+    import urllib.error
+    import json as _json
+
+    base_url = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "auto")
 
     click.echo(f"\n{'=' * 60}")
-    click.echo("  🧠 STRATEGIC BRAIN HEALTH CHECK")
+    click.echo("  🧠 BRAIN PING — LLM Provider Connectivity")
     click.echo(f"{'=' * 60}\n")
 
-    checks_passed = 0
-    checks_total = 0
+    if not base_url:
+        click.echo("  ❌ OPENAI_BASE_URL is not set")
+        click.echo(f"{'=' * 60}\n")
+        sys.exit(1)
 
-    hermes_bin = shutil.which("hermes")
-    checks_total += 1
-    if hermes_bin:
-        click.echo(f"  ✅ Hermes binary: {hermes_bin}")
-        checks_passed += 1
+    if not api_key:
+        click.echo("  ❌ OPENAI_API_KEY is not set")
+        click.echo(f"{'=' * 60}\n")
+        sys.exit(1)
+
+    masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+    click.echo(f"  Provider : {provider}")
+    click.echo(f"  Base URL : {base_url}")
+
+    if not base_url.endswith("/v1"):
+        click.echo("  ⚠️  Base URL does NOT end with /v1 — many providers require this")
     else:
-        click.echo("  ❌ Hermes binary: not found on PATH")
+        click.echo("  ✅ Base URL ends with /v1")
 
-    checks_total += 1
-    or_key = os.environ.get("OPENROUTER_API_KEY", "")
-    if or_key:
-        click.echo(f"  ✅ OPENROUTER_API_KEY: {or_key[:12]}...{or_key[-6:]}")
-        checks_passed += 1
-    else:
-        click.echo("  ⚠️  OPENROUTER_API_KEY: not set")
+    click.echo(f"  API Key  : {masked_key}")
 
-    checks_total += 1
-    oai_key = os.environ.get("OPENAI_API_KEY", "")
-    if oai_key:
-        click.echo(f"  ✅ OPENAI_API_KEY: {oai_key[:12]}...{oai_key[-6:]}")
-        checks_passed += 1
-    else:
-        click.echo("  ⚠️  OPENAI_API_KEY: not set")
+    chat_url = (
+        base_url
+        if base_url.endswith("/chat/completions")
+        else base_url.rstrip("/") + "/chat/completions"
+    )
 
-    checks_total += 1
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if anthropic_key:
-        click.echo(
-            f"  ✅ ANTHROPIC_API_KEY: {anthropic_key[:12]}...{anthropic_key[-6:]}"
+    click.echo(f"\n  Pinging: {chat_url}")
+
+    payload = _json.dumps(
+        {
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}],
+            "max_tokens": 5,
+        }
+    ).encode()
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+
+    try:
+        req = urllib.request.Request(
+            chat_url, data=payload, headers=headers, method="POST"
         )
-        checks_passed += 1
-    else:
-        click.echo("  ⚠️  ANTHROPIC_API_KEY: not set")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = _json.loads(resp.read().decode())
+            content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
+            click.echo(f"\n  ✅ PONG — HTTP {resp.status}")
+            click.echo(f"  Response: {content[:100]}")
+            click.echo(f"\n{'─' * 60}")
+            click.echo(click.style("  BRAIN ONLINE", fg="green"))
 
-    checks_total += 1
-    provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "auto")
-    base_url = os.environ.get("OPENAI_BASE_URL", "")
-    click.echo(f"  ℹ️  Provider: {provider}" + (f" ({base_url})" if base_url else ""))
+    except urllib.error.HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode()[:500]
+        except Exception:
+            pass
+        click.echo(f"\n  ❌ HTTP {e.code} {e.reason}")
+        click.echo(f"  Response body: {body}")
+        if e.code == 401:
+            click.echo("  → Unauthorized: check OPENAI_API_KEY")
+        elif e.code == 404:
+            click.echo("  → Not Found: OPENAI_BASE_URL is wrong (may need /v1 suffix)")
+        elif e.code == 429:
+            click.echo("  → Rate limited: check quota/billing")
+        click.echo(f"\n{'─' * 60}")
+        click.echo(click.style("  BRAIN OFFLINE (HTTP error)", fg="red"))
 
-    checks_total += 1
-    hermes_home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
-    soul_path = os.path.join(hermes_home, "SOUL.md")
-    if os.path.isfile(soul_path):
-        click.echo(f"  ✅ SOUL.md: {soul_path}")
-        checks_passed += 1
-    else:
-        click.echo(f"  ⚠️  SOUL.md: not found at {soul_path}")
+    except urllib.error.URLError as e:
+        click.echo(f"\n  ❌ Connection failed: {e.reason}")
+        click.echo("  → Check OPENAI_BASE_URL hostname and network")
+        click.echo(f"\n{'─' * 60}")
+        click.echo(click.style("  BRAIN OFFLINE (connection error)", fg="red"))
 
-    checks_total += 1
-    project_soul = PROJECT_ROOT / "config" / "hermes-soul.md"
-    if project_soul.exists():
-        click.echo(f"  ✅ hermes-soul.md (project): {project_soul}")
-        checks_passed += 1
-    else:
-        click.echo(f"  ⚠️  hermes-soul.md: not found at {project_soul}")
+    except Exception as e:
+        click.echo(f"\n  ❌ Unexpected error: {type(e).__name__}: {e}")
+        click.echo(f"\n{'─' * 60}")
+        click.echo(click.style("  BRAIN OFFLINE (unexpected error)", fg="red"))
 
-    click.echo(f"\n{'─' * 60}")
-    if checks_passed >= 3:
-        click.echo(
-            f"  Result: {checks_passed}/{checks_total} checks passed — "
-            + click.style("BRAIN READY", fg="green")
-        )
-    elif checks_passed >= 1:
-        click.echo(
-            f"  Result: {checks_passed}/{checks_total} checks passed — "
-            + click.style("PARTIAL (check LLM keys)", fg="yellow")
-        )
-    else:
-        click.echo(
-            f"  Result: {checks_passed}/{checks_total} checks passed — "
-            + click.style("BRAIN OFFLINE", fg="red")
-        )
     click.echo(f"{'=' * 60}\n")
