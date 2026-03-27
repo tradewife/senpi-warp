@@ -1,46 +1,26 @@
 {
-  "timestamp": "2026-03-24T18:02:00.000000Z",
-  "type": "PORTFOLIO_REVIEW",
-  "status": "ACTIVE",
-  "generatedBy": "waifu-portfolio-review",
-  "summary": {
-    "openPositions": 0,
-    "dailyRealizedPnl": 0.0,
-    "unrealizedPnl": 0.0,
-    "totalEquity": 100.0,
-    "peakEquity": 0,
-    "drawdownPct": 0.0,
-    "regime": "RISK_OFF"
-  },
-  "positions": [],
-  "riskCheck": {
-    "dailyLossLimit": "PASS (0% / 10%)",
-    "catastrophicDrawdown": "PASS (0% / 20%)",
-    "maxPositions": "PASS (0 / 3)",
-    "directionalExposure": "N/A (no positions)",
-    "leveragBand": "N/A (no positions)",
-    "perAssetCooldown": "N/A"
-  },
-  "dslAudit": {
-    "allPositionsHighWater": true,
-    "nonHighWaterPositions": [],
-    "note": "No open positions"
-  },
-  "arenaBenchmark": {
-    "topPerformer": "Polar (28.09% ROI)",
-    "ourRank": "N/A — 0 trades",
-    "gap": "Not yet trading. Arena data confirms: wait for RISK_ON before starting."
-  },
-  "staleCrons": {
-    "condor": "last heartbeat 2026-03-24T02:10:06Z (stale)",
-    "sentinel": "last heartbeat 2026-03-24T02:08:36Z (stale)",
-    "brain": "last heartbeat 2026-03-24T02:07:36Z (stale)",
-    "activeScanners": ["polar", "mantis", "komodo", "orca", "rhino", "barracuda", "bison"]
-  },
-  "actions": [
-    "RISK_OFF regime set — no new entries until trend reverses",
-    "Arena learnings updated with fee analysis and volume efficiency metrics",
-    "Stale crons noted (condor, sentinel, brain) — mechanical layer issue on Railway"
-  ],
-  "nextReview": "2026-03-25T00:02:00Z"
+  "generatedAt": "2026-03-27T13:01:27Z",
+  "regime": "BASELINE",
+  "equity": 0.0,
+  "peakEquity": 0.0,
+  "drawdownPct": 0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [],
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ]
+  }
 }
