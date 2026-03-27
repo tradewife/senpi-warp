@@ -453,6 +453,11 @@ def brain_check():
         click.echo("  ⚠️  ANTHROPIC_API_KEY: not set")
 
     checks_total += 1
+    provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "auto")
+    base_url = os.environ.get("OPENAI_BASE_URL", "")
+    click.echo(f"  ℹ️  Provider: {provider}" + (f" ({base_url})" if base_url else ""))
+
+    checks_total += 1
     hermes_home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
     soul_path = os.path.join(hermes_home, "SOUL.md")
     if os.path.isfile(soul_path):
