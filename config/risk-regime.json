@@ -1,6 +1,6 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-27T00:00:23Z",
+  "updatedAt": "2026-03-27T09:00:52Z",
   "updatedBy": "waifu-regime",
   "reason": "No candle data available (HTTP 406: Not Acceptable)",
   "globalGuardrails": {
