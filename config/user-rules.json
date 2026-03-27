@@ -30,6 +30,14 @@
     "slRoePct": null,
     "description": "Fixed stop-loss ROE. Overrides DSL floor with a fixed ROE stop."
   },
+  "partial_sl": {
+    "enabled": false,
+    "sl1RoePct": null,
+    "sl1ClosePct": 50,
+    "sl2RoePct": null,
+    "sl2ClosePct": 25,
+    "description": "Partial stop-loss. Close N% of position at SL1, rest at SL2."
+  },
   "dsl_override": {
     "enabled": false,
     "overrides": {},

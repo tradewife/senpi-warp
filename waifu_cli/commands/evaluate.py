@@ -4,6 +4,12 @@ evaluate.py — Trade Evaluator command.
 
 Processes queued scanner signals and executes approved trades.
 Refactored into TradeEvaluator class with process_queue() method.
+
+Strategic Sovereignty: user-rules.json defines trade-level overrides
+(fixed TP/SL ROE, partial exits, DSL params) that are injected AFTER
+the 10-gate safety pipeline approves a signal. Strategic rules manage
+the TRADE; the Arbiter manages the ACCOUNT. Hardcoded safety floors
+(max 3 positions, XYZ ban, 7-10x leverage) cannot be bypassed.
 """
 
 from __future__ import annotations
@@ -28,6 +34,119 @@ from waifu_cli.runtime import (
 from waifu_cli.safety import evaluate_entry, GateResult
 
 
+USER_RULES_FILE = sc.CONFIG_DIR / "user-rules.json"
+
+
+def build_strategic_overrides(user_rules: dict) -> dict:
+    """Build strategic TP/SL/partial overrides from user-rules.json.
+
+    Strategic rules manage individual TRADE behavior (SL ROE, TP ROE,
+    partial exits). They NEVER override account-level safety (max positions,
+    leverage band, XYZ ban, daily loss limit). Account safety is enforced
+    by the 10-gate pipeline in safety.py BEFORE this function is ever called.
+    """
+    overrides = {}
+
+    fixed_tp = user_rules.get("fixed_tp_roe", {})
+    if fixed_tp.get("enabled") and fixed_tp.get("tpRoePct") is not None:
+        overrides["strategicTpRoe"] = float(fixed_tp["tpRoePct"])
+
+    fixed_sl = user_rules.get("fixed_sl_roe", {})
+    if fixed_sl.get("enabled") and fixed_sl.get("slRoePct") is not None:
+        overrides["strategicSlRoe"] = float(fixed_sl["slRoePct"])
+
+    partial_tp = user_rules.get("partial_tp", {})
+    if partial_tp.get("enabled"):
+        overrides["partialTp"] = {
+            "tp1RoePct": float(partial_tp.get("tp1RoePct", 0)),
+            "tp1ClosePct": float(partial_tp.get("tp1ClosePct", 50)),
+            "tp2RoePct": float(partial_tp.get("tp2RoePct", 0)),
+            "tp2ClosePct": float(partial_tp.get("tp2ClosePct", 25)),
+        }
+
+    partial_sl = user_rules.get("partial_sl", {})
+    if partial_sl.get("enabled"):
+        overrides["partialSl"] = {
+            "sl1RoePct": float(partial_sl.get("sl1RoePct", 0)),
+            "sl1ClosePct": float(partial_sl.get("sl1ClosePct", 50)),
+            "sl2RoePct": float(partial_sl.get("sl2RoePct", 0)),
+            "sl2ClosePct": float(partial_sl.get("sl2ClosePct", 25)),
+        }
+
+    dsl_override = user_rules.get("dsl_override", {})
+    if dsl_override.get("enabled"):
+        overrides["dslParams"] = dsl_override.get("overrides", {})
+
+    return overrides
+
+
+def build_dsl_state(
+    asset: str,
+    direction: str,
+    entry_price: float,
+    leverage: int,
+    margin: float,
+    strategy_id: str,
+    strat_key: str,
+    scanner: str,
+    score: float,
+    strategic: dict,
+) -> dict:
+    """Build DSL state file for a newly opened position.
+
+    Includes strategic overrides from user-rules.json. These are
+    trade-level parameters that sit above the DSL defaults but below
+    the account-level safety floor.
+    """
+    dsl = {
+        "active": True,
+        "asset": asset,
+        "direction": direction,
+        "entryPrice": entry_price,
+        "leverage": leverage,
+        "margin": margin,
+        "strategyId": strategy_id,
+        "strategyKey": strat_key,
+        "scanner": scanner,
+        "entryScore": score,
+        "phase": 1,
+        "highWaterPrice": entry_price,
+        "highWaterRoe": 0,
+        "currentTierIndex": -1,
+        "currentBreachCount": 0,
+        "lockMode": "pct_of_high_water",
+        "phase2TriggerRoe": 7,
+        "createdAt": sc.now_iso(),
+        "highWaterUpdatedAt": sc.now_iso(),
+        "phase1": {
+            "absoluteFloorRoe": -20,
+            "hardTimeoutSec": 2700,
+            "weakPeakCutSec": 1800,
+            "deadWeightCutMin": 15,
+        },
+        "tiers": [
+            {"triggerPct": 5, "lockHwPct": 20, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 10, "lockHwPct": 40, "consecutiveBreachesRequired": 1},
+            {"triggerPct": 20, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+            {"triggerPct": 30, "lockHwPct": 70, "consecutiveBreachesRequired": 2},
+        ],
+        "stagnationTp": {"enabled": True, "roeMin": 10, "hwStaleMin": 45},
+    }
+
+    if "strategicSlRoe" in strategic:
+        dsl["strategicSlRoe"] = strategic["strategicSlRoe"]
+    if "strategicTpRoe" in strategic:
+        dsl["strategicTpRoe"] = strategic["strategicTpRoe"]
+    if "partialTp" in strategic:
+        dsl["partialTp"] = strategic["partialTp"]
+    if "partialSl" in strategic:
+        dsl["partialSl"] = strategic["partialSl"]
+    if "dslParams" in strategic:
+        dsl.update(strategic["dslParams"])
+
+    return dsl
+
+
 class Recommendation(Enum):
     APPROVE = "APPROVE"
     REJECT = "REJECT"
@@ -46,6 +165,10 @@ class TradeEvaluator:
     """
     TradeEvaluator processes pending scanner signals through the 10-gate pipeline
     and returns DecisionObjects with recommendations (APPROVE, REJECT, MANUAL_REVIEW).
+
+    The 10-gate pipeline (safety.py) enforces account-level safety BEFORE any
+    strategic overrides are applied. Strategic rules from user-rules.json only
+    affect trade-level behavior (TP/SL, partial exits, DSL params).
     """
 
     PENDING_ENTRIES_FILE = sc.POSITION_STATE_DIR / "pending-entries.json"
@@ -65,6 +188,8 @@ class TradeEvaluator:
         self.dry_run = dry_run
         self.processed: List[dict] = []
         self.remaining: List[dict] = []
+        self.user_rules: dict = {}
+        self.effective_min_scores: dict = {}
 
     def process_queue(self) -> List[DecisionObject]:
         """
@@ -72,6 +197,24 @@ class TradeEvaluator:
         Returns a list of DecisionObjects containing signal, gate results, and recommendation.
         """
         decisions: List[DecisionObject] = []
+
+        # Hot-load user rules at the start of every run
+        self.user_rules = sc.load_json(USER_RULES_FILE, default={})
+        evaluate_rules = self.user_rules.get("evaluate", {})
+        user_min_score = evaluate_rules.get("minScore")
+
+        if user_min_score is not None:
+            self.effective_min_scores = {
+                k: int(user_min_score) for k in self.MIN_SCORES
+            }
+            click.echo(f"[evaluate] user minScore override: {user_min_score}")
+        else:
+            self.effective_min_scores = dict(self.MIN_SCORES)
+
+        strategic = build_strategic_overrides(self.user_rules)
+        active_overrides = list(strategic.keys()) if strategic else []
+        if active_overrides:
+            click.echo(f"[evaluate] strategic overrides: {', '.join(active_overrides)}")
 
         pending = sc.load_json(self.PENDING_ENTRIES_FILE, default=[])
         if not pending:
@@ -93,6 +236,7 @@ class TradeEvaluator:
         strategy_id = strategy.get("strategyId", "")
 
         for entry in pending:
+            # 10-gate safety pipeline runs FIRST (account-level: positions, leverage, XYZ, cooldown)
             gate = evaluate_entry(entry, strategy)
             recommendation = self._determine_recommendation(entry, gate, strategy)
             decision = DecisionObject(
@@ -104,7 +248,10 @@ class TradeEvaluator:
             decisions.append(decision)
 
             if recommendation == Recommendation.APPROVE:
-                self._handle_approval(entry, strategy, gate, strat_key, strategy_id)
+                # Strategic overrides applied AFTER gates pass (trade-level only)
+                self._handle_approval(
+                    entry, strategy, gate, strat_key, strategy_id, strategic
+                )
                 self.processed.append(entry)
             elif recommendation == Recommendation.MANUAL_REVIEW:
                 self._handle_manual_review(entry, gate)
@@ -132,11 +279,12 @@ class TradeEvaluator:
                 break
 
         score = float(entry.get("score", entry.get("totalScore", 0)))
-        min_score = self.MIN_SCORES.get(scanner, 6)
+        min_score = self.effective_min_scores.get(scanner, 6)
 
         if score < min_score:
             return Recommendation.REJECT
 
+        # Hardcoded leverage band — CANNOT be overridden by strategic rules
         if gate.clamped_leverage < 7 or gate.clamped_leverage > 10:
             return Recommendation.REJECT
 
@@ -158,8 +306,15 @@ class TradeEvaluator:
         gate: GateResult,
         strat_key: str,
         strategy_id: str,
+        strategic: dict,
     ):
-        """Handle an approved signal - execute trade if not dry-run."""
+        """Handle an approved signal - execute trade if not dry-run.
+
+        Strategic overrides (TP/SL, partial exits) are injected into the
+        position params AFTER the 10-gate pipeline has already enforced
+        account-level safety. These trade-level rules manage the position,
+        while the Arbiter manages the account.
+        """
         asset = entry.get("asset", entry.get("symbol", ""))
         direction = entry.get("direction", entry.get("side", ""))
         scanner = str(
@@ -173,25 +328,50 @@ class TradeEvaluator:
             f"  APPROVE {asset} {direction} @ {leverage}x (score={score}, scanner={scanner})"
         )
 
+        if strategic:
+            parts = []
+            if "strategicSlRoe" in strategic:
+                parts.append(f"SL={strategic['strategicSlRoe']}%")
+            if "strategicTpRoe" in strategic:
+                parts.append(f"TP={strategic['strategicTpRoe']}%")
+            if "partialTp" in strategic:
+                parts.append("partialTP")
+            if "partialSl" in strategic:
+                parts.append("partialSL")
+            if parts:
+                click.echo(f"    strategic: {', '.join(parts)}")
+
         if self.dry_run:
             click.echo(f"    DRY-RUN: would open {asset} {direction} @ {leverage}x")
             return
 
         try:
-            resp = sc.mcporter_call(
-                "strategy_open_position",
-                {
-                    "strategyId": strategy_id,
-                    "asset": asset,
-                    "direction": direction,
-                    "leverage": leverage,
-                    "marginUsd": margin,
-                    "lockMode": "pct_of_high_water",
-                },
-            )
+            # Base position params (safety-guaranteed by 10-gate pipeline)
+            position_params = {
+                "strategyId": strategy_id,
+                "asset": asset,
+                "direction": direction,
+                "leverage": leverage,
+                "marginUsd": margin,
+                "lockMode": "pct_of_high_water",
+            }
+
+            # Inject strategic TP/SL/partial overrides (trade-level, above DSL defaults)
+            if "strategicSlRoe" in strategic:
+                position_params["stopLossRoe"] = strategic["strategicSlRoe"]
+            if "strategicTpRoe" in strategic:
+                position_params["takeProfitRoe"] = strategic["strategicTpRoe"]
+            if "partialTp" in strategic:
+                position_params["partialTp"] = strategic["partialTp"]
+            if "partialSl" in strategic:
+                position_params["partialSl"] = strategic["partialSl"]
+
+            resp = sc.mcporter_call("strategy_open_position", position_params)
 
             if resp.get("success", False):
+                entry_price = float(resp.get("entryPrice", 0))
                 click.echo(f"    OPENED: {asset} {direction}")
+
                 sc.record_trade(
                     {
                         "action": "OPEN",
@@ -205,6 +385,23 @@ class TradeEvaluator:
                         "realizedPnl": 0,
                     }
                 )
+
+                # Save DSL state with strategic overrides
+                dsl = build_dsl_state(
+                    asset,
+                    direction,
+                    entry_price,
+                    leverage,
+                    margin,
+                    strategy_id,
+                    strat_key,
+                    scanner,
+                    score,
+                    strategic,
+                )
+                state_dir = sc.get_strategy_state_dir(strat_key)
+                sc.save_json(state_dir / f"dsl-{asset}.json", dsl)
+
             else:
                 click.echo(f"    FAILED: {resp.get('error', 'unknown')}")
         except Exception as e:

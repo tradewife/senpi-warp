@@ -3,8 +3,13 @@
 jido.py — Autonomous trade executor with tiered governance.
 
 For every APPROVED signal:
-  - If scanner ROI > 15%: execute trade immediately via mcporter_call
-  - If scanner ROI < 15%: send Telegram for manual approval
+  - If scanner ROI > threshold: execute trade immediately via mcporter_call
+  - If scanner ROI < threshold: send Telegram for manual approval
+
+Strategic Sovereignty: user-rules.json overrides (TP/SL, partial exits)
+are injected into the trade execution AFTER the 10-gate safety pipeline
+approves the signal. These trade-level rules cannot bypass account-level
+safety (max 3 positions, XYZ ban, 7-10x leverage).
 """
 
 from __future__ import annotations
@@ -24,7 +29,13 @@ from waifu_cli.runtime import (
     acquire_command_lock,
     release_command_lock,
 )
-from waifu_cli.commands.evaluate import TradeEvaluator, DecisionObject, Recommendation
+from waifu_cli.commands.evaluate import (
+    TradeEvaluator,
+    DecisionObject,
+    Recommendation,
+    build_strategic_overrides,
+    build_dsl_state,
+)
 from waifu_cli.safety import GateResult
 
 
@@ -75,12 +86,21 @@ def _run(dry_run: bool):
     click.echo(f"[jido] {sc.now_iso()} starting{' (dry-run)' if dry_run else ''}")
     sync_before()
 
-    # Hot-reload user rules at the start of every run
-    roi_threshold = _get_roi_threshold()
-    auto_execute_enabled = _get_jido_auto_execute_enabled()
+    user_rules = _load_user_rules()
+    roi_threshold = float(
+        user_rules.get("jido", {}).get("roi_threshold_auto", DEFAULT_ROI_THRESHOLD)
+    )
+    auto_execute_enabled = bool(
+        user_rules.get("jido", {}).get("autoExecuteEnabled", True)
+    )
+    strategic = build_strategic_overrides(user_rules)
+
     click.echo(
         f"[jido] rules: roi_threshold={roi_threshold:.2f}, auto_execute={auto_execute_enabled}"
     )
+    active_overrides = list(strategic.keys()) if strategic else []
+    if active_overrides:
+        click.echo(f"[jido] strategic overrides: {', '.join(active_overrides)}")
 
     regime = sc.load_regime()
     mode = regime.get("riskMode", "BASELINE")
@@ -132,7 +152,7 @@ def _run(dry_run: bool):
                 if dry_run:
                     click.echo("    DRY-RUN: would execute trade")
                 else:
-                    _execute_approved_trade(signal, gate_result, scanner)
+                    _execute_approved_trade(signal, gate_result, scanner, strategic)
                 approved_count += 1
 
             else:
@@ -200,9 +220,14 @@ def _get_scanner_roi(scanner: str, arena_learnings: dict) -> Optional[float]:
 
 
 def _execute_approved_trade(
-    signal: dict, gate_result: GateResult, scanner: str
+    signal: dict, gate_result: GateResult, scanner: str, strategic: dict
 ) -> None:
-    """Execute trade via mcporter_call with trade lock acquired."""
+    """Execute trade via mcporter_call with trade lock acquired.
+
+    Strategic overrides (TP/SL, partial exits) are injected into the
+    position params. These trade-level rules sit above the DSL defaults
+    but below the account-level safety floor enforced by the 10-gate pipeline.
+    """
     strategies = sc.get_enabled_strategies()
     if not strategies:
         click.echo("[jido] No enabled strategies")
@@ -218,21 +243,46 @@ def _execute_approved_trade(
     margin = gate_result.effective_margin
     score = float(signal.get("score", signal.get("totalScore", 0)))
 
+    if strategic:
+        parts = []
+        if "strategicSlRoe" in strategic:
+            parts.append(f"SL={strategic['strategicSlRoe']}%")
+        if "strategicTpRoe" in strategic:
+            parts.append(f"TP={strategic['strategicTpRoe']}%")
+        if "partialTp" in strategic:
+            parts.append("partialTP")
+        if "partialSl" in strategic:
+            parts.append("partialSL")
+        if parts:
+            click.echo(f"    strategic: {', '.join(parts)}")
+
+    # Base position params (safety-guaranteed by 10-gate pipeline)
+    position_params = {
+        "strategyId": strategy_id,
+        "asset": asset,
+        "direction": direction,
+        "leverage": leverage,
+        "marginUsd": margin,
+        "lockMode": "pct_of_high_water",
+    }
+
+    # Inject strategic TP/SL/partial overrides (trade-level only)
+    if "strategicSlRoe" in strategic:
+        position_params["stopLossRoe"] = strategic["strategicSlRoe"]
+    if "strategicTpRoe" in strategic:
+        position_params["takeProfitRoe"] = strategic["strategicTpRoe"]
+    if "partialTp" in strategic:
+        position_params["partialTp"] = strategic["partialTp"]
+    if "partialSl" in strategic:
+        position_params["partialSl"] = strategic["partialSl"]
+
     with sc.acquire_trade_lock():
-        resp = sc.mcporter_call(
-            "strategy_open_position",
-            {
-                "strategyId": strategy_id,
-                "asset": asset,
-                "direction": direction,
-                "leverage": leverage,
-                "marginUsd": margin,
-                "lockMode": "pct_of_high_water",
-            },
-        )
+        resp = sc.mcporter_call("strategy_open_position", position_params)
 
     if resp.get("success", False):
+        entry_price = float(resp.get("entryPrice", 0))
         click.echo(f"    OPENED: {asset} {direction}")
+
         sc.record_trade(
             {
                 "action": "OPEN",
@@ -246,6 +296,23 @@ def _execute_approved_trade(
                 "realizedPnl": 0,
             }
         )
+
+        # Save DSL state with strategic overrides
+        dsl = build_dsl_state(
+            asset,
+            direction,
+            entry_price,
+            leverage,
+            margin,
+            strategy_id,
+            strat_key,
+            scanner,
+            score,
+            strategic,
+        )
+        state_dir = sc.get_strategy_state_dir(strat_key)
+        sc.save_json(state_dir / f"dsl-{asset}.json", dsl)
+
         sc.send_telegram(
             f"🟢 JIDO AUTO-EXECUTE: {direction} {asset}\n"
             f"Scanner: {scanner} | Score: {score}\n"

@@ -329,6 +329,14 @@ def _create_default_rules():
             "slRoePct": None,
             "description": "Fixed stop-loss ROE. Overrides DSL floor with a fixed ROE stop.",
         },
+        "partial_sl": {
+            "enabled": False,
+            "sl1RoePct": None,
+            "sl1ClosePct": 50,
+            "sl2RoePct": None,
+            "sl2ClosePct": 25,
+            "description": "Partial stop-loss. Close N% of position at SL1, rest at SL2.",
+        },
         "dsl_override": {
             "enabled": False,
             "overrides": {},
@@ -383,6 +391,17 @@ def _display_rules_table(rules: dict):
     click.echo(f"\n🛑 FIXED SL ROE: [{sl_status}]")
     if fixed_sl.get("enabled"):
         click.echo(f"   slRoePct:           {fixed_sl.get('slRoePct', '?')}")
+    else:
+        click.echo(f"   (disabled — uses DSL floor)")
+
+    partial_sl = rules.get("partial_sl", {})
+    sl_status = "ON" if partial_sl.get("enabled") else "OFF"
+    click.echo(f"\n📉 PARTIAL SL: [{sl_status}]")
+    if partial_sl.get("enabled"):
+        click.echo(f"   sl1RoePct:           {partial_sl.get('sl1RoePct', '?')}")
+        click.echo(f"   sl1ClosePct:        {partial_sl.get('sl1ClosePct', '?')}")
+        click.echo(f"   sl2RoePct:           {partial_sl.get('sl2RoePct', '?')}")
+        click.echo(f"   sl2ClosePct:        {partial_sl.get('sl2ClosePct', '?')}")
     else:
         click.echo(f"   (disabled — uses DSL floor)")
 

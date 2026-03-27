@@ -416,11 +416,52 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 RULES_KEY_MAP = {
     "jido_roi": ("jido", "roi_threshold_auto", float),
     "jido_minscore": ("jido", "minScore", int),
-    "jido_auto": ("jido", "autoExecuteEnabled", lambda v: v.lower() == "true"),
+    "jido_auto": (
+        "jido",
+        "autoExecuteEnabled",
+        lambda v: v.lower() in ("true", "1", "on"),
+    ),
     "eval_minscore": ("evaluate", "minScore", int),
     "eval_maxlev": ("evaluate", "maxLeverage", int),
     "eval_maxpos": ("evaluate", "maxPositions", int),
     "eval_cooldown": ("evaluate", "cooldownMinutes", int),
+    "fixed_tp": ("fixed_tp_roe", "tpRoePct", float),
+    "fixed_sl": ("fixed_sl_roe", "slRoePct", float),
+    "partial_tp1": ("partial_tp", "tp1RoePct", float),
+    "partial_tp1_pct": ("partial_tp", "tp1ClosePct", float),
+    "partial_tp2": ("partial_tp", "tp2RoePct", float),
+    "partial_tp2_pct": ("partial_tp", "tp2ClosePct", float),
+    "partial_sl1": ("partial_sl", "sl1RoePct", float),
+    "partial_sl1_pct": ("partial_sl", "sl1ClosePct", float),
+    "partial_sl2": ("partial_sl", "sl2RoePct", float),
+    "partial_sl2_pct": ("partial_sl", "sl2ClosePct", float),
+}
+
+RULES_CONFIRMATIONS = {
+    "jido_roi": lambda v: f"Jido will now require {float(v):.0%} ROI before auto-executing.",
+    "jido_minscore": lambda v: f"Jido minimum score set to {v}.",
+    "jido_auto": lambda v: f"Jido auto-execute {'enabled' if v.lower() in ('true', '1', 'on') else 'disabled'}.",
+    "eval_minscore": lambda v: f"Manual evaluate minimum score set to {v}.",
+    "eval_maxlev": lambda v: f"Manual evaluate max leverage set to {v}x (hardcoded 7-10x band still applies).",
+    "eval_maxpos": lambda v: f"Manual evaluate max positions set to {v} (hardcoded 3-position cap still applies).",
+    "eval_cooldown": lambda v: f"Manual evaluate cooldown set to {v} minutes.",
+    "fixed_tp": lambda v: f"Fixed TP ROE set to {float(v):.1f}%. New trades will target this exit.",
+    "fixed_sl": lambda v: f"Fixed SL ROE set to {float(v):.1f}%. New trades will use this stop.",
+    "partial_tp1": lambda v: f"Partial TP1 at {float(v):.1f}% ROE.",
+    "partial_tp1_pct": lambda v: f"Partial TP1 close amount set to {float(v):.0f}% of position.",
+    "partial_tp2": lambda v: f"Partial TP2 at {float(v):.1f}% ROE.",
+    "partial_tp2_pct": lambda v: f"Partial TP2 close amount set to {float(v):.0f}% of position.",
+    "partial_sl1": lambda v: f"Partial SL1 at {float(v):.1f}% ROE.",
+    "partial_sl1_pct": lambda v: f"Partial SL1 close amount set to {float(v):.0f}% of position.",
+    "partial_sl2": lambda v: f"Partial SL2 at {float(v):.1f}% ROE.",
+    "partial_sl2_pct": lambda v: f"Partial SL2 close amount set to {float(v):.0f}% of position.",
+}
+
+ENABLE_SECTIONS = {
+    "fixed_tp_roe": "fixed_tp",
+    "fixed_sl_roe": "fixed_sl",
+    "partial_tp": "partial_tp",
+    "partial_sl": "partial_sl",
 }
 
 
@@ -432,19 +473,47 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # /rules set <key> <value>
     if args and args[0].lower() == "set":
         if len(args) < 3:
-            valid_keys = ", ".join(RULES_KEY_MAP.keys())
-            await update.message.reply_text(
-                f"Usage: `/rules set <key> <value>`\n\n"
-                f"*Valid keys:*\n"
-                f"• `jido_roi` — Jido auto-execute ROI threshold (e.g., 0.20)\n"
-                f"• `jido_minscore` — Jido minimum score\n"
-                f"• `jido_auto` — Jido auto-execute enabled (true/false)\n"
-                f"• `eval_minscore` — Evaluate minimum score\n"
-                f"• `eval_maxlev` — Evaluate max leverage\n"
-                f"• `eval_maxpos` — Evaluate max positions\n"
-                f"• `eval_cooldown` — Evaluate cooldown minutes",
-                parse_mode="Markdown",
-            )
+            key_groups = [
+                (
+                    "Evaluate (Manual)",
+                    [
+                        ("eval_minscore", "int", "Minimum signal score"),
+                        ("eval_maxlev", "int", "Max leverage (7-10x band hardcoded)"),
+                        ("eval_maxpos", "int", "Max positions (3 hardcoded cap)"),
+                        ("eval_cooldown", "int", "Cooldown minutes"),
+                    ],
+                ),
+                (
+                    "Jido (Autonomous)",
+                    [
+                        ("jido_roi", "float", "Auto-execute ROI threshold (e.g. 0.20)"),
+                        ("jido_minscore", "int", "Minimum signal score"),
+                        ("jido_auto", "true/false", "Enable auto-execute"),
+                    ],
+                ),
+                (
+                    "Strategic Overrides",
+                    [
+                        ("fixed_tp", "float", "Fixed TP ROE% (e.g. 20)"),
+                        ("fixed_sl", "float", "Fixed SL ROE% (e.g. -15)"),
+                        ("partial_tp1", "float", "Partial TP1 ROE%"),
+                        ("partial_tp1_pct", "float", "Partial TP1 close %"),
+                        ("partial_tp2", "float", "Partial TP2 ROE%"),
+                        ("partial_tp2_pct", "float", "Partial TP2 close %"),
+                        ("partial_sl1", "float", "Partial SL1 ROE%"),
+                        ("partial_sl1_pct", "float", "Partial SL1 close %"),
+                        ("partial_sl2", "float", "Partial SL2 ROE%"),
+                        ("partial_sl2_pct", "float", "Partial SL2 close %"),
+                    ],
+                ),
+            ]
+            lines = ["Usage: `/rules set <key> <value>`\n"]
+            for group_name, keys in key_groups:
+                lines.append(f"*{group_name}:*")
+                for k, t, d in keys:
+                    lines.append(f"  `{k}` ({t}) — {d}")
+                lines.append("")
+            await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
             return
 
         key = args[1].lower()
@@ -452,7 +521,7 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if key not in RULES_KEY_MAP:
             await update.message.reply_text(
-                f"❌ Unknown key: `{key}`\n\nValid: {', '.join(RULES_KEY_MAP.keys())}",
+                f"❌ Unknown key: `{key}`\n\nUse /rules set without values to see all keys.",
                 parse_mode="Markdown",
             )
             return
@@ -471,6 +540,11 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
         rules = load_json(USER_RULES_FILE, default={})
         if section not in rules:
             rules[section] = {}
+
+        # Auto-enable the parent section for strategic overrides
+        if section in ENABLE_SECTIONS:
+            rules[section]["enabled"] = True
+
         rules[section][field] = converted
         rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         rules["updatedBy"] = "telegram-bot"
@@ -481,11 +555,15 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f.write("\n")
         tmp.rename(USER_RULES_FILE)
 
+        confirmation_fn = RULES_CONFIRMATIONS.get(key)
+        confirmation = (
+            confirmation_fn(value) if confirmation_fn else f"`{key}` → `{value}`"
+        )
+
         await update.message.reply_text(
-            f"✅ *Rule updated*\n\n"
-            f"`{key}` → `{value}`\n"
-            f"Section: {section}.{field}\n\n"
-            f"_Changes take effect on next Jido run (within 5 min)._",
+            f"✅ {confirmation}\n\n"
+            f"_Changes take effect on next Jido run (within 5 min)._\n"
+            f"_Use /rules to verify._",
             parse_mode="Markdown",
         )
         return
@@ -501,21 +579,64 @@ async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     evaluate = rules.get("evaluate", {})
     jido = rules.get("jido", {})
 
-    text = (
-        f"📋 *User Rules*\n\n"
-        f"*Evaluate (Manual):*\n"
-        f"  minScore: {evaluate.get('minScore', '?')}\n"
-        f"  maxLeverage: {evaluate.get('maxLeverage', '?')}x\n"
-        f"  maxPositions: {evaluate.get('maxPositions', '?')}\n"
-        f"  cooldown: {evaluate.get('cooldownMinutes', '?')}min\n\n"
-        f"*Jido (Autonomous):*\n"
-        f"  roi_threshold: {jido.get('roi_threshold_auto', '?')}\n"
-        f"  minScore: {jido.get('minScore', '?')}\n"
-        f"  autoExecute: {jido.get('autoExecuteEnabled', '?')}\n\n"
-        f"Updated: {rules.get('updatedAt', '?')} by {rules.get('updatedBy', '?')}\n\n"
-        f"_Use /rules set <key> <value> to change._"
+    lines = [
+        "📋 *User Rules*\n",
+        "*Evaluate (Manual):*",
+        f"  minScore: {evaluate.get('minScore', '?')}",
+        f"  maxLeverage: {evaluate.get('maxLeverage', '?')}x",
+        f"  maxPositions: {evaluate.get('maxPositions', '?')}",
+        f"  cooldown: {evaluate.get('cooldownMinutes', '?')}min",
+        "",
+        "*Jido (Autonomous):*",
+        f"  roi_threshold: {jido.get('roi_threshold_auto', '?')}",
+        f"  minScore: {jido.get('minScore', '?')}",
+        f"  autoExecute: {jido.get('autoExecuteEnabled', '?')}",
+    ]
+
+    # Strategic overrides
+    fixed_tp = rules.get("fixed_tp_roe", {})
+    tp_on = fixed_tp.get("enabled", False)
+    lines.append("")
+    lines.append(f"*Fixed TP ROE:* {'ON' if tp_on else 'OFF'}")
+    if tp_on:
+        lines.append(f"  tpRoePct: {fixed_tp.get('tpRoePct', '?')}%")
+
+    fixed_sl = rules.get("fixed_sl_roe", {})
+    sl_on = fixed_sl.get("enabled", False)
+    lines.append(f"*Fixed SL ROE:* {'ON' if sl_on else 'OFF'}")
+    if sl_on:
+        lines.append(f"  slRoePct: {fixed_sl.get('slRoePct', '?')}%")
+
+    partial_tp = rules.get("partial_tp", {})
+    ptp_on = partial_tp.get("enabled", False)
+    lines.append(f"*Partial TP:* {'ON' if ptp_on else 'OFF'}")
+    if ptp_on:
+        lines.append(
+            f"  TP1: {partial_tp.get('tp1RoePct', '?')}% / close {partial_tp.get('tp1ClosePct', '?')}%\n"
+            f"  TP2: {partial_tp.get('tp2RoePct', '?')}% / close {partial_tp.get('tp2ClosePct', '?')}%"
+        )
+
+    partial_sl = rules.get("partial_sl", {})
+    psl_on = partial_sl.get("enabled", False)
+    lines.append(f"*Partial SL:* {'ON' if psl_on else 'OFF'}")
+    if psl_on:
+        lines.append(
+            f"  SL1: {partial_sl.get('sl1RoePct', '?')}% / close {partial_sl.get('sl1ClosePct', '?')}%\n"
+            f"  SL2: {partial_sl.get('sl2RoePct', '?')}% / close {partial_sl.get('sl2ClosePct', '?')}%"
+        )
+
+    dsl = rules.get("dsl_override", {})
+    dsl_on = dsl.get("enabled", False)
+    lines.append(f"*DSL Override:* {'ON' if dsl_on else 'OFF'}")
+
+    lines.append("")
+    lines.append(
+        f"Updated: {rules.get('updatedAt', '?')} by {rules.get('updatedBy', '?')}"
     )
-    await update.message.reply_text(text, parse_mode="Markdown")
+    lines.append("")
+    lines.append("_Use /rules set <key> <value> to change._")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
 
 
 # ---------------------------------------------------------------------------
