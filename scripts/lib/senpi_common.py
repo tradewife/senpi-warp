@@ -704,9 +704,10 @@ def _senpi_mcp_request(tool: str, args: dict, *, timeout: int = 30) -> dict:
 
     headers = {
         "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
     }
     if auth_token:
-        headers["Authorization"] = auth_token
+        headers["Authorization"] = f"Bearer {auth_token}"
 
     try:
         req = urllib.request.Request(
