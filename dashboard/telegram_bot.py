@@ -668,8 +668,11 @@ def _get_current_gates() -> dict:
     from senpi_common import load_global_guardrails, load_user_min_scores
 
     guardrails = load_global_guardrails()
-    user_scores = load_user_min_scores() or dict(DEFAULT_MIN_SCORES)
-    return {**guardrails, "minScores": user_scores}
+    base_scores = dict(DEFAULT_MIN_SCORES)
+    user_scores = load_user_min_scores()
+    if user_scores:
+        base_scores.update(user_scores)
+    return {**guardrails, "minScores": base_scores}
 
 
 def _get_user_overrides() -> dict:
@@ -711,11 +714,14 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_scores = overrides.get("minScores", {})
 
     def _src(field: str, val) -> str:
-        """Show if value differs from default."""
+        """Show if value differs from default. Escapes Telegram Markdown specials."""
         default_val = DEFAULT_GUARDRAILS.get(field)
         if default_val is not None and val != default_val:
-            return f"{val}  ✏️ (default: {default_val})"
-        return str(val)
+            raw = f"{val}  ✏️ (default: {default_val})"
+        else:
+            raw = str(val)
+        # Escape Telegram Markdown special chars in dynamic values
+        return raw.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
 
     def _src_score(scanner: str, val) -> str:
         default_val = DEFAULT_MIN_SCORES.get(scanner)
@@ -762,11 +768,7 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lines.append("\n_Use /gates\\_set <key> <value> to modify._")
     lines.append("_Use /gates\\_reset to restore all defaults._")
 
-    await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
-
-
-@authorized
-async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _safe_reply(update, "\n".join(lines))(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
     args = context.args
