@@ -695,17 +695,25 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             env_lines.append(f"GLM_BASE_URL={glm_base}")
         hermes_env_path.write_text("\n".join(env_lines) + "\n")
 
-        # Write config.yaml so Hermes picks up provider/model/base_url reliably
+        # Merge provider/model into config.yaml without clobbering Apollo overrides
         config_yaml_path = Path(hermes_home) / "config.yaml"
-        config_lines = [
-            f"model:",
-            f'  provider: "{hermes_provider}"',
-        ]
-        if hermes_model:
-            config_lines.append(f'  default: "{hermes_model}"')
-        if glm_base:
-            config_lines.append(f'  base_url: "{glm_base}"')
-        config_yaml_path.write_text("\n".join(config_lines) + "\n")
+        try:
+            import yaml
+            existing = {}
+            if config_yaml_path.exists():
+                existing = yaml.safe_load(config_yaml_path.read_text()) or {}
+            model_block = existing.get("model", {})
+            if not isinstance(model_block, dict):
+                model_block = {}
+            model_block["provider"] = hermes_provider
+            if hermes_model:
+                model_block["default"] = hermes_model
+            if glm_base:
+                model_block["base_url"] = glm_base
+            existing["model"] = model_block
+            config_yaml_path.write_text(yaml.safe_dump(existing, sort_keys=False))
+        except Exception as yaml_err:
+            logger.warning("Failed to update hermes config.yaml: %s", yaml_err)
     except Exception as e:
         logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
 
@@ -762,9 +770,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error("brain error: rc=%d stderr=%s", returncode, err_detail[:2000])
             await _safe_reply(
                 update,
-                f"❌ *Brain Error*\n\n```\n{err_detail}\n```\n\n"
-                f"_Return code: {returncode}_",
-                parse_mode="Markdown",
+                f"❌ Brain Error (rc={returncode})\n\n{err_detail}",
             )
             return
 
