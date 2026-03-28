@@ -414,46 +414,56 @@ def brain_ping():
     import urllib.error
     import json as _json
 
-    base_url = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
-    api_key = os.environ.get("OPENAI_API_KEY", "")
-    provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "auto")
+    _glm_base = os.environ.get("GLM_BASE_URL", "").strip()
+    _glm_key = os.environ.get("GLM_API_KEY", "").strip()
+    _oai_base = os.environ.get("OPENAI_BASE_URL", "").strip()
+    _oai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+
+    base_url = _glm_base or _oai_base
+    api_key = _glm_key or _oai_key
+    if base_url and not base_url.endswith("/v4"):
+        base_url = base_url.rstrip("/") + "/v4"
+    active_source = "GLM" if _glm_base else ("OPENAI" if _oai_base else "none")
+
+    model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+    provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
 
     click.echo(f"\n{'=' * 60}")
     click.echo("  🧠 BRAIN PING — LLM Provider Connectivity")
     click.echo(f"{'=' * 60}\n")
 
+    click.echo(f"  Active source : {active_source}")
+    if _glm_base:
+        click.echo(f"  GLM_BASE_URL  : {_glm_base}")
+    if _glm_key:
+        masked = _glm_key[:8] + "..." + _glm_key[-4:] if len(_glm_key) > 12 else "***"
+        click.echo(f"  GLM_API_KEY   : {masked}")
+    if _oai_base:
+        click.echo(f"  OPENAI_BASE_URL: {_oai_base}")
+    if _oai_key:
+        masked = _oai_key[:8] + "..." + _oai_key[-4:] if len(_oai_key) > 12 else "***"
+        click.echo(f"  OPENAI_API_KEY : {masked}")
+
     if not base_url:
-        click.echo("  ❌ OPENAI_BASE_URL is not set")
+        click.echo("\n  ❌ Neither GLM_BASE_URL nor OPENAI_BASE_URL is set")
         click.echo(f"{'=' * 60}\n")
         sys.exit(1)
 
     if not api_key:
-        click.echo("  ❌ OPENAI_API_KEY is not set")
+        click.echo("\n  ❌ Neither GLM_API_KEY nor OPENAI_API_KEY is set")
         click.echo(f"{'=' * 60}\n")
         sys.exit(1)
 
-    masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
-    click.echo(f"  Provider : {provider}")
-    click.echo(f"  Base URL : {base_url}")
+    click.echo(f"  Provider      : {provider or '(not set)'}")
+    click.echo(f"  Model         : {model or '(not set)'}")
 
-    if not base_url.endswith("/v1"):
-        click.echo("  ⚠️  Base URL does NOT end with /v1 — many providers require this")
-    else:
-        click.echo("  ✅ Base URL ends with /v1")
-
-    click.echo(f"  API Key  : {masked_key}")
-
-    chat_url = (
-        base_url
-        if base_url.endswith("/chat/completions")
-        else base_url.rstrip("/") + "/chat/completions"
-    )
-
+    chat_url = base_url.rstrip("/") + "/chat/completions"
     click.echo(f"\n  Pinging: {chat_url}")
 
+    ping_model = model
     payload = _json.dumps(
         {
-            "model": "gpt-4o-mini",
+            "model": ping_model,
             "messages": [{"role": "user", "content": "ping"}],
             "max_tokens": 5,
         }
@@ -483,11 +493,12 @@ def brain_ping():
         except Exception:
             pass
         click.echo(f"\n  ❌ HTTP {e.code} {e.reason}")
+        click.echo(f"  URL tried: {chat_url}")
         click.echo(f"  Response body: {body}")
         if e.code == 401:
-            click.echo("  → Unauthorized: check OPENAI_API_KEY")
+            click.echo(f"  → Unauthorized: check {active_source}_API_KEY")
         elif e.code == 404:
-            click.echo("  → Not Found: OPENAI_BASE_URL is wrong (may need /v1 suffix)")
+            click.echo(f"  → Not Found: check {active_source}_BASE_URL")
         elif e.code == 429:
             click.echo("  → Rate limited: check quota/billing")
         click.echo(f"\n{'─' * 60}")
@@ -495,7 +506,8 @@ def brain_ping():
 
     except urllib.error.URLError as e:
         click.echo(f"\n  ❌ Connection failed: {e.reason}")
-        click.echo("  → Check OPENAI_BASE_URL hostname and network")
+        click.echo(f"  URL tried: {chat_url}")
+        click.echo(f"  → Check {active_source}_BASE_URL hostname and network")
         click.echo(f"\n{'─' * 60}")
         click.echo(click.style("  BRAIN OFFLINE (connection error)", fg="red"))
 

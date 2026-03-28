@@ -605,17 +605,28 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def _strip_tui_artifacts(text: str) -> str:
+    text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
     lines = text.split("\n")
     cleaned = []
     for line in lines:
         stripped = line.strip()
-        if re.match(r"^[\u2500─━]{3,}$", stripped):
+        if re.match(r"^[\u2500─━═]{3,}$", stripped):
+            continue
+        if re.match(r"^[\u2502│┃║┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬]", stripped):
             continue
         if re.match(r"^session_id:\s*", stripped):
             continue
         if re.match(r"^Hermes Agent\s+v?[\d.]+", stripped):
             continue
         if re.match(r"^Available Tools?:\s*", stripped, re.IGNORECASE):
+            continue
+        if re.match(r"^Provider:\s*", stripped, re.IGNORECASE):
+            continue
+        if re.match(r"^Model:\s*", stripped, re.IGNORECASE):
+            continue
+        if re.match(r"^Loaded Skills?:\s*", stripped, re.IGNORECASE):
+            continue
+        if re.match(r"^Worktree:\s*", stripped, re.IGNORECASE):
             continue
         cleaned.append(line)
     result = "\n".join(cleaned).strip()
@@ -662,37 +673,60 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("brain dispatch: hermes=%s query=%r", hermes_bin, message[:80])
     await _safe_reply(update, "🧠 Thinking...")
 
-    raw_base_url = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
-    if raw_base_url and not raw_base_url.endswith("/v1"):
-        raw_base_url += "/v1"
+    _oai_base = os.environ.get("OPENAI_BASE_URL", "").strip()
+    _oai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+
+    glm_key = os.environ.get("GLM_API_KEY", "").strip() or _oai_key
+    glm_base = os.environ.get("GLM_BASE_URL", "").strip() or _oai_base
+    if glm_base and not glm_base.endswith("/v4"):
+        glm_base = glm_base.rstrip("/") + "/v4"
+
+    hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
+    hermes_model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+    hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
+
+    if glm_key:
+        hermes_env_path = Path(hermes_home) / ".env"
+        try:
+            hermes_env_path.parent.mkdir(parents=True, exist_ok=True)
+            env_lines = []
+            if hermes_env_path.exists():
+                for raw_line in hermes_env_path.read_text().splitlines():
+                    if not raw_line.startswith("GLM_"):
+                        env_lines.append(raw_line)
+            env_lines.append(f"GLM_API_KEY={glm_key}")
+            if glm_base:
+                env_lines.append(f"GLM_BASE_URL={glm_base}")
+            hermes_env_path.write_text("\n".join(env_lines) + "\n")
+        except Exception as e:
+            logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
 
     env = {
         **CHILD_ENV,
-        "HERMES_HOME": os.environ.get("HERMES_HOME", "/root/.hermes"),
-        "HERMES_INFERENCE_PROVIDER": "zai",
-        "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", ""),
-        "OPENAI_BASE_URL": raw_base_url,
+        "HERMES_HOME": hermes_home,
+        "HERMES_INFERENCE_PROVIDER": hermes_provider,
+        "HERMES_MODEL": hermes_model,
+        "GLM_BASE_URL": glm_base,
+        "GLM_API_KEY": glm_key,
+        "OPENAI_BASE_URL": _oai_base,
+        "OPENAI_API_KEY": _oai_key,
         "NO_COLOR": "1",
         "TERM": "dumb",
     }
-
-    hermes_model = os.environ.get("HERMES_MODEL", "zai-coding-plan/glm-5.1")
 
     soul_path = CONFIG_DIR / "hermes-soul.md"
     if soul_path.exists():
         env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
 
+    cmd_args = [hermes_bin, "chat", "--query", message, "-Q"]
+    if hermes_model:
+        cmd_args += ["-m", hermes_model]
+    if hermes_provider:
+        cmd_args += ["--provider", hermes_provider]
+
     try:
         proc = await asyncio.create_subprocess_exec(
-            hermes_bin,
-            "chat",
-            "-q",
-            message,
-            "-Q",
-            "-m",
-            hermes_model,
-            "--provider",
-            "zai",
+            *cmd_args,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=env,
