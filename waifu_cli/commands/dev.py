@@ -416,14 +416,10 @@ def brain_ping():
 
     _glm_base = os.environ.get("GLM_BASE_URL", "").strip()
     _glm_key = os.environ.get("GLM_API_KEY", "").strip()
-    _oai_base = os.environ.get("OPENAI_BASE_URL", "").strip()
-    _oai_key = os.environ.get("OPENAI_API_KEY", "").strip()
 
-    base_url = _glm_base or _oai_base
-    api_key = _glm_key or _oai_key
-    if base_url and not base_url.endswith("/v4"):
-        base_url = base_url.rstrip("/") + "/v4"
-    active_source = "GLM" if _glm_base else ("OPENAI" if _oai_base else "none")
+    base_url = _glm_base
+    api_key = _glm_key
+    active_source = "GLM" if _glm_base else "none"
 
     model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
     provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
@@ -438,19 +434,14 @@ def brain_ping():
     if _glm_key:
         masked = _glm_key[:8] + "..." + _glm_key[-4:] if len(_glm_key) > 12 else "***"
         click.echo(f"  GLM_API_KEY   : {masked}")
-    if _oai_base:
-        click.echo(f"  OPENAI_BASE_URL: {_oai_base}")
-    if _oai_key:
-        masked = _oai_key[:8] + "..." + _oai_key[-4:] if len(_oai_key) > 12 else "***"
-        click.echo(f"  OPENAI_API_KEY : {masked}")
 
     if not base_url:
-        click.echo("\n  ❌ Neither GLM_BASE_URL nor OPENAI_BASE_URL is set")
+        click.echo("\n  ❌ GLM_BASE_URL is not set")
         click.echo(f"{'=' * 60}\n")
         sys.exit(1)
 
     if not api_key:
-        click.echo("\n  ❌ Neither GLM_API_KEY nor OPENAI_API_KEY is set")
+        click.echo("\n  ❌ GLM_API_KEY is not set")
         click.echo(f"{'=' * 60}\n")
         sys.exit(1)
 

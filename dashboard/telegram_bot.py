@@ -673,43 +673,33 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("brain dispatch: hermes=%s query=%r", hermes_bin, message[:80])
     await _safe_reply(update, "🧠 Thinking...")
 
-    _oai_base = os.environ.get("OPENAI_BASE_URL", "").strip()
-    _oai_key = os.environ.get("OPENAI_API_KEY", "").strip()
-
-    glm_key = os.environ.get("GLM_API_KEY", "").strip() or _oai_key
-    glm_base = os.environ.get("GLM_BASE_URL", "").strip() or _oai_base
-    if glm_base and not glm_base.endswith("/v4"):
-        glm_base = glm_base.rstrip("/") + "/v4"
-
     hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
     hermes_model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
     hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
 
-    if glm_key:
-        hermes_env_path = Path(hermes_home) / ".env"
-        try:
-            hermes_env_path.parent.mkdir(parents=True, exist_ok=True)
-            env_lines = []
-            if hermes_env_path.exists():
-                for raw_line in hermes_env_path.read_text().splitlines():
-                    if not raw_line.startswith("GLM_"):
-                        env_lines.append(raw_line)
+    hermes_env_path = Path(hermes_home) / ".env"
+    try:
+        hermes_env_path.parent.mkdir(parents=True, exist_ok=True)
+        env_lines = []
+        if hermes_env_path.exists():
+            for raw_line in hermes_env_path.read_text().splitlines():
+                if not raw_line.startswith("GLM_"):
+                    env_lines.append(raw_line)
+        glm_key = os.environ.get("GLM_API_KEY", "").strip()
+        glm_base = os.environ.get("GLM_BASE_URL", "").strip()
+        if glm_key:
             env_lines.append(f"GLM_API_KEY={glm_key}")
-            if glm_base:
-                env_lines.append(f"GLM_BASE_URL={glm_base}")
-            hermes_env_path.write_text("\n".join(env_lines) + "\n")
-        except Exception as e:
-            logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
+        if glm_base:
+            env_lines.append(f"GLM_BASE_URL={glm_base}")
+        hermes_env_path.write_text("\n".join(env_lines) + "\n")
+    except Exception as e:
+        logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
 
     env = {
         **CHILD_ENV,
         "HERMES_HOME": hermes_home,
         "HERMES_INFERENCE_PROVIDER": hermes_provider,
         "HERMES_MODEL": hermes_model,
-        "GLM_BASE_URL": glm_base,
-        "GLM_API_KEY": glm_key,
-        "OPENAI_BASE_URL": _oai_base,
-        "OPENAI_API_KEY": _oai_key,
         "NO_COLOR": "1",
         "TERM": "dumb",
     }
