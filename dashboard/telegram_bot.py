@@ -764,13 +764,13 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         if returncode != 0:
-            err_detail = (
-                stderr_text[:2000] if stderr_text else f"exit code {returncode}"
-            )
-            logger.error("brain error: rc=%d stderr=%s", returncode, err_detail[:2000])
+            # Show last 30 lines of stderr to capture the actual exception
+            err_lines = stderr_text.splitlines() if stderr_text else []
+            err_tail = "\n".join(err_lines[-30:]) if err_lines else f"exit code {returncode}"
+            logger.error("brain error: rc=%d stderr_tail=%s", returncode, err_tail[:2000])
             await _safe_reply(
                 update,
-                f"❌ Brain Error (rc={returncode})\n\n{err_detail}",
+                f"❌ Brain Error (rc={returncode})\n\n{err_tail[:3500]}",
             )
             return
 
