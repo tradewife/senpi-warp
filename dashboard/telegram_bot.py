@@ -17,6 +17,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -603,6 +604,37 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 
 
+def _strip_tui_artifacts(text: str) -> str:
+    lines = text.split("\n")
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^[\u2500─━]{3,}$", stripped):
+            continue
+        if re.match(r"^session_id:\s*", stripped):
+            continue
+        if re.match(r"^Hermes Agent\s+v?[\d.]+", stripped):
+            continue
+        if re.match(r"^Available Tools?:\s*", stripped, re.IGNORECASE):
+            continue
+        cleaned.append(line)
+    result = "\n".join(cleaned).strip()
+    leading = 0
+    for line in result.split("\n"):
+        if line.strip() == "":
+            leading += 1
+        else:
+            break
+    if leading:
+        result = (
+            result.split("\n", leading)[-1]
+            if leading < len(result.split("\n"))
+            else result
+        )
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result
+
+
 @authorized
 async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
@@ -630,14 +662,21 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("brain dispatch: hermes=%s query=%r", hermes_bin, message[:80])
     await _safe_reply(update, "🧠 Thinking...")
 
+    raw_base_url = os.environ.get("OPENAI_BASE_URL", "").rstrip("/")
+    if raw_base_url and not raw_base_url.endswith("/v1"):
+        raw_base_url += "/v1"
+
     env = {
         **CHILD_ENV,
         "HERMES_HOME": os.environ.get("HERMES_HOME", "/root/.hermes"),
-        "HERMES_INFERENCE_PROVIDER": os.environ.get("HERMES_INFERENCE_PROVIDER", "zai"),
+        "HERMES_INFERENCE_PROVIDER": "zai",
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", ""),
-        "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", ""),
+        "OPENAI_BASE_URL": raw_base_url,
+        "NO_COLOR": "1",
         "TERM": "dumb",
     }
+
+    hermes_model = os.environ.get("HERMES_MODEL", "zai-coding-plan/glm-5.1")
 
     soul_path = CONFIG_DIR / "hermes-soul.md"
     if soul_path.exists():
@@ -650,6 +689,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "-q",
             message,
             "-Q",
+            "-m",
+            hermes_model,
+            "--provider",
+            "zai",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             env=env,
@@ -693,7 +736,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        output = stdout_text
+        output = _strip_tui_artifacts(stdout_text)
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"
 
