@@ -694,6 +694,18 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if glm_base:
             env_lines.append(f"GLM_BASE_URL={glm_base}")
         hermes_env_path.write_text("\n".join(env_lines) + "\n")
+
+        # Write config.yaml so Hermes picks up provider/model/base_url reliably
+        config_yaml_path = Path(hermes_home) / "config.yaml"
+        config_lines = [
+            f"model:",
+            f'  provider: "{hermes_provider}"',
+        ]
+        if hermes_model:
+            config_lines.append(f'  default: "{hermes_model}"')
+        if glm_base:
+            config_lines.append(f'  base_url: "{glm_base}"')
+        config_yaml_path.write_text("\n".join(config_lines) + "\n")
     except Exception as e:
         logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
 
@@ -747,7 +759,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             err_detail = (
                 stderr_text[:2000] if stderr_text else f"exit code {returncode}"
             )
-            logger.error("brain error: rc=%d stderr=%s", returncode, err_detail[:500])
+            logger.error("brain error: rc=%d stderr=%s", returncode, err_detail[:2000])
             await _safe_reply(
                 update,
                 f"❌ *Brain Error*\n\n```\n{err_detail}\n```\n\n"
