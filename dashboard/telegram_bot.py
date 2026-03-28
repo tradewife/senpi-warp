@@ -620,6 +620,8 @@ def _strip_tui_artifacts(text: str) -> str:
             continue
         if re.match(r"^Available Tools?:\s*", stripped, re.IGNORECASE):
             continue
+        if re.match(r"^Tools?:\s*", stripped, re.IGNORECASE):
+            continue
         if re.match(r"^Provider:\s*", stripped, re.IGNORECASE):
             continue
         if re.match(r"^Model:\s*", stripped, re.IGNORECASE):
@@ -674,7 +676,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _safe_reply(update, "🧠 Thinking...")
 
     hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
-    hermes_model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+    hermes_model = os.environ.get("HERMES_MODEL", "").strip()
     hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
 
     hermes_env_path = Path(hermes_home) / ".env"
@@ -685,8 +687,8 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for raw_line in hermes_env_path.read_text().splitlines():
                 if not raw_line.startswith("GLM_"):
                     env_lines.append(raw_line)
-        glm_key = os.environ.get("GLM_API_KEY", "").strip()
-        glm_base = os.environ.get("GLM_BASE_URL", "").strip()
+        glm_key = (os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")).strip()
+        glm_base = (os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")).strip()
         if glm_key:
             env_lines.append(f"GLM_API_KEY={glm_key}")
         if glm_base:
@@ -694,6 +696,9 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         hermes_env_path.write_text("\n".join(env_lines) + "\n")
     except Exception as e:
         logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
+
+    glm_key_env = (os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")).strip()
+    glm_base_env = (os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")).strip()
 
     env = {
         **CHILD_ENV,
@@ -703,12 +708,16 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "NO_COLOR": "1",
         "TERM": "dumb",
     }
+    if glm_key_env:
+        env["GLM_API_KEY"] = glm_key_env
+    if glm_base_env:
+        env["GLM_BASE_URL"] = glm_base_env
 
     soul_path = CONFIG_DIR / "hermes-soul.md"
     if soul_path.exists():
         env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
 
-    cmd_args = [hermes_bin, "chat", "--query", message, "-Q"]
+    cmd_args = [hermes_bin, "chat", "-q", "--message", message]
     if hermes_model:
         cmd_args += ["-m", hermes_model]
     if hermes_provider:
@@ -769,8 +778,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await _safe_reply(
             update,
-            f"🧠 *Strategic Waifu*\n\n```\n{output}\n```",
-            parse_mode="Markdown",
+            f"🧠 {output}",
         )
 
     except asyncio.TimeoutError:

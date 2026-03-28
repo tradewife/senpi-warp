@@ -414,14 +414,14 @@ def brain_ping():
     import urllib.error
     import json as _json
 
-    _glm_base = os.environ.get("GLM_BASE_URL", "").strip()
-    _glm_key = os.environ.get("GLM_API_KEY", "").strip()
+    _glm_base = (os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")).strip()
+    _glm_key = (os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")).strip()
 
     base_url = _glm_base
     api_key = _glm_key
     active_source = "GLM" if _glm_base else "none"
 
-    model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+    model = os.environ.get("HERMES_MODEL", "").strip()
     provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
 
     click.echo(f"\n{'=' * 60}")
