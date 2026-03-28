@@ -378,7 +378,7 @@ waifu debug tail arbiter  # Risk arbiter
 waifu debug tail brain    # Autonomous brain
 ```
 
-Valid scanners: orca, mantis, fox, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena
+Valid scanners: orca, mantis, fox, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena, regime, elite, jido, reconcile
 
 ### waifu debug deploy --trigger
 
@@ -470,18 +470,22 @@ Check "Pending entries" section.
 
 ## Safety Rules (Non-Negotiable)
 
-These gates are hardcoded in Python. The CLI cannot override them:
+These gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEvaluator`. The CLI cannot override them:
 
-| Gate | Value | Reason |
-|------|-------|--------|
-| XYZ equities | BANNED | Net negative across all agents |
-| Leverage | 7-10x only | Sub-7x can't overcome fees, >10x blows up |
-| Max positions | 3 | Concentration beats diversification |
-| Daily loss limit | 10% | Fox's 10% limit bled 2.5x less than Vixen's 25% |
-| Catastrophic DD | 20% | Auto-flatten from peak |
-| Per-asset cooldown | 2 hours | Prevents re-entry after Phase 1 exit |
-| 4H trend alignment | HARD gate | Never counter-trend |
-| Stagnation TP | Mandatory | Positions that peaked then reversed |
+| # | Gate | Value | Enforced In |
+|---|------|-------|-------------|
+| 1 | Entries allowed | Regime-gated | `safety.py` — RISK_OFF blocks all |
+| 2 | Auto-entry enabled | Regime + brain | `safety.py` — both must allow |
+| 3 | Valid strategy ID | Required | `safety.py` — must be configured |
+| 4 | Slots available | 3 max | `safety.py` — concentration > diversification |
+| 5 | Scanner not blocked | Brain policy | `safety.py` — brain can disable scanners |
+| 6 | Score threshold | Per-scanner | `safety.py` — ORCA ≥6, MANTIS ≥7, KOMODO ≥10 |
+| 7 | XYZ asset ban | BANNED | `safety.py` — `xyz:*` prefix prohibited |
+| 8 | Per-asset cooldown | 2 hours | `safety.py` — prevents re-entry after exit |
+| 9 | Directional exposure | 70% cap | `safety.py` — prevents one-sided concentration |
+| 10 | Leverage clamp | 7-10x only | `safety.py` — sub-7x can't overcome fees, >10x blows up |
+| — | Daily loss limit | 10% | `risk-arbiter.py` — auto RISK_OFF |
+| — | Catastrophic DD | 20% | `risk-arbiter.py` — auto-flatten from peak |
 
 ---
 
@@ -549,3 +553,6 @@ waifu status
 | `outputs/arbiter-state.json` | Peak/DD tracking |
 | `memory/trade-journal.json` | All trades |
 | `memory/MEMORY.md` | Persistent context |
+| `waifu_cli/safety.py` | 10-gate entry pipeline |
+| `worker.py` | Railway scheduler (all crons) |
+| `dashboard/telegram_bot.py` | Telegram bot + Hermes bridge |
