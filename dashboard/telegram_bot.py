@@ -605,22 +605,38 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def _strip_tui_artifacts(text: str) -> str:
+    # Strip ANSI escape codes
     text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
     lines = text.split("\n")
     cleaned = []
+    in_tool_block = False
     for line in lines:
         stripped = line.strip()
+        # Box-drawing borders (╭╮╰╯│┃║ etc.)
+        if re.match(r"^[╭╮╰╯┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬│┃║\u2500─━═]", stripped):
+            continue
+        # Horizontal rules
         if re.match(r"^[\u2500─━═]{3,}$", stripped):
             continue
-        if re.match(r"^[\u2502│┃║┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬]", stripped):
+        # Tool execution lines from Hermes
+        if re.match(r"^\[tool\]", stripped):
+            in_tool_block = True
             continue
+        if re.match(r"^\[done\]", stripped):
+            in_tool_block = True
+            continue
+        if in_tool_block and re.match(r"^[┊┆¦]", stripped):
+            continue
+        if in_tool_block and stripped == "":
+            in_tool_block = False
+            continue
+        in_tool_block = False
+        # Hermes TUI metadata lines
         if re.match(r"^session_id:\s*", stripped):
             continue
         if re.match(r"^Hermes Agent\s+v?[\d.]+", stripped):
             continue
-        if re.match(r"^Available Tools?:\s*", stripped, re.IGNORECASE):
-            continue
-        if re.match(r"^Tools?:\s*", stripped, re.IGNORECASE):
+        if re.match(r"^(Available\s+)?Tools?:\s*", stripped, re.IGNORECASE):
             continue
         if re.match(r"^Provider:\s*", stripped, re.IGNORECASE):
             continue
@@ -630,20 +646,15 @@ def _strip_tui_artifacts(text: str) -> str:
             continue
         if re.match(r"^Worktree:\s*", stripped, re.IGNORECASE):
             continue
+        # Kaomoji tool status lines (e.g. "(◕ᴗ◕✿) 💻 ...")
+        if re.match(r"^\(.*[◕◡≧★ω٩۶].*\)", stripped):
+            continue
+        # Standalone emoji tool indicator lines
+        if re.match(r"^[┊┆¦]\s*(📖|💻|⚡)", stripped):
+            continue
         cleaned.append(line)
     result = "\n".join(cleaned).strip()
-    leading = 0
-    for line in result.split("\n"):
-        if line.strip() == "":
-            leading += 1
-        else:
-            break
-    if leading:
-        result = (
-            result.split("\n", leading)[-1]
-            if leading < len(result.split("\n"))
-            else result
-        )
+    # Collapse excessive blank lines
     result = re.sub(r"\n{3,}", "\n\n", result)
     return result
 
@@ -788,6 +799,12 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         output = _strip_tui_artifacts(stdout_text)
+
+        # Deduplicate: Hermes may echo the response twice (streaming + final)
+        half = len(output) // 2
+        if half > 50 and output[:half].strip() == output[half:].strip():
+            output = output[:half].strip()
+
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"
 
