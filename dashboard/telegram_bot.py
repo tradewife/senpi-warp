@@ -768,7 +768,11 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lines.append("\n_Use /gates\\_set <key> <value> to modify._")
     lines.append("_Use /gates\\_reset to restore all defaults._")
 
-    await _safe_reply(update, "\n".join(lines))(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await _safe_reply(update, "\n".join(lines))
+
+
+@authorized
+async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
     args = context.args
