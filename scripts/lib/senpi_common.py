@@ -613,12 +613,54 @@ DEFAULT_GLOBAL_GUARDRAILS = {
 
 
 def load_global_guardrails() -> dict:
-    """Load globalGuardrails from risk-regime.json, falling back to defaults."""
+    """Load globalGuardrails from risk-regime.json, with user-rules.json safety_gates overrides.
+
+    Layer order (last wins):
+      1. DEFAULT_GLOBAL_GUARDRAILS (hardcoded defaults)
+      2. risk-regime.json globalGuardrails (system config)
+      3. user-rules.json safety_gates (user sovereignty from Telegram)
+    """
     regime = load_regime()
     guardrails = regime.get("globalGuardrails", {})
     merged = dict(DEFAULT_GLOBAL_GUARDRAILS)
     merged.update({k: v for k, v in guardrails.items() if v is not None})
+
+    # Layer: user-rules safety_gates overrides (Telegram /gates_set)
+    user_rules = load_json(CONFIG_DIR / "user-rules.json", default={})
+    user_gates = user_rules.get("safety_gates", {})
+    for key in ("maxPositionsTotal", "perAssetCooldownMinutes",
+                "directionalCapPct", "minLeverage", "maxLeverage",
+                "bannedAssetPrefixes"):
+        if key in user_gates and user_gates[key] is not None:
+            merged[key] = user_gates[key]
+
     return merged
+
+
+# Default per-scanner minimum signal scores
+DEFAULT_MIN_SCORES = {
+    "orca": 6,
+    "mantis": 7,
+    "fox": 7,
+    "komodo": 10,
+    "condor": 10,
+    "polar": 10,
+    "sentinel": 5,
+    "rhino": 5,
+}
+
+
+def load_user_min_scores() -> dict | None:
+    """Load user-overridden per-scanner min scores from user-rules.json.
+
+    Returns None if no user overrides exist (caller should use DEFAULT_MIN_SCORES).
+    """
+    user_rules = load_json(CONFIG_DIR / "user-rules.json", default={})
+    user_gates = user_rules.get("safety_gates", {})
+    scores = user_gates.get("minScores")
+    if scores and isinstance(scores, dict):
+        return {k: int(v) for k, v in scores.items() if isinstance(v, (int, float))}
+    return None
 
 
 def clamp_leverage(leverage: float) -> int:

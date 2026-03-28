@@ -108,6 +108,21 @@ COMMANDS = [
         "Immediate RISK_OFF",
         "Block all entries and send Telegram alert.",
     ),
+    (
+        "gates",
+        "View safety gates",
+        "All 10 entry gates with current values and user overrides.",
+    ),
+    (
+        "gates_set",
+        "Modify safety gate",
+        "Usage: /gates_set <key> <value>",
+    ),
+    (
+        "gates_reset",
+        "Reset gates to defaults",
+        "Remove all user gate overrides.",
+    ),
 ]
 
 
@@ -600,6 +615,371 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
+# /gates + /gates_set + /gates_reset — User-Configurable Safety Gates
+# ---------------------------------------------------------------------------
+
+GATES_KEY_MAP = {
+    "max_positions":  ("safety_gates", "maxPositionsTotal", int),
+    "cooldown":       ("safety_gates", "perAssetCooldownMinutes", int),
+    "dir_cap":        ("safety_gates", "directionalCapPct", int),
+    "min_lev":        ("safety_gates", "minLeverage", int),
+    "max_lev":        ("safety_gates", "maxLeverage", int),
+    "banned_prefix":  ("safety_gates", "bannedAssetPrefixes", lambda v: [p.strip() for p in v.split(",") if p.strip()]),
+    "score_orca":     ("safety_gates:minScores", "orca", int),
+    "score_mantis":   ("safety_gates:minScores", "mantis", int),
+    "score_fox":      ("safety_gates:minScores", "fox", int),
+    "score_komodo":   ("safety_gates:minScores", "komodo", int),
+    "score_condor":   ("safety_gates:minScores", "condor", int),
+    "score_polar":    ("safety_gates:minScores", "polar", int),
+    "score_sentinel": ("safety_gates:minScores", "sentinel", int),
+    "score_rhino":    ("safety_gates:minScores", "rhino", int),
+}
+
+GATES_BOUNDS = {
+    "maxPositionsTotal":       (1, 10, "1-10 positions"),
+    "perAssetCooldownMinutes": (0, 1440, "0-1440 min (0=disabled)"),
+    "directionalCapPct":       (50, 100, "50-100%"),
+    "minLeverage":             (1, 50, "1-50x"),
+    "maxLeverage":             (1, 50, "1-50x"),
+}
+
+DEFAULT_MIN_SCORES = {
+    "orca": 6, "mantis": 7, "fox": 7, "komodo": 10,
+    "condor": 10, "polar": 10, "sentinel": 5, "rhino": 5,
+}
+
+DEFAULT_GUARDRAILS = {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": ["xyz:"],
+}
+
+
+def _get_current_gates() -> dict:
+    """Read effective gate values (defaults + user overrides)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "lib"))
+    from senpi_common import load_global_guardrails, load_user_min_scores
+
+    guardrails = load_global_guardrails()
+    user_scores = load_user_min_scores() or dict(DEFAULT_MIN_SCORES)
+    return {**guardrails, "minScores": user_scores}
+
+
+def _get_user_overrides() -> dict:
+    """Read only the user-overridden gate values from user-rules.json."""
+    rules = load_json(USER_RULES_FILE, default={})
+    return rules.get("safety_gates", {})
+
+
+def _validate_gate(key: str, value) -> tuple[bool, str]:
+    """Validate a gate value against bounds. Returns (ok, error_msg)."""
+    bounds = GATES_BOUNDS.get(key)
+    if bounds:
+        lo, hi, _ = bounds
+        if not isinstance(value, (int, float)):
+            return False, "Must be a number"
+        if not (lo <= value <= hi):
+            return False, f"Out of range ({bounds[2]})"
+
+    # Cross-field: min <= max leverage
+    if key == "minLeverage":
+        current = _get_current_gates()
+        if value > current.get("maxLeverage", 50):
+            return False, f"min ({value}) > current max ({current['maxLeverage']}). Set max_lev first."
+    if key == "maxLeverage":
+        current = _get_current_gates()
+        if value < current.get("minLeverage", 1):
+            return False, f"max ({value}) < current min ({current['minLeverage']}). Set min_lev first."
+
+    return True, "ok"
+
+
+@authorized
+async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    current = _get_current_gates()
+    overrides = _get_user_overrides()
+    user_scores = overrides.get("minScores", {})
+
+    def _src(field: str, val) -> str:
+        """Show if value differs from default."""
+        default_val = DEFAULT_GUARDRAILS.get(field)
+        if default_val is not None and val != default_val:
+            return f"{val}  ✏️ (default: {default_val})"
+        return str(val)
+
+    def _src_score(scanner: str, val) -> str:
+        default_val = DEFAULT_MIN_SCORES.get(scanner)
+        if default_val is not None and val != default_val:
+            return f"{val}  ✏️ (default: {default_val})"
+        return str(val)
+
+    lines = [
+        "🛡 *Safety Gates*\n",
+        "*Gate 1: Entries Allowed*",
+        "  REGIME-GATED  (automatic)\n",
+        "*Gate 2: Auto-Entry*",
+        "  REGIME + BRAIN  (automatic)\n",
+        "*Gate 3: Valid Strategy*",
+        "  REQUIRED  (automatic)\n",
+        f"*Gate 4: Max Positions*",
+        f"  {_src('maxPositionsTotal', current.get('maxPositionsTotal', 3))}\n",
+        "*Gate 5: Scanner Blocked*",
+        "  BRAIN POLICY  (automatic)\n",
+        "*Gate 6: Min Score Thresholds*",
+    ]
+    for scanner in DEFAULT_MIN_SCORES:
+        val = current.get("minScores", {}).get(scanner, DEFAULT_MIN_SCORES[scanner])
+        lines.append(f"  {scanner}: {_src_score(scanner, val)}")
+    lines.append("")
+
+    banned = current.get("bannedAssetPrefixes", ["xyz:"])
+    lines.append(f"*Gate 7: Banned Prefixes*")
+    lines.append(f"  {', '.join(banned)}\n")
+
+    lines.append(f"*Gate 8: Cooldown*")
+    lines.append(f"  {_src('perAssetCooldownMinutes', current.get('perAssetCooldownMinutes', 120))} min\n")
+
+    lines.append(f"*Gate 9: Directional Cap*")
+    lines.append(f"  {_src('directionalCapPct', current.get('directionalCapPct', 70))}%\n")
+
+    min_lev = current.get("minLeverage", 7)
+    max_lev = current.get("maxLeverage", 10)
+    lines.append(f"*Gate 10: Leverage Band*")
+    lines.append(f"  {_src('minLeverage', min_lev)}-{_src('maxLeverage', max_lev)}x\n")
+
+    lines.append("✏️ = user override (differs from default)")
+    lines.append("Gates 1-3, 5 are automatic — controlled by regime/brain.")
+    lines.append("\n_Use /gates\\_set <key> <value> to modify._")
+    lines.append("_Use /gates\\_reset to restore all defaults._")
+
+    await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
+
+
+@authorized
+async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    args = context.args
+
+    if not args or len(args) < 2:
+        key_groups = [
+            (
+                "Positions & Exposure",
+                [
+                    ("max_positions", "int", "Max concurrent positions (1-10)"),
+                    ("dir_cap", "int", "Directional exposure cap % (50-100)"),
+                ],
+            ),
+            (
+                "Leverage Band",
+                [
+                    ("min_lev", "int", "Minimum leverage (1-50x)"),
+                    ("max_lev", "int", "Maximum leverage (1-50x)"),
+                ],
+            ),
+            (
+                "Timing & Bans",
+                [
+                    ("cooldown", "int", "Per-asset cooldown minutes (0=off, max 1440)"),
+                    ("banned_prefix", "csv", "Banned asset prefixes (e.g. xyz:,test:)"),
+                ],
+            ),
+            (
+                "Per-Scanner Min Scores (1-20)",
+                [
+                    ("score_orca", "int", "ORCA minimum signal score"),
+                    ("score_mantis", "int", "MANTIS minimum signal score"),
+                    ("score_fox", "int", "FOX minimum signal score"),
+                    ("score_komodo", "int", "KOMODO minimum signal score"),
+                    ("score_condor", "int", "CONDOR minimum signal score"),
+                    ("score_polar", "int", "POLAR minimum signal score"),
+                    ("score_sentinel", "int", "SENTINEL minimum signal score"),
+                    ("score_rhino", "int", "RHINO minimum signal score"),
+                ],
+            ),
+        ]
+        lines = ["Usage: `/gates_set <key> <value>`\n"]
+        for group_name, keys in key_groups:
+            lines.append(f"*{group_name}:*")
+            for k, t, d in keys:
+                lines.append(f"  `{k}` ({t}) — {d}")
+            lines.append("")
+        await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
+        return
+
+    key = args[0].lower()
+    value_str = " ".join(args[1:])
+
+    if key not in GATES_KEY_MAP:
+        await _safe_reply(
+            update,
+            f"❌ Unknown key: `{key}`\n\nUse /gates\\_set without values to see all keys.",
+            parse_mode="Markdown",
+        )
+        return
+
+    section_path, field, converter = GATES_KEY_MAP[key]
+
+    try:
+        converted = converter(value_str)
+    except (ValueError, TypeError) as e:
+        await _safe_reply(
+            update,
+            f"❌ Invalid value: `{value_str}` for key `{key}` ({e})",
+            parse_mode="Markdown",
+        )
+        return
+
+    # Validate bounds for top-level guardrails
+    validate_field = field if section_path == "safety_gates" else None
+    if validate_field:
+        ok, err = _validate_gate(validate_field, converted)
+        if not ok:
+            await _safe_reply(
+                update,
+                f"❌ Invalid: {err}",
+                parse_mode="Markdown",
+            )
+            return
+    # Validate score bounds
+    if section_path == "safety_gates:minScores":
+        if not (1 <= converted <= 20):
+            await _safe_reply(
+                update,
+                f"❌ Score must be 1-20, got {converted}",
+                parse_mode="Markdown",
+            )
+            return
+
+    # Write to user-rules.json
+    rules = load_json(USER_RULES_FILE, default={})
+
+    if ":" in section_path:
+        # Nested path like safety_gates:minScores
+        parts = section_path.split(":")
+        target = rules
+        for part in parts:
+            if part not in target or not isinstance(target[part], dict):
+                target[part] = {}
+            target = target[part]
+        target[field] = converted
+    else:
+        if section_path not in rules or not isinstance(rules.get(section_path), dict):
+            rules[section_path] = {}
+        rules[section_path][field] = converted
+
+    rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rules["updatedBy"] = "telegram-gates"
+
+    tmp = USER_RULES_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(rules, f, indent=2)
+        f.write("\n")
+    tmp.rename(USER_RULES_FILE)
+
+    # Git sync
+    git_sync_msg = ""
+    try:
+        sync_proc = await asyncio.create_subprocess_exec(
+            "python3",
+            "-c",
+            "import sys; sys.path.insert(0,'scripts/lib'); "
+            "import senpi_common as sc; "
+            "sc.git_sync('strat: gate update via telegram')",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=CHILD_ENV,
+            cwd=str(STATE_DIR),
+        )
+        _, sync_err = await asyncio.wait_for(sync_proc.communicate(), timeout=30)
+        if sync_err:
+            git_sync_msg = f"\n\n⚠️ Git sync warning: {sync_err.decode().strip()[:200]}"
+        else:
+            git_sync_msg = "\n\n✅ Synced to GitHub."
+    except Exception:
+        git_sync_msg = "\n\n⚠️ Git sync failed (non-fatal)."
+
+    # Human-readable confirmation
+    gate_name = key.replace("_", " ").title()
+    await _safe_reply(
+        update,
+        f"✅ Gate updated: {gate_name} → {converted}\n\n"
+        f"_Takes effect on next evaluate/jido run._\n"
+        f"_Use /gates to verify._{git_sync_msg}",
+        parse_mode="Markdown",
+    )
+
+
+@authorized
+async def cmd_gates_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    rules = load_json(USER_RULES_FILE, default={})
+    had_overrides = "safety_gates" in rules and rules["safety_gates"]
+
+    if not had_overrides:
+        await _safe_reply(
+            update,
+            "ℹ️ No user gate overrides found — already at defaults.",
+        )
+        return
+
+    rules.pop("safety_gates", None)
+    rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rules["updatedBy"] = "telegram-gates-reset"
+
+    tmp = USER_RULES_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(rules, f, indent=2)
+        f.write("\n")
+    tmp.rename(USER_RULES_FILE)
+
+    # Git sync
+    git_sync_msg = ""
+    try:
+        sync_proc = await asyncio.create_subprocess_exec(
+            "python3",
+            "-c",
+            "import sys; sys.path.insert(0,'scripts/lib'); "
+            "import senpi_common as sc; "
+            "sc.git_sync('strat: gates reset via telegram')",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=CHILD_ENV,
+            cwd=str(STATE_DIR),
+        )
+        _, sync_err = await asyncio.wait_for(sync_proc.communicate(), timeout=30)
+        if sync_err:
+            git_sync_msg = f"\n\n⚠️ Git sync warning: {sync_err.decode().strip()[:200]}"
+        else:
+            git_sync_msg = "\n\n✅ Synced to GitHub."
+    except Exception:
+        git_sync_msg = "\n\n⚠️ Git sync failed (non-fatal)."
+
+    await _safe_reply(
+        update,
+        "🔄 All gate overrides removed — defaults restored.\n\n"
+        "  Max positions: 3\n"
+        "  Cooldown: 120 min\n"
+        "  Directional cap: 70%\n"
+        "  Leverage: 7-10x\n"
+        "  Banned: xyz:*\n"
+        f"_Use /gates to verify._{git_sync_msg}",
+    )
+
+
+# ---------------------------------------------------------------------------
 # Free text → Strategic Brain (Hermes Apollo)
 # ---------------------------------------------------------------------------
 
@@ -851,6 +1231,9 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("whale", cmd_whale))
     app.add_handler(CommandHandler("arena", cmd_arena))
     app.add_handler(CommandHandler("emergency_stop", cmd_emergency_stop))
+    app.add_handler(CommandHandler("gates", cmd_gates))
+    app.add_handler(CommandHandler("gates_set", cmd_gates_set))
+    app.add_handler(CommandHandler("gates_reset", cmd_gates_reset))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_free_text))
 

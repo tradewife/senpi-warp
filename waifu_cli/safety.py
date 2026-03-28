@@ -24,6 +24,8 @@ from senpi_common import (
     is_auto_entry_enabled,
     load_brain_state,
     load_global_guardrails,
+    load_user_min_scores,
+    DEFAULT_MIN_SCORES,
     check_directional_exposure_limit,
 )
 
@@ -93,17 +95,11 @@ def evaluate_entry(entry: dict, strategy: dict) -> GateResult:
         f"Scanner {scanner} blocked by brain policy",
     )
 
-    # Gate 6: Score threshold
-    min_scores = {
-        "orca": 6,
-        "mantis": 7,
-        "fox": 7,
-        "komodo": 10,
-        "condor": 10,
-        "polar": 10,
-        "sentinel": 5,
-        "rhino": 5,
-    }
+    # Gate 6: Score threshold (user-configurable via /gates_set)
+    min_scores = dict(DEFAULT_MIN_SCORES)
+    user_scores = load_user_min_scores()
+    if user_scores:
+        min_scores.update(user_scores)
     # Normalize scanner name
     for s_name in min_scores:
         if s_name in scanner:

@@ -173,16 +173,7 @@ class TradeEvaluator:
 
     PENDING_ENTRIES_FILE = sc.POSITION_STATE_DIR / "pending-entries.json"
 
-    MIN_SCORES = {
-        "orca": 6,
-        "mantis": 7,
-        "fox": 7,
-        "komodo": 10,
-        "condor": 10,
-        "polar": 10,
-        "sentinel": 5,
-        "rhino": 5,
-    }
+    MIN_SCORES = dict(sc.DEFAULT_MIN_SCORES)
 
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
@@ -203,11 +194,19 @@ class TradeEvaluator:
         evaluate_rules = self.user_rules.get("evaluate", {})
         user_min_score = evaluate_rules.get("minScore")
 
+        # Start with user-configured per-scanner min scores (from /gates_set)
+        user_per_scanner = sc.load_user_min_scores()
         if user_min_score is not None:
+            # Legacy global override: apply to all scanners
             self.effective_min_scores = {
                 k: int(user_min_score) for k in self.MIN_SCORES
             }
             click.echo(f"[evaluate] user minScore override: {user_min_score}")
+        elif user_per_scanner is not None:
+            # Per-scanner overrides from safety_gates.minScores
+            self.effective_min_scores = dict(self.MIN_SCORES)
+            self.effective_min_scores.update(user_per_scanner)
+            click.echo(f"[evaluate] user per-scanner minScores: {user_per_scanner}")
         else:
             self.effective_min_scores = dict(self.MIN_SCORES)
 
