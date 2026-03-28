@@ -1,6 +1,6 @@
 # 🐺 senpi-waifu: High-Integrity Trading CLI
 
-### *Mechanical Strength. Decision Sovereignty.*
+### *Mechanical Strength. Strategic Sovereignty.*
 
 **senpi-waifu** is a high-integrity CLI and autonomous worker for operating a Hyperliquid perpetual futures trading system. It integrates **Senpi MCP strategies** with a hardened governance layer that separates mechanical safety from high-level decision-making. 
 
@@ -20,7 +20,7 @@ The system operates on three layers of authority to ensure selectivity and accou
 
 ## 🧠 The Brain: Hermes Apollo
 
-**Hermes Apollo** serves as the system's "Decision Ceiling". It is an opinionated distribution of the `hermes-agent` tuned for technical workflows and rigorous software auditing.
+**Hermes Apollo** serves as the system's "Intelligent Ceiling". It is an opinionated distribution of the `hermes-agent` tuned for technical workflows and rigorous software auditing.
 
 *   **Python-Native Integration:** Built primarily on **Python (91.9%)**, Hermes Apollo shares a native language with the `waifu-cli` (91.7%) and Senpi Skills (100%). This allows the Brain to perform deep structural audits of the system's core logic and state.
 *   **Persistent Identity:** Unlike standard agents, Apollo maintains a global identity via **`SOUL.md`**, ensuring it adheres to a consistent long-term trading thesis.
