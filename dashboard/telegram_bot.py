@@ -717,7 +717,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if soul_path.exists():
         env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
 
-    cmd_args = [hermes_bin, "chat", "-q", "--message", message]
+    cmd_args = [hermes_bin, "chat", "-Q", "-q", message]
     if hermes_model:
         cmd_args += ["-m", hermes_model]
     if hermes_provider:
