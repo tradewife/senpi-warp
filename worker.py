@@ -203,6 +203,20 @@ def job_brain():
     run_py("scripts/vps/autonomous-brain.py")
 
 
+def job_regime():
+    """Regime classifier — runs via waifu CLI."""
+    result = subprocess.run(
+        ["python3", "-m", "waifu_cli", "regime"],
+        capture_output=True,
+        text=True,
+        env=CHILD_ENV,
+    )
+    output = (result.stdout + "\n" + result.stderr).strip()
+    if output:
+        for line in output.split("\n"):
+            print(line)
+
+
 def job_arbiter():
     run_py("scripts/vps/risk-arbiter.py")
 
@@ -312,6 +326,9 @@ def main():
     # Autonomous Brain — every 5min, offset 210s
     scheduler.add_job(job_brain, "interval", minutes=5, id="brain", seconds=210)
 
+    # Regime Classifier — every 15min, offset 5min
+    scheduler.add_job(job_regime, "interval", minutes=15, id="regime", seconds=300)
+
     # Risk Arbiter (mechanical safety) — every 30s
     scheduler.add_job(job_arbiter, "interval", seconds=30, id="arbiter")
 
@@ -345,6 +362,7 @@ def main():
     print("  👁  Watchdog:        every 5min")
     print("  🏥 Health Check:    every 10min")
     print("  📊 Arena Monitor:   every 15min")
+    print("  🌡  Regime Class:    every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
     print("  ⚡ ELITE-TRADER:    every 30min")
