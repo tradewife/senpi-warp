@@ -297,7 +297,8 @@ def _execute_approved_trade(
             }
         )
 
-        # Save DSL state with strategic overrides
+        # Save DSL state with strategic overrides (DSL v1.1.1 pattern)
+        wallet = strategy.get("wallet", "")
         dsl = build_dsl_state(
             asset,
             direction,
@@ -309,6 +310,7 @@ def _execute_approved_trade(
             scanner,
             score,
             strategic,
+            wallet=wallet,
         )
         state_dir = sc.get_strategy_state_dir(strat_key)
         sc.save_json(state_dir / f"dsl-{asset}.json", dsl)

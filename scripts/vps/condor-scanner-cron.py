@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-CONDOR v1.0 — Multi-asset alpha hunter.
-Follows the 3-mode lifecycle across BTC, ETH, SOL, HYPE.
+CONDOR v2.0 — Multi-asset alpha hunter.
+
+v1.0 → v2.0: Thesis exit removed. DSL manages ALL exits.
+When a position is active, scanner outputs NO_REPLY. DSL handles trailing stops.
+The scanner only hunts for new entries when no position is active.
+
+Condor v1.0 data: all 40 trades closed by scanner thesis exit. DSL never got
+to work. Removing thesis exit lets DSL trail winners properly.
 """
 
 import sys
@@ -405,31 +411,18 @@ def scan():
                 condor_strat = strat
                 break
 
-    # RIDING MODE
+    # RIDING MODE — v2.0: DSL manages ALL exits. Scanner does NOT thesis-exit.
     if active_pos and mode in ("RIDING", "HUNTING"):
         if mode != "RIDING":
             state["currentMode"] = "RIDING"
             state["activeAsset"] = active_pos["asset"]
             save_json(CONDOR_STATE_FILE, state)
 
-        asset = active_pos["asset"]
-        direction = active_pos["direction"]
-        valid, reasons = evaluate_position(asset, direction, config)
-
-        if not valid:
-            log(f"CONDOR: Thesis failed for {asset} {direction}: {reasons}")
-            active_pos["active"] = False
-            active_pos["closedAt"] = now_iso()
-            active_pos["closeReason"] = "condor_thesis_exit"
-            sfile = get_strategy_state_dir(condor_strat["_key"]) / f"dsl-{asset}.json"
-            save_json(sfile, active_pos)
-            send_telegram(
-                f"🦅 CONDOR THESIS EXIT: {asset}\nReasons: {', '.join(reasons)}"
-            )
-            state["currentMode"] = "HUNTING"
-            state.pop("exitState", None)
-            state.pop("activeAsset", None)
-            save_json(CONDOR_STATE_FILE, state)
+        # v2.0: NO_REPLY. Let DSL trail. Do not re-evaluate thesis.
+        # Condor v1.0 data: all 40 trades closed by thesis exit. DSL never got to work.
+        log(
+            f"CONDOR: RIDING {active_pos['asset']} {active_pos['direction']} — DSL manages exit. NO_REPLY."
+        )
         return
 
     # DETECT DSL EXIT

@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
 """
-ORCA Scanner v1.0 — Dual-Mode Emerging Movers (Hardened).
+ORCA Scanner v1.3 — Dual-Mode Emerging Movers (Hardened + Entry Cap).
 
-Replaces the single-mode EM scanner with two entry modes:
-  STALKER: SM accumulating over 3+ scans. Score 6+. Enter before the crowd.
-  STRIKER: Violent FIRST_JUMP + volume >= 1.5x. Score 9+. Enter the explosion.
+The A/B experiment: does Stalker add value on top of Striker?
+Roach = Striker only (+8.2%). Orca v1.3 = Stalker + Striker.
 
-Every protective gate is HARDCODED — the agent/config cannot override them:
+v1.0 → v1.3 changes:
+  - Daily entry cap: MAX_DAILY_ENTRIES = 8 (v1.1 did 30/day, bled $80+/day in fees)
+  - Stalker minScore raised from 6 to 7 (score 6 entries were 100% losers in Fox data)
+  - Stalker minTotalClimb raised from 5 to 8 (weak +5/+6 climbs were noise)
+  - Stalker momentum gate: score 7-8 needs 4H > 1% aligned AND traders > 15
+  - STRONG_4H bonus (+1 if |4h change| > 3%)
+  - DEEP_SM bonus (+1 if traders >= 30)
+  - Leverage reduced to 7x
+
+Every protective gate is HARDCODED:
   - XYZ equities banned at scan level
-  - Leverage 7-10x
+  - Leverage 7x
   - Max 3 positions
   - 10% daily loss limit
   - 2-hour per-asset cooldown
   - Stagnation TP mandatory
+  - 8 entries/day max
 
-Based on FOX v1.6 (+34.5% ROI) and hardened with lessons from 22 live agents.
-Runs every 90 seconds.
+Runs every 3 minutes.
 """
 
 import sys
@@ -39,23 +47,25 @@ from senpi_common import (
 )
 
 # ---------------------------------------------------------------------------
-# HARDCODED CONSTANTS — learned from 5 days of live trading across 22 agents.
+# HARDCODED CONSTANTS — learned from 30+ live agents across 5+ days.
 # These are NOT configurable. They are in the code.
 # ---------------------------------------------------------------------------
 MIN_LEVERAGE = 7
-MAX_LEVERAGE = 10
+MAX_LEVERAGE = 7  # v1.3: reduced from 10x to 7x
 MAX_POSITIONS = 3
 MAX_DAILY_LOSS_PCT = 10
+MAX_DAILY_ENTRIES = 8  # v1.3: v1.1 was doing 30/day, bleeding $80+/day in fees
 XYZ_BANNED = True
 COOLDOWN_MINUTES = 120
 STAGNATION_TP = {"enabled": True, "roeMin": 10, "hwStaleMin": 45}
 
-MAX_SCAN_HISTORY = 40  # ~60 min at 90s intervals
+MAX_SCAN_HISTORY = 60  # v1.3: ~180 min at 3min intervals
 TOP_N = 50
 ERRATIC_REVERSAL_THRESHOLD = 5
 
 SCAN_HISTORY_FILE = POSITION_STATE_DIR / "orca-scan-history.json"
 COOLDOWN_FILE = POSITION_STATE_DIR / "orca-cooldowns.json"
+TRADE_COUNTER_FILE = POSITION_STATE_DIR / "orca-trade-counter.json"
 
 
 # ---------------------------------------------------------------------------
@@ -181,9 +191,11 @@ def check_asset_volume(token: str, dex: str = "") -> tuple[float, bool]:
 
 
 def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict]:
+    # v1.3: minScore raised to 7, minTotalClimb raised to 8
     min_consecutive = 3
-    min_total_climb = 5
-    min_score = 6
+    min_total_climb = 8  # v1.3: was 5 — weak +5/+6 climbs were noise (Fox data)
+    min_score = 7  # v1.3: was 6 — score 6 entries were 100% losers (Fox data)
+    momentum_gate_score = 9  # Below 9, need momentum event confirmation
 
     if len(history) < min_consecutive:
         return []
@@ -239,7 +251,7 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
             ):
                 continue
 
-        # Score
+        # Score (v1.3: added STRONG_4H and DEEP_SM bonuses)
         score = 0
         reasons = []
 
@@ -257,14 +269,25 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
                 reasons.append(f"CONTRIB_ACCEL +{vel * 100:.3f}%/scan")
             elif vel > 0:
                 score += 1
-                reasons.append("CONTRIB_POSITIVE")
+                reasons.append(f"CONTRIB_POSITIVE +{vel * 100:.4f}%/scan")
 
         if market["traders"] >= 10:
             score += 1
-            reasons.append("SM_ACTIVE")
+            reasons.append(f"SM_ACTIVE {market['traders']} traders")
         if recent_ranks[0] >= 30:
             score += 1
-            reasons.append("DEEP_START")
+            reasons.append(f"DEEP_START from #{recent_ranks[0]}")
+
+        # v1.3: STRONG_4H bonus
+        p4h = abs(market.get("price_chg_4h", 0))
+        if p4h > 3:
+            score += 1
+            reasons.append(f"STRONG_4H {market.get('price_chg_4h', 0):+.1f}%")
+
+        # v1.3: DEEP_SM bonus
+        if market["traders"] >= 30:
+            score += 1
+            reasons.append(f"DEEP_SM ({market['traders']}t)")
 
         tod_mod, tod_reason = time_of_day_modifier()
         score += tod_mod
@@ -273,6 +296,16 @@ def detect_stalker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
         if score < min_score:
             continue
+
+        # v1.3: Momentum gate — score 7-8 Stalkers without momentum backing
+        # are catching chop, not accumulation. Fox data: 17.6% WR at score 6-7.
+        if score < momentum_gate_score:
+            p4h_aligned = (
+                direction == "LONG" and market.get("price_chg_4h", 0) > 1.0
+            ) or (direction == "SHORT" and market.get("price_chg_4h", 0) < -1.0)
+            deep_sm = market["traders"] >= 15
+            if not (p4h_aligned and deep_sm):
+                continue
 
         signals.append(
             {
@@ -377,7 +410,7 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
             if not (is_first_jump and contrib_velocity > 0):
                 continue
 
-        # Score
+        # Score (v1.3: added STRONG_4H and DEEP_SM bonuses)
         score = 0
         if is_first_jump:
             score += 3
@@ -399,6 +432,17 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
             if total_climb >= 10:
                 score += 1
                 reasons.append(f"CLIMBING +{total_climb}")
+
+        # v1.3: STRONG_4H bonus
+        p4h = abs(market.get("price_chg_4h", 0))
+        if p4h > 3:
+            score += 1
+            reasons.append(f"STRONG_4H {market.get('price_chg_4h', 0):+.1f}%")
+
+        # v1.3: DEEP_SM bonus
+        if market["traders"] >= 30:
+            score += 1
+            reasons.append(f"DEEP_SM ({market['traders']}t)")
 
         tod_mod, tod_reason = time_of_day_modifier()
         score += tod_mod
@@ -439,6 +483,30 @@ def detect_striker_signals(current_scan: dict, history: list[dict]) -> list[dict
 
 
 # ---------------------------------------------------------------------------
+# Trade Counter (v1.3: daily entry cap)
+# ---------------------------------------------------------------------------
+
+
+def load_trade_counter() -> dict:
+    """Load daily trade counter. Resets at midnight UTC."""
+    tc = load_json(TRADE_COUNTER_FILE, default={"date": "", "entries": 0})
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if tc.get("date") != today:
+        return {"date": today, "entries": 0}
+    return tc
+
+
+def save_trade_counter(tc: dict):
+    save_json(TRADE_COUNTER_FILE, tc)
+
+
+def increment_trade_counter():
+    tc = load_trade_counter()
+    tc["entries"] = tc.get("entries", 0) + 1
+    save_trade_counter(tc)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -450,6 +518,12 @@ def main():
     try:
         record_heartbeat("orca")
         git_pull()
+
+        # v1.3: Check daily entry cap BEFORE fetching markets
+        tc = load_trade_counter()
+        if tc.get("entries", 0) >= MAX_DAILY_ENTRIES:
+            log(f"ORCA: Daily entry limit ({MAX_DAILY_ENTRIES}) reached — skipping")
+            return
 
         raw = fetch_markets()
         if raw is None:
@@ -482,12 +556,17 @@ def main():
         if not combined:
             return
 
+        # v1.3: Cap signals to remaining daily entries
+        remaining_entries = MAX_DAILY_ENTRIES - tc.get("entries", 0)
+        combined = combined[:remaining_entries]
+
         for sig in combined:
             log(
                 f"ORCA {sig['mode']}: {sig['direction']} {sig['asset']} "
                 f"score={sig['score']} reasons={sig['reasons']}"
             )
             add_pending_entry({**sig, "autoEntered": False, "scanner": "orca"})
+            increment_trade_counter()
 
         git_sync("auto: ORCA scan")
 

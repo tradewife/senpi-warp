@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-FOX v2.0 — Dual-Mode Emerging Movers Scanner
+FOX v2.0 — Dual-Mode Emerging Movers Scanner (Hardened + minReasons + Streak Gate).
 
-Fox v2.0 is a variant of the hardened dual-mode scanner applying live lessons:
-  Stalker minReasons = 3 experiment: entries must have at least 3 distinct
-  scoring reasons, forcing breadth of confirmation beyond base climb.
+FOX v2.0 applies all live trading lessons:
+  - Stalker minReasons = 3: entries must have at least 3 distinct scoring reasons
+  - Stalker streak gate: 3 consecutive Stalker losses → minScore raised to 9
+  - Stalker minScore raised from 6 to 7 (score 6 entries were 100% losers)
+  - Stalker minTotalClimb raised from 5 to 8 (weak climbs were noise)
+  - STRONG_4H bonus (+1 if |4h change| > 3%)
+  - DEEP_SM bonus (+1 if traders >= 30)
 
 Runs every 90 seconds.
 """
@@ -31,6 +35,7 @@ from senpi_common import (
 
 FOX_CONFIG_FILE = CONFIG_DIR / "fox-config.json"
 SCAN_HISTORY_FILE = POSITION_STATE_DIR / "fox-scan-history.json"
+TRADE_COUNTER_FILE = POSITION_STATE_DIR / "fox-trade-counter.json"
 TRADE_JOURNAL_FILE = (
     Path(__file__).resolve().parent.parent / "memory" / "trade-journal.json"
 )
@@ -157,6 +162,28 @@ def check_4h_alignment(direction, price_chg_4h):
     return True
 
 
+# ─── Streak Tracking (v2.0) ──────────────────────────────────
+
+
+def load_trade_counter():
+    tc = load_json(TRADE_COUNTER_FILE, default={"date": "", "stalkerResults": []})
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if tc.get("date") != today:
+        return {"date": today, "stalkerResults": []}
+    return tc
+
+
+def save_trade_counter(tc):
+    save_json(TRADE_COUNTER_FILE, tc)
+
+
+def is_stalker_streak_active():
+    """Check if last 3 Stalker results were all losses."""
+    tc = load_trade_counter()
+    results = tc.get("stalkerResults", [])
+    return len(results) >= 3 and all(r == "L" for r in results[-3:])
+
+
 # ─── MODE A: STALKER ──────────────────────────────────────────────────
 
 
@@ -222,21 +249,37 @@ def detect_stalker_signals(current_scan, history, stalker_cfg):
                 reasons.append(f"CONTRIB_ACCEL +{vel * 100:.3f}%/scan")
             elif vel > 0:
                 score += 1
-                reasons.append(f"CONTRIB_POSITIVE +{vel * 100:.3f}%/scan")
+                reasons.append(f"CONTRIB_POSITIVE +{vel * 100:.4f}%/scan")
 
         if m["traders"] >= 10:
             score += 1
-            reasons.append("SM_ACTIVE")
+            reasons.append(f"SM_ACTIVE {m['traders']} traders")
         if recent_r[0] >= 30:
             score += 1
-            reasons.append("DEEP_START")
+            reasons.append(f"DEEP_START from #{recent_r[0]}")
+
+        # v2.0: STRONG_4H bonus
+        p4h = abs(m.get("price_chg_4h", 0))
+        if p4h > 3:
+            score += 1
+            reasons.append(f"STRONG_4H {m.get('price_chg_4h', 0):+.1f}%")
+
+        # v2.0: DEEP_SM bonus
+        if m["traders"] >= 30:
+            score += 1
+            reasons.append(f"DEEP_SM ({m['traders']}t)")
 
         tmod, treas = time_of_day_modifier()
         score += tmod
         if treas:
             reasons.append(treas)
 
-        if score >= min_score and len(reasons) >= min_reasons:
+        # v2.0: Streak gate — 3 consecutive Stalker losses → minScore raised to 9
+        effective_min_score = min_score
+        if is_stalker_streak_active() and score < 9:
+            effective_min_score = 9  # Suppress low-score Stalkers during losing streak
+
+        if score >= effective_min_score and len(reasons) >= min_reasons:
             signals.append(
                 {
                     "token": token,
@@ -340,6 +383,17 @@ def detect_striker_signals(current_scan, history, striker_cfg):
             score += 1
             reasons.append("CLIMBING")
 
+        # v2.0: STRONG_4H bonus
+        p4h = abs(m.get("price_chg_4h", 0))
+        if p4h > 3:
+            score += 1
+            reasons.append(f"STRONG_4H {m.get('price_chg_4h', 0):+.1f}%")
+
+        # v2.0: DEEP_SM bonus
+        if m["traders"] >= 30:
+            score += 1
+            reasons.append(f"DEEP_SM ({m['traders']}t)")
+
         tmod, treas = time_of_day_modifier()
         score += tmod
         if treas:
@@ -387,8 +441,8 @@ def run():
     striker = detect_striker_signals(cur, hist, config.get("entry", {}))
 
     hist["scans"].append(cur)
-    if len(hist["scans"]) > 20:
-        hist["scans"] = hist["scans"][-20:]
+    if len(hist["scans"]) > 60:
+        hist["scans"] = hist["scans"][-60:]
     save_json(SCAN_HISTORY_FILE, hist)
 
     cd_min = config.get("entry", {}).get("assetCooldownMinutes", 120)
