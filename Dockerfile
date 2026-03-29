@@ -35,5 +35,7 @@ RUN bash /app/scripts/install-apollo.sh && \
 
 COPY . .
 
+RUN chmod +x /app/waifu && ln -sf /app/waifu /usr/local/bin/waifu
+
 ENV PYTHONUNBUFFERED=1
 CMD ["python3", "worker.py"]
