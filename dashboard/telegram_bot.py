@@ -55,76 +55,17 @@ CHILD_ENV = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
 # Command descriptions — registered with BotFather and shown in /help.
 # Each tuple: (command, short_desc_for_menu, detailed_desc_for_help)
 COMMANDS = [
-    (
-        "status",
-        "System snapshot",
-        "Regime, open positions, daily PnL, equity, and arbiter status.",
-    ),
-    (
-        "jido",
-        "Run autonomous executor",
-        "High-conviction trades via the in-container brain policy.",
-    ),
-    (
-        "evaluate",
-        "Process signals",
-        "HITL evaluation of queued scanner signals.",
-    ),
-    (
-        "rules",
-        "View strategic ceiling",
-        "ROI and safety rules for evaluate (Manual) and jido (Autonomous).",
-    ),
-    (
-        "rules_set",
-        "Update strategic rules",
-        "Usage: /rules_set <key> <value>",
-    ),
-    (
-        "regime",
-        "BTC/ETH macro classification",
-        "Active regime, parameters, guardrails, and reason.",
-    ),
-    (
-        "review",
-        "Portfolio health report",
-        "Equity, drawdown, daily PnL, dead-weight detection, guardrail alerts.",
-    ),
-    (
-        "howl",
-        "Last nightly self-improvement",
-        "HOWL analysis: win rates, scanner comparison, fee drag, arena benchmarking.",
-    ),
-    (
-        "whale",
-        "Mirror-trade rebalance",
-        "Copy-trade portfolio status and rebalance actions.",
-    ),
-    (
-        "arena",
-        "Predator leaderboard",
-        "Top predator strategies, winning/losing traits, recommendations.",
-    ),
-    (
-        "emergency_stop",
-        "Immediate RISK_OFF",
-        "Block all entries and send Telegram alert.",
-    ),
-    (
-        "gates",
-        "View safety gates",
-        "All 10 entry gates with current values and user overrides.",
-    ),
-    (
-        "gates_set",
-        "Modify safety gate",
-        "Usage: /gates_set <key> <value>",
-    ),
-    (
-        "gates_reset",
-        "Reset gates to defaults",
-        "Remove all user gate overrides.",
-    ),
+    ("status", "System snapshot", "Regime, open positions, daily PnL, equity, and arbiter status."),
+    ("jido", "Autonomous executor", "Process high-conviction trades via brain policy."),
+    ("evaluate", "Process signals", "HITL evaluation of queued scanner signals."),
+    ("regime", "Market regime", "BTC/ETH macro classification and parameters."),
+    ("review", "Portfolio review", "Equity, drawdown, daily PnL, dead-weight detection."),
+    ("howl", "Nightly analysis", "10-pillar self-improvement analysis."),
+    ("whale", "Copy-trade rebalance", "Mirror-trade portfolio management."),
+    ("arena", "Predator leaderboard", "Top predator strategies and recommendations."),
+    ("settings", "View all settings", "Unified view of rules, gates, and scanner scores."),
+    ("set", "Change a setting", "Usage: /set <key> <value>"),
+    ("emergency_stop", "Immediate RISK_OFF", "Block all entries and send alert."),
 ]
 
 
@@ -296,6 +237,40 @@ def _daily_stats(journal: list[dict]) -> dict:
     }
 
 
+def _regime_header() -> str:
+    """One-line context header: regime, open positions, pending signals."""
+    regime = load_json(CONFIG_DIR / "risk-regime.json")
+    mode = regime.get("riskMode", "UNKNOWN")
+    _, positions = _count_open_positions()
+    pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
+    if not isinstance(pending, list):
+        pending = []
+    parts = [f"📊 {mode}", f"{len(positions)} open", f"{len(pending)} pending"]
+    return " • ".join(parts)
+
+
+def _check_stale_crons(heartbeats: dict) -> list[str]:
+    """Check for stale cron heartbeats. Returns list of stale cron names."""
+    stale_limits = {
+        "orca": 10, "mantis": 4, "fox": 4, "roach": 4, "komodo": 12,
+        "condor": 8, "polar": 8, "rhino": 8, "sentinel": 8,
+        "dsl-runner": 8, "risk-arbiter": 3, "brain": 12,
+    }
+    now = datetime.now(timezone.utc)
+    stale = []
+    for name, max_min in stale_limits.items():
+        last = heartbeats.get(name)
+        if not last:
+            continue
+        try:
+            dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
+            if (now - dt).total_seconds() > max_min * 60:
+                stale.append(name)
+        except (ValueError, TypeError):
+            continue
+    return stale
+
+
 # ---------------------------------------------------------------------------
 # /start — Onboarding
 # ---------------------------------------------------------------------------
@@ -305,17 +280,54 @@ def _daily_stats(journal: list[dict]) -> dict:
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    text = (
-        "🐺 *Senpi — Strategic Remote*\n\n"
-        "This bot is a pure remote for the waifu-cli strategic suite.\n\n"
-        "⚙️ *Mechanical Layer* (Railway)\n"
-        "Scanners, DSL trailing stops, Risk Arbiter. No LLM.\n\n"
-        "🧠 *Strategic Layer*\n"
-        "Powered by local Hermes Apollo agent on Railway.\n\n"
-        "_Send any non-command text to talk to the Strategic Brain._\n\n"
-        "Use /help to see all commands."
-    )
-    await _safe_reply(update, text, parse_mode="Markdown")
+
+    regime = load_json(CONFIG_DIR / "risk-regime.json")
+    mode = regime.get("riskMode", "UNKNOWN")
+    _, positions = _count_open_positions()
+    pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
+    if not isinstance(pending, list):
+        pending = []
+
+    # Build compact status header
+    lines = ["🐺 *Senpi Control Panel*\n"]
+    lines.append(f"📊 *{mode}*  •  {len(positions)} open  •  {len(pending)} pending")
+
+    if positions:
+        for pos in positions[:3]:
+            asset = pos.get("asset", "?")
+            direction = pos.get("direction", "?")
+            roe = float(pos.get("currentRoe", 0) or 0)
+            lines.append(f"   {asset} {direction} {roe:+.1f}%")
+
+    # Cron health
+    heartbeat_file = OUTPUTS_DIR / "cron-heartbeats.json"
+    heartbeats = load_json(heartbeat_file, default={})
+    stale_crons = _check_stale_crons(heartbeats)
+    if stale_crons:
+        lines.append(f"⚠️ Stale: {', '.join(stale_crons)}")
+    else:
+        lines.append("✅ All crons healthy")
+
+    lines.append("\n_Any message → Strategic Brain_")
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("📊 Status", callback_data="act:status_run"),
+            InlineKeyboardButton("🌐 Regime", callback_data="act:regime_run"),
+            InlineKeyboardButton("📋 Review", callback_data="act:review_run"),
+        ],
+        [
+            InlineKeyboardButton("⚡ Jido", callback_data="act:jido_prompt"),
+            InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
+            InlineKeyboardButton("🐋 Whale", callback_data="act:whale_run"),
+        ],
+        [
+            InlineKeyboardButton("⚙️ Settings", callback_data="act:settings_view"),
+            InlineKeyboardButton("🚨 Emergency Stop", callback_data="act:emergency_prompt"),
+        ],
+    ])
+
+    await _safe_reply(update, "\n".join(lines), parse_mode="Markdown", reply_markup=keyboard)
 
 
 # ---------------------------------------------------------------------------
@@ -363,19 +375,29 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_jido(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
+    regime = load_json(CONFIG_DIR / "risk-regime.json")
+    mode = regime.get("riskMode", "BASELINE")
+    rules = load_json(USER_RULES_FILE, default={})
+    jido_rules = rules.get("jido", {})
+    auto = "ON" if jido_rules.get("autoExecuteEnabled", True) else "OFF"
+    roi = float(jido_rules.get("roi_threshold_auto", 0.15))
+    pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
+    if not isinstance(pending, list):
+        pending = []
+
     keyboard = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("▶️ Run Jido", callback_data="act:jido_confirm"),
+            InlineKeyboardButton("▶️ Run", callback_data="act:jido_confirm"),
             InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
         ],
         [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
     ])
     await update.message.reply_text(
-        "🔮 *Jido — Autonomous Executor*\n\n"
-        "Choose execution mode:\n"
-        "• *Run*: Live execution (may open/close positions)\n"
-        "• *Dry Run*: Preview only, no trades placed\n\n"
-        "_Jido can take up to 2 minutes._",
+        f"🔮 *Jido — Autonomous Executor*\n\n"
+        f"Regime: *{mode}*  •  Auto-execute: *{auto}*\n"
+        f"ROI threshold: *{roi:.0%}*  •  {len(pending)} pending signals\n\n"
+        f"▶️ *Run* — live execution\n"
+        f"🔍 *Dry Run* — preview only",
         parse_mode="Markdown",
         reply_markup=keyboard,
     )
@@ -385,6 +407,13 @@ async def cmd_jido(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_evaluate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
+    regime = load_json(CONFIG_DIR / "risk-regime.json")
+    mode = regime.get("riskMode", "BASELINE")
+    pending = load_json(POSITION_STATE_DIR / "pending-entries.json", default=[])
+    if not isinstance(pending, list):
+        pending = []
+    _, positions = _count_open_positions()
+
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
@@ -393,11 +422,10 @@ async def cmd_evaluate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
     ])
     await update.message.reply_text(
-        "⚡ *Evaluate — Signal Processor*\n\n"
-        "Choose execution mode:\n"
-        "• *Execute*: Process signals and place trades\n"
-        "• *Dry Run*: Preview approvals/rejections only\n\n"
-        "_Evaluation can take up to 2 minutes._",
+        f"⚡ *Evaluate — Signal Processor*\n\n"
+        f"Regime: *{mode}*  •  {len(positions)} open  •  {len(pending)} pending\n\n"
+        f"▶️ *Execute* — process signals and place trades\n"
+        f"🔍 *Dry Run* — preview approvals/rejections only",
         parse_mode="Markdown",
         reply_markup=keyboard,
     )
@@ -520,14 +548,26 @@ async def cmd_emergency_stop(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    lines = ["🐺 *Senpi — Strategic Suite*\n"]
-    for cmd_name, short_desc, detail in COMMANDS:
-        lines.append(f"/{cmd_name} — {detail}")
-    lines.append(
-        "\n_Any non-command text is sent to the Strategic Brain (Hermes Apollo)._\n"
-        "_The Brain can read state, modify user-rules.json, and push changes to GitHub._"
+    text = (
+        "🐺 *Senpi — Command Reference*\n\n"
+        "*Monitor*\n"
+        "/status — System snapshot\n"
+        "/regime — Market regime classification\n"
+        "/review — Portfolio health report\n"
+        "/howl — Nightly self-improvement analysis\n"
+        "/arena — Predator leaderboard\n\n"
+        "*Execute*\n"
+        "/jido — Autonomous executor\n"
+        "/evaluate — Process scanner signals\n"
+        "/whale — Copy-trade rebalance\n\n"
+        "*Settings*\n"
+        "/settings — View all rules, gates, and scores\n"
+        "/set — Change a setting (usage: /set <key> <value>)\n\n"
+        "*Safety*\n"
+        "/emergency\\_stop — Immediate RISK\\_OFF\n\n"
+        "_Any non-command text → Strategic Brain_"
     )
-    await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
+    await _safe_reply(update, text, parse_mode="Markdown")
 
 
 # ---------------------------------------------------------------------------
@@ -661,63 +701,12 @@ ENABLE_SECTIONS = {
 }
 
 
-@authorized
-async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-    args = context.args
-
-    if not args or len(args) < 2:
-        key_groups = [
-            (
-                "Evaluate (Manual)",
-                [
-                    ("eval_minscore", "int", "Minimum signal score"),
-                    ("eval_maxlev", "int", "Max leverage (7-10x band hardcoded)"),
-                    ("eval_maxpos", "int", "Max positions (3 hardcoded cap)"),
-                    ("eval_cooldown", "int", "Cooldown minutes"),
-                ],
-            ),
-            (
-                "Jido (Autonomous)",
-                [
-                    ("jido_roi", "float", "Auto-execute ROI threshold (e.g. 0.20)"),
-                    ("jido_minscore", "int", "Minimum signal score"),
-                    ("jido_auto", "true/false", "Enable auto-execute"),
-                ],
-            ),
-            (
-                "Strategic Overrides",
-                [
-                    ("fixed_tp", "float", "Fixed TP ROE% (e.g. 20)"),
-                    ("fixed_sl", "float", "Fixed SL ROE% (e.g. -15)"),
-                    ("partial_tp1", "float", "Partial TP1 ROE%"),
-                    ("partial_tp1_pct", "float", "Partial TP1 close %"),
-                    ("partial_tp2", "float", "Partial TP2 ROE%"),
-                    ("partial_tp2_pct", "float", "Partial TP2 close %"),
-                    ("partial_sl1", "float", "Partial SL1 ROE%"),
-                    ("partial_sl1_pct", "float", "Partial SL1 close %"),
-                    ("partial_sl2", "float", "Partial SL2 ROE%"),
-                    ("partial_sl2_pct", "float", "Partial SL2 close %"),
-                ],
-            ),
-        ]
-        lines = ["Usage: `/rules_set <key> <value>`\n"]
-        for group_name, keys in key_groups:
-            lines.append(f"*{group_name}:*")
-            for k, t, d in keys:
-                lines.append(f"  `{k}` ({t}) — {d}")
-            lines.append("")
-        await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
-        return
-
-    key = args[0].lower()
-    value = args[1]
-
+async def _handle_rules_set(update: Update, key: str, value: str):
+    """Core logic for setting a rules key. Used by both /rules_set and /set."""
     if key not in RULES_KEY_MAP:
         await _safe_reply(
             update,
-            f"❌ Unknown key: `{key}`\n\nUse /rules\\_set without values to see all keys.",
+            f"❌ Unknown key: `{key}`\n\nUse /set to see all keys.",
             parse_mode="Markdown",
         )
         return
@@ -778,9 +767,62 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update,
         f"✅ {confirmation}\n\n"
         f"_Changes take effect on next Jido run (within 5 min)._\n"
-        f"_Use /rules to verify._{git_sync_msg}",
+        f"_Use /settings to verify._{git_sync_msg}",
         parse_mode="Markdown",
     )
+
+
+@authorized
+async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    args = context.args
+
+    if not args or len(args) < 2:
+        key_groups = [
+            (
+                "Evaluate (Manual)",
+                [
+                    ("eval_minscore", "int", "Minimum signal score"),
+                    ("eval_maxlev", "int", "Max leverage (7-10x band hardcoded)"),
+                    ("eval_maxpos", "int", "Max positions (3 hardcoded cap)"),
+                    ("eval_cooldown", "int", "Cooldown minutes"),
+                ],
+            ),
+            (
+                "Jido (Autonomous)",
+                [
+                    ("jido_roi", "float", "Auto-execute ROI threshold (e.g. 0.20)"),
+                    ("jido_minscore", "int", "Minimum signal score"),
+                    ("jido_auto", "true/false", "Enable auto-execute"),
+                ],
+            ),
+            (
+                "Strategic Overrides",
+                [
+                    ("fixed_tp", "float", "Fixed TP ROE% (e.g. 20)"),
+                    ("fixed_sl", "float", "Fixed SL ROE% (e.g. -15)"),
+                    ("partial_tp1", "float", "Partial TP1 ROE%"),
+                    ("partial_tp1_pct", "float", "Partial TP1 close %"),
+                    ("partial_tp2", "float", "Partial TP2 ROE%"),
+                    ("partial_tp2_pct", "float", "Partial TP2 close %"),
+                    ("partial_sl1", "float", "Partial SL1 ROE%"),
+                    ("partial_sl1_pct", "float", "Partial SL1 close %"),
+                    ("partial_sl2", "float", "Partial SL2 ROE%"),
+                    ("partial_sl2_pct", "float", "Partial SL2 close %"),
+                ],
+            ),
+        ]
+        lines = ["Usage: `/rules_set <key> <value>`\n"]
+        for group_name, keys in key_groups:
+            lines.append(f"*{group_name}:*")
+            for k, t, d in keys:
+                lines.append(f"  `{k}` ({t}) — {d}")
+            lines.append("")
+        await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
+        return
+
+    await _handle_rules_set(update, args[0].lower(), args[1])
 
 
 # ---------------------------------------------------------------------------
@@ -940,65 +982,12 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _safe_reply(update, "\n".join(lines))
 
 
-@authorized
-async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-    args = context.args
-
-    if not args or len(args) < 2:
-        key_groups = [
-            (
-                "Positions & Exposure",
-                [
-                    ("max_positions", "int", "Max concurrent positions (1-10)"),
-                    ("dir_cap", "int", "Directional exposure cap % (50-100)"),
-                ],
-            ),
-            (
-                "Leverage Band",
-                [
-                    ("min_lev", "int", "Minimum leverage (1-50x)"),
-                    ("max_lev", "int", "Maximum leverage (1-50x)"),
-                ],
-            ),
-            (
-                "Timing & Bans",
-                [
-                    ("cooldown", "int", "Per-asset cooldown minutes (0=off, max 1440)"),
-                    ("banned_prefix", "csv", "Banned asset prefixes (e.g. xyz:,test:)"),
-                ],
-            ),
-            (
-                "Per-Scanner Min Scores (1-20)",
-                [
-                    ("score_orca", "int", "ORCA minimum signal score"),
-                    ("score_mantis", "int", "MANTIS minimum signal score"),
-                    ("score_fox", "int", "FOX minimum signal score"),
-                    ("score_komodo", "int", "KOMODO minimum signal score"),
-                    ("score_condor", "int", "CONDOR minimum signal score"),
-                    ("score_polar", "int", "POLAR minimum signal score"),
-                    ("score_sentinel", "int", "SENTINEL minimum signal score"),
-                    ("score_rhino", "int", "RHINO minimum signal score"),
-                ],
-            ),
-        ]
-        lines = ["Usage: `/gates_set <key> <value>`\n"]
-        for group_name, keys in key_groups:
-            lines.append(f"*{group_name}:*")
-            for k, t, d in keys:
-                lines.append(f"  `{k}` ({t}) — {d}")
-            lines.append("")
-        await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
-        return
-
-    key = args[0].lower()
-    value_str = " ".join(args[1:])
-
+async def _handle_gates_set(update: Update, key: str, value_str: str):
+    """Core logic for setting a gates key. Used by both /gates_set and /set."""
     if key not in GATES_KEY_MAP:
         await _safe_reply(
             update,
-            f"❌ Unknown key: `{key}`\n\nUse /gates\\_set without values to see all keys.",
+            f"❌ Unknown key: `{key}`\n\nUse /set to see all keys.",
             parse_mode="Markdown",
         )
         return
@@ -1090,9 +1079,64 @@ async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update,
         f"✅ Gate updated: {gate_name} → {converted}\n\n"
         f"_Takes effect on next evaluate/jido run._\n"
-        f"_Use /gates to verify._{git_sync_msg}",
+        f"_Use /settings to verify._{git_sync_msg}",
         parse_mode="Markdown",
     )
+
+
+@authorized
+async def cmd_gates_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    args = context.args
+
+    if not args or len(args) < 2:
+        key_groups = [
+            (
+                "Positions & Exposure",
+                [
+                    ("max_positions", "int", "Max concurrent positions (1-10)"),
+                    ("dir_cap", "int", "Directional exposure cap % (50-100)"),
+                ],
+            ),
+            (
+                "Leverage Band",
+                [
+                    ("min_lev", "int", "Minimum leverage (1-50x)"),
+                    ("max_lev", "int", "Maximum leverage (1-50x)"),
+                ],
+            ),
+            (
+                "Timing & Bans",
+                [
+                    ("cooldown", "int", "Per-asset cooldown minutes (0=off, max 1440)"),
+                    ("banned_prefix", "csv", "Banned asset prefixes (e.g. xyz:,test:)"),
+                ],
+            ),
+            (
+                "Per-Scanner Min Scores (1-20)",
+                [
+                    ("score_orca", "int", "ORCA minimum signal score"),
+                    ("score_mantis", "int", "MANTIS minimum signal score"),
+                    ("score_fox", "int", "FOX minimum signal score"),
+                    ("score_komodo", "int", "KOMODO minimum signal score"),
+                    ("score_condor", "int", "CONDOR minimum signal score"),
+                    ("score_polar", "int", "POLAR minimum signal score"),
+                    ("score_sentinel", "int", "SENTINEL minimum signal score"),
+                    ("score_rhino", "int", "RHINO minimum signal score"),
+                ],
+            ),
+        ]
+        lines = ["Usage: `/gates_set <key> <value>`\n"]
+        for group_name, keys in key_groups:
+            lines.append(f"*{group_name}:*")
+            for k, t, d in keys:
+                lines.append(f"  `{k}` ({t}) — {d}")
+            lines.append("")
+        await _safe_reply(update, "\n".join(lines), parse_mode="Markdown")
+        return
+
+    await _handle_gates_set(update, args[0].lower(), " ".join(args[1:]))
 
 
 @authorized
@@ -1151,6 +1195,162 @@ async def cmd_gates_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  Leverage: 7-10x\n"
         "  Banned: xyz:*\n"
         f"_Use /gates to verify._{git_sync_msg}",
+    )
+
+
+# ---------------------------------------------------------------------------
+# /settings + /set — Unified Settings View
+# ---------------------------------------------------------------------------
+
+
+@authorized
+async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    text = _build_settings_text()
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✏️ Execution", callback_data="act:settings_help_execution"),
+            InlineKeyboardButton("✏️ Position Mgmt", callback_data="act:settings_help_position"),
+        ],
+        [
+            InlineKeyboardButton("✏️ Gates", callback_data="act:settings_help_gates"),
+            InlineKeyboardButton("✏️ Scores", callback_data="act:settings_help_scores"),
+        ],
+        [InlineKeyboardButton("🔄 Reset Gates", callback_data="act:gates_reset_prompt")],
+    ])
+    await _safe_reply(update, text, parse_mode="Markdown", reply_markup=keyboard)
+
+
+def _build_settings_text() -> str:
+    """Build unified settings view combining rules + gates + scores."""
+    rules = load_json(USER_RULES_FILE, default={})
+    ev = rules.get("evaluate", {})
+    jido = rules.get("jido", {})
+
+    lines = [f"⚙️ *Settings*\n"]
+
+    # Execution
+    lines.append("*EXECUTION*")
+    auto = "ON" if jido.get("autoExecuteEnabled", True) else "OFF"
+    lines.append(f"  Evaluate: minScore {ev.get('minScore', '?')} • maxLev {ev.get('maxLeverage', '?')}x • maxPos {ev.get('maxPositions', '?')} • cooldown {ev.get('cooldownMinutes', '?')}min")
+    roi_val = jido.get("roi_threshold_auto", "?")
+    if isinstance(roi_val, (int, float)):
+        roi_display = f"{roi_val:.0%}"
+    else:
+        roi_display = str(roi_val)
+    lines.append(f"  Jido: ROI threshold {roi_display} • minScore {jido.get('minScore', '?')} • auto {auto}")
+    lines.append("")
+
+    # Position management
+    lines.append("*POSITION MANAGEMENT*")
+    tp = rules.get("fixed_tp_roe", {})
+    sl = rules.get("fixed_sl_roe", {})
+    ptp = rules.get("partial_tp", {})
+    psl = rules.get("partial_sl", {})
+    dsl = rules.get("dsl_override", {})
+    tp_str = f"{tp.get('tpRoePct')}%" if tp.get("enabled") and tp.get("tpRoePct") else "OFF"
+    sl_str = f"{sl.get('slRoePct')}%" if sl.get("enabled") and sl.get("slRoePct") else "OFF"
+    lines.append(f"  Fixed TP: {tp_str}  •  Fixed SL: {sl_str}")
+    lines.append(f"  Partial TP: {'ON' if ptp.get('enabled') else 'OFF'}  •  Partial SL: {'ON' if psl.get('enabled') else 'OFF'}")
+    lines.append(f"  DSL Override: {'ON' if dsl.get('enabled') else 'OFF'}")
+    lines.append("")
+
+    # Safety gates
+    current = _get_current_gates()
+    lines.append("*SAFETY GATES*")
+    lines.append(f"  Max positions: {current.get('maxPositionsTotal', 3)}  •  Cooldown: {current.get('perAssetCooldownMinutes', 120)}min")
+    lines.append(f"  Directional cap: {current.get('directionalCapPct', 70)}%  •  Leverage: {current.get('minLeverage', 7)}-{current.get('maxLeverage', 10)}x")
+    banned = current.get("bannedAssetPrefixes", ["xyz:"])
+    lines.append(f"  Banned: {', '.join(banned)}")
+    lines.append("")
+
+    # Scanner scores
+    scores = current.get("minScores", DEFAULT_MIN_SCORES)
+    lines.append("*SCANNER SCORES*")
+    score_parts = [f"{s}: {scores.get(s, v)}" for s, v in DEFAULT_MIN_SCORES.items()]
+    # Split into two rows
+    mid = len(score_parts) // 2
+    lines.append(f"  {' • '.join(score_parts[:mid])}")
+    lines.append(f"  {' • '.join(score_parts[mid:])}")
+    lines.append("")
+
+    updated = rules.get("updatedAt", "?")
+    by = rules.get("updatedBy", "?")
+    lines.append(f"_Updated: {updated} by {by}_")
+    lines.append("\n_Use /set <key> <value> to change_")
+
+    return "\n".join(lines)
+
+
+@authorized
+async def cmd_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Unified /set command — routes to rules or gates handler."""
+    if not update.message:
+        return
+    args = context.args
+
+    if not args or len(args) < 2:
+        # Show all available keys grouped
+        text = _build_set_help_text()
+        await _safe_reply(update, text, parse_mode="Markdown")
+        return
+
+    key = args[0].lower()
+    value = args[1]
+
+    # Check rules keys first, then gates keys
+    if key in RULES_KEY_MAP:
+        await _handle_rules_set(update, key, value)
+    elif key in GATES_KEY_MAP:
+        await _handle_gates_set(update, key, " ".join(args[1:]))
+    else:
+        await _safe_reply(
+            update,
+            f"❌ Unknown key: `{key}`\n\nUse /set to see all available keys.",
+            parse_mode="Markdown",
+        )
+
+
+def _build_set_help_text() -> str:
+    """Build help text for /set showing all available keys."""
+    return (
+        "Usage: `/set <key> <value>`\n\n"
+        "*Execution*\n"
+        "  `eval_minscore` (int) — Evaluate min score\n"
+        "  `eval_maxlev` (int) — Max leverage (7-10x band)\n"
+        "  `eval_maxpos` (int) — Max positions (3 cap)\n"
+        "  `eval_cooldown` (int) — Cooldown minutes\n"
+        "  `jido_roi` (float) — Auto-execute ROI threshold\n"
+        "  `jido_minscore` (int) — Jido min score\n"
+        "  `jido_auto` (true/false) — Enable auto-execute\n\n"
+        "*Position Management*\n"
+        "  `fixed_tp` (float) — Fixed TP ROE%\n"
+        "  `fixed_sl` (float) — Fixed SL ROE%\n"
+        "  `partial_tp1` (float) — Partial TP1 ROE%\n"
+        "  `partial_tp1_pct` (float) — TP1 close %\n"
+        "  `partial_tp2` (float) — Partial TP2 ROE%\n"
+        "  `partial_tp2_pct` (float) — TP2 close %\n"
+        "  `partial_sl1` (float) — Partial SL1 ROE%\n"
+        "  `partial_sl1_pct` (float) — SL1 close %\n"
+        "  `partial_sl2` (float) — Partial SL2 ROE%\n"
+        "  `partial_sl2_pct` (float) — SL2 close %\n\n"
+        "*Safety Gates*\n"
+        "  `max_positions` (int) — Max concurrent positions\n"
+        "  `dir_cap` (int) — Directional cap %\n"
+        "  `min_lev` (int) — Min leverage\n"
+        "  `max_lev` (int) — Max leverage\n"
+        "  `cooldown` (int) — Per-asset cooldown min\n"
+        "  `banned_prefix` (csv) — Banned asset prefixes\n\n"
+        "*Scanner Scores*\n"
+        "  `score_orca` (int) — ORCA min score\n"
+        "  `score_mantis` (int) — MANTIS min score\n"
+        "  `score_fox` (int) — FOX min score\n"
+        "  `score_komodo` (int) — KOMODO min score\n"
+        "  `score_condor` (int) — CONDOR min score\n"
+        "  `score_polar` (int) — POLAR min score\n"
+        "  `score_sentinel` (int) — SENTINEL min score\n"
+        "  `score_rhino` (int) — RHINO min score"
     )
 
 
@@ -1489,6 +1689,156 @@ async def _handle_action_callback(query, action: str) -> None:
             output = output[:3900] + "\n\n_(truncated)_"
         await _safe_edit(query, f"```\n{output}\n```", parse_mode="Markdown")
 
+    elif action == "settings_view":
+        text = _build_settings_text()
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✏️ Execution", callback_data="act:settings_help_execution"),
+                InlineKeyboardButton("✏️ Position Mgmt", callback_data="act:settings_help_position"),
+            ],
+            [
+                InlineKeyboardButton("✏️ Gates", callback_data="act:settings_help_gates"),
+                InlineKeyboardButton("✏️ Scores", callback_data="act:settings_help_scores"),
+            ],
+            [InlineKeyboardButton("🔄 Reset Gates", callback_data="act:gates_reset_prompt")],
+        ])
+        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
+
+    elif action == "settings_help_execution":
+        text = (
+            "✏️ *Execution Keys*\n\n"
+            "`/set eval_minscore <int>` — Evaluate min score\n"
+            "`/set eval_maxlev <int>` — Max leverage\n"
+            "`/set eval_maxpos <int>` — Max positions\n"
+            "`/set eval_cooldown <int>` — Cooldown minutes\n"
+            "`/set jido_roi <float>` — ROI threshold\n"
+            "`/set jido_minscore <int>` — Jido min score\n"
+            "`/set jido_auto <true/false>` — Auto-execute"
+        )
+        await _answer_and_edit(query, text, parse_mode="Markdown")
+
+    elif action == "settings_help_position":
+        text = (
+            "✏️ *Position Management Keys*\n\n"
+            "`/set fixed_tp <float>` — Fixed TP ROE%\n"
+            "`/set fixed_sl <float>` — Fixed SL ROE%\n"
+            "`/set partial_tp1 <float>` — Partial TP1 ROE%\n"
+            "`/set partial_tp1_pct <float>` — TP1 close %\n"
+            "`/set partial_tp2 <float>` — Partial TP2 ROE%\n"
+            "`/set partial_tp2_pct <float>` — TP2 close %\n"
+            "`/set partial_sl1 <float>` — Partial SL1 ROE%\n"
+            "`/set partial_sl1_pct <float>` — SL1 close %\n"
+            "`/set partial_sl2 <float>` — Partial SL2 ROE%\n"
+            "`/set partial_sl2_pct <float>` — SL2 close %"
+        )
+        await _answer_and_edit(query, text, parse_mode="Markdown")
+
+    elif action == "settings_help_gates":
+        text = (
+            "✏️ *Safety Gate Keys*\n\n"
+            "`/set max_positions <int>` — Max concurrent positions\n"
+            "`/set dir_cap <int>` — Directional cap %\n"
+            "`/set min_lev <int>` — Min leverage\n"
+            "`/set max_lev <int>` — Max leverage\n"
+            "`/set cooldown <int>` — Per-asset cooldown min\n"
+            "`/set banned_prefix <csv>` — Banned asset prefixes"
+        )
+        await _answer_and_edit(query, text, parse_mode="Markdown")
+
+    elif action == "settings_help_scores":
+        text = (
+            "✏️ *Scanner Score Keys*\n\n"
+            "`/set score_orca <int>` — ORCA min score\n"
+            "`/set score_mantis <int>` — MANTIS min score\n"
+            "`/set score_fox <int>` — FOX min score\n"
+            "`/set score_komodo <int>` — KOMODO min score\n"
+            "`/set score_condor <int>` — CONDOR min score\n"
+            "`/set score_polar <int>` — POLAR min score\n"
+            "`/set score_sentinel <int>` — SENTINEL min score\n"
+            "`/set score_rhino <int>` — RHINO min score"
+        )
+        await _answer_and_edit(query, text, parse_mode="Markdown")
+
+    elif action == "gates_reset_prompt":
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔄 Confirm Reset", callback_data="act:gates_reset_confirm"),
+                InlineKeyboardButton("❌ Cancel", callback_data="act:settings_view"),
+            ],
+        ])
+        await _answer_and_edit(
+            query,
+            "🔄 *Reset all gate overrides to defaults?*\n\n"
+            "This will restore:\n"
+            "  Max positions: 3\n"
+            "  Cooldown: 120 min\n"
+            "  Directional cap: 70%\n"
+            "  Leverage: 7-10x\n"
+            "  Banned: xyz:\\*",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
+    elif action == "gates_reset_confirm":
+        rules = load_json(USER_RULES_FILE, default={})
+        had_overrides = "safety_gates" in rules and rules["safety_gates"]
+        if not had_overrides:
+            await _answer_and_edit(query, "ℹ️ No user gate overrides found — already at defaults.")
+            return
+        rules.pop("safety_gates", None)
+        rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rules["updatedBy"] = "telegram-gates-reset"
+        tmp = USER_RULES_FILE.with_suffix(".tmp")
+        with open(tmp, "w") as f:
+            json.dump(rules, f, indent=2)
+            f.write("\n")
+        tmp.rename(USER_RULES_FILE)
+        await _answer_and_edit(query, "✅ All gate overrides removed — defaults restored.")
+
+    elif action == "status_run":
+        waifu_bin = shutil.which("waifu")
+        if not waifu_bin:
+            await _answer_and_edit(query, "❌ waifu-cli not found in PATH.")
+            return
+        await query.answer()
+        await _safe_edit(query, "⏳ Loading status...", parse_mode="Markdown")
+        output = await run_script_async([waifu_bin, "status"], timeout=60)
+        if len(output) > 3800:
+            output = output[:3700] + "\n\n_(truncated)_"
+        keyboard = _build_status_keyboard()
+        await _safe_edit(
+            query,
+            f"```\n{output}\n```",
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
+    elif action == "regime_run":
+        await _run_waifu_and_edit(query, "regime", timeout=60)
+
+    elif action == "whale_run":
+        await _run_waifu_and_edit(query, "whale", timeout=120)
+
+    elif action == "emergency_prompt":
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚨 CONFIRM", callback_data="act:emergency_stop_confirm"),
+                InlineKeyboardButton("❌ Cancel", callback_data="act:emergency_stop_cancel"),
+            ],
+        ])
+        await _answer_and_edit(
+            query,
+            "🚨 *Emergency Stop Confirmation*\n\n"
+            "This will:\n"
+            "• Set regime to RISK\\_OFF\n"
+            "• Block all new entries\n"
+            "• Send Telegram alert\n"
+            "• Existing positions stay open (managed by DSL)\n\n"
+            "_Are you sure?_",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
     else:
         await _answer_and_edit(query, f"⚠️ Unknown action: {action}")
 
@@ -1531,17 +1881,20 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("jido", cmd_jido))
     app.add_handler(CommandHandler("evaluate", cmd_evaluate))
-    app.add_handler(CommandHandler("rules", cmd_rules))
-    app.add_handler(CommandHandler("rules_set", cmd_rules_set))
     app.add_handler(CommandHandler("regime", cmd_regime))
     app.add_handler(CommandHandler("review", cmd_review))
     app.add_handler(CommandHandler("howl", cmd_howl))
     app.add_handler(CommandHandler("whale", cmd_whale))
     app.add_handler(CommandHandler("arena", cmd_arena))
     app.add_handler(CommandHandler("emergency_stop", cmd_emergency_stop))
+    app.add_handler(CommandHandler("settings", cmd_settings))
+    app.add_handler(CommandHandler("set", cmd_set))
+    # Backward-compatible aliases
     app.add_handler(CommandHandler("gates", cmd_gates))
     app.add_handler(CommandHandler("gates_set", cmd_gates_set))
     app.add_handler(CommandHandler("gates_reset", cmd_gates_reset))
+    app.add_handler(CommandHandler("rules", cmd_rules))
+    app.add_handler(CommandHandler("rules_set", cmd_rules_set))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_free_text))
 
