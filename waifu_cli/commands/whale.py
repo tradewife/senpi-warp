@@ -20,9 +20,10 @@ from waifu_cli.runtime import sync_before, sync_after, acquire_command_lock, rel
 def _score_trader(t: dict) -> float:
     """Score a trader candidate using weighted formula."""
     wr = float(t.get("winRate", 0))
-    consistency = float(t.get("consistency", 0))
-    hold_time = float(t.get("avgHoldTime", 0))
-    drawdown = float(t.get("maxDrawdown", 100))
+    # tcsValue is the consistency score (0-100), tcsLabel is the label
+    consistency = float(t.get("tcsValue", t.get("consistency", 0)))
+    hold_time = float(t.get("averageHoldTimeSeconds") or 0)
+    drawdown = abs(float(t.get("maxDrawdown", 100)))
     return 0.35 * 50 + 0.25 * wr + 0.20 * consistency + 0.10 * min(hold_time, 100) + 0.10 * (100 - drawdown)
 
 
@@ -53,7 +54,14 @@ def _run(dry_run: bool):
 
     # Discover top traders
     traders = sc.mcporter_call("discovery_get_top_traders", {"limit": 50, "timeframe": "30d"})
-    top = traders.get("data", traders.get("traders", []))
+    raw = traders.get("data", traders)
+    # data can be a dict {"traders": [...]} or a list directly
+    if isinstance(raw, dict):
+        top = raw.get("traders", [])
+    elif isinstance(raw, list):
+        top = raw
+    else:
+        top = []
 
     if not top:
         click.echo("  No trader data available — skipping")
@@ -72,7 +80,7 @@ def _run(dry_run: bool):
         "aggressive": ["ELITE", "RELIABLE", "BALANCED"],
     }.get(risk, ["ELITE"])
 
-    allowed = [t for t in top if t.get("consistencyLabel", t.get("label", "")) in allowed_labels]
+    allowed = [t for t in top if isinstance(t, dict) and t.get("tcsLabel", t.get("consistencyLabel", t.get("label", ""))) in allowed_labels]
     click.echo(f"  After risk filter ({risk}): {len(allowed)} candidates")
 
     # Score and sort
@@ -121,7 +129,7 @@ def _run(dry_run: bool):
             addr = trader.get("address", trader.get("traderAddress", ""))
             new_slot = {
                 "traderAddress": addr,
-                "traderLabel": trader.get("consistencyLabel", trader.get("label", "UNKNOWN")),
+                "traderLabel": trader.get("tcsLabel", trader.get("consistencyLabel", trader.get("label", "UNKNOWN"))),
                 "status": "HOLD",
                 "watchCount": 0,
                 "createdAt": sc.now_iso(),
