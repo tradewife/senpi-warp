@@ -25,9 +25,11 @@ from typing import Optional
 
 logger = logging.getLogger("telegram_bot")
 
-from telegram import BotCommand, Update
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import BadRequest
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
     ContextTypes,
@@ -169,6 +171,50 @@ async def _safe_reply(update: Update, text: str, **kwargs):
         logger.warning("update.message is None — cannot reply")
 
 
+async def _safe_edit(query, text: str, **kwargs) -> None:
+    """Edit a callback-query message in-place. Catches BadRequest gracefully."""
+    try:
+        await query.edit_message_text(text, **kwargs)
+    except BadRequest as e:
+        if "not changed" not in str(e).lower():
+            logger.warning("edit_message_text failed: %s", e)
+    except Exception as e:
+        logger.error("edit_message_text failed: %s", e)
+
+
+async def _progress_reply(update: Update, text: str = "⏳ Working..."):
+    """Send a temporary progress message. Returns the Message for later edit."""
+    if update.message:
+        try:
+            return await update.message.reply_text(text)
+        except Exception as e:
+            logger.error("progress reply failed: %s", e)
+    return None
+
+
+async def _answer_and_edit(query, text: str, reply_markup=None, **kwargs) -> None:
+    """Standard callback pattern: answer the query, then edit the message."""
+    await query.answer()
+    await _safe_edit(query, text, reply_markup=reply_markup, **kwargs)
+
+
+def _build_status_keyboard() -> InlineKeyboardMarkup:
+    """Build inline action buttons for /status output."""
+    _, positions = _count_open_positions()
+    buttons = []
+    if positions:
+        buttons.append([
+            InlineKeyboardButton("🔄 Jido", callback_data="act:jido_prompt"),
+            InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
+        ])
+    buttons.append([
+        InlineKeyboardButton("🔃 Refresh", callback_data="act:status_refresh"),
+        InlineKeyboardButton("📊 Review", callback_data="act:review_run"),
+        InlineKeyboardButton("🛡 Gates", callback_data="act:gates_view"),
+    ])
+    return InlineKeyboardMarkup(buttons)
+
+
 def is_authorized(update: Update) -> bool:
     chat_id = (
         getattr(update.effective_chat, "id", None) if update.effective_chat else None
@@ -293,53 +339,176 @@ async def _waifu_cli(update: Update, cmd: str, timeout: int = 90) -> None:
 
 @authorized
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "status")
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "⏳ Loading status...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "status"], timeout=60)
+    if len(output) > 3800:
+        output = output[:3700] + "\n\n_(truncated)_"
+    keyboard = _build_status_keyboard()
+    if msg:
+        await msg.edit_text(
+            f"```\n{output}\n```",
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
 
 
 @authorized
 async def cmd_jido(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "jido", timeout=120)
+    if not update.message:
+        return
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("▶️ Run Jido", callback_data="act:jido_confirm"),
+            InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
+        ],
+        [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
+    ])
+    await update.message.reply_text(
+        "🔮 *Jido — Autonomous Executor*\n\n"
+        "Choose execution mode:\n"
+        "• *Run*: Live execution (may open/close positions)\n"
+        "• *Dry Run*: Preview only, no trades placed\n\n"
+        "_Jido can take up to 2 minutes._",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
 
 
 @authorized
 async def cmd_evaluate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    dry = "--dry-run" if context.args and "--dry-run" in context.args else ""
-    await _waifu_cli(update, f"evaluate {dry}".strip(), timeout=120)
+    if not update.message:
+        return
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
+            InlineKeyboardButton("🔍 Dry Run", callback_data="act:evaluate_dry"),
+        ],
+        [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
+    ])
+    await update.message.reply_text(
+        "⚡ *Evaluate — Signal Processor*\n\n"
+        "Choose execution mode:\n"
+        "• *Execute*: Process signals and place trades\n"
+        "• *Dry Run*: Preview approvals/rejections only\n\n"
+        "_Evaluation can take up to 2 minutes._",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
 
 
 @authorized
 async def cmd_regime(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "regime")
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "⏳ Classifying market regime...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "regime"], timeout=60)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    if msg:
+        await msg.edit_text(f"```\n{output}\n```", parse_mode="Markdown")
 
 
 @authorized
 async def cmd_review(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "review", timeout=120)
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "📊 Generating portfolio report...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "review"], timeout=120)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    if msg:
+        await msg.edit_text(f"```\n{output}\n```", parse_mode="Markdown")
 
 
 @authorized
 async def cmd_howl(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "howl", timeout=120)
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "🐺 Loading HOWL analysis...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "howl"], timeout=120)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    if msg:
+        await msg.edit_text(f"```\n{output}\n```", parse_mode="Markdown")
 
 
 @authorized
 async def cmd_whale(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "whale", timeout=120)
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "🐋 Running whale rebalance analysis...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "whale"], timeout=120)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    if msg:
+        await msg.edit_text(f"```\n{output}\n```", parse_mode="Markdown")
 
 
 @authorized
 async def cmd_arena(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _waifu_cli(update, "arena", timeout=120)
+    if not update.message:
+        return
+    msg = await _progress_reply(update, "🏟 Loading arena leaderboard...")
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        if msg:
+            await msg.edit_text("❌ waifu-cli not found in PATH.")
+        return
+    output = await run_script_async([waifu_bin, "arena"], timeout=120)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    if msg:
+        await msg.edit_text(f"```\n{output}\n```", parse_mode="Markdown")
 
 
 @authorized
 async def cmd_emergency_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    await _safe_reply(
-        update, "🚨 *Triggering emergency stop...*", parse_mode="Markdown"
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🚨 CONFIRM", callback_data="act:emergency_stop_confirm"),
+            InlineKeyboardButton("❌ Cancel", callback_data="act:emergency_stop_cancel"),
+        ],
+    ])
+    await update.message.reply_text(
+        "🚨 *Emergency Stop Confirmation*\n\n"
+        "This will:\n"
+        "• Set regime to RISK\\_OFF\n"
+        "• Block all new entries\n"
+        "• Send Telegram alert\n"
+        "• Existing positions stay open (managed by DSL)\n\n"
+        "_Are you sure?_",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
     )
-    await _waifu_cli(update, "emergency-stop", timeout=120)
 
 
 # ---------------------------------------------------------------------------
@@ -1213,6 +1382,139 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------------------------------------------------------------------
+# Callback query handler — central router for all inline buttons
+# ---------------------------------------------------------------------------
+
+
+async def _run_waifu_and_edit(query, cmd: str, timeout: int = 120) -> None:
+    """Run a waifu CLI command and edit the callback message with the result."""
+    waifu_bin = shutil.which("waifu")
+    if not waifu_bin:
+        await _answer_and_edit(query, "❌ waifu-cli not found in PATH.")
+        return
+    await query.answer()
+    await _safe_edit(query, f"⏳ Running `{cmd}`...", parse_mode="Markdown")
+    output = await run_script_async([waifu_bin, cmd], timeout=timeout)
+    if len(output) > 4000:
+        output = output[:3900] + "\n\n_(truncated)_"
+    await _safe_edit(query, f"```\n{output}\n```", parse_mode="Markdown")
+
+
+async def _handle_action_callback(query, action: str) -> None:
+    """Route act:* callbacks to their implementations."""
+    if action == "emergency_stop_confirm":
+        await _run_waifu_and_edit(query, "emergency-stop", timeout=120)
+
+    elif action == "emergency_stop_cancel":
+        await _answer_and_edit(query, "✅ Emergency stop cancelled.")
+
+    elif action == "jido_confirm":
+        await _run_waifu_and_edit(query, "jido", timeout=120)
+
+    elif action == "jido_dry":
+        await _run_waifu_and_edit(query, "jido --dry-run", timeout=120)
+
+    elif action == "jido_cancel":
+        await _answer_and_edit(query, "✅ Jido cancelled.")
+
+    elif action == "jido_prompt":
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("▶️ Run Jido", callback_data="act:jido_confirm"),
+                InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
+        ])
+        await _answer_and_edit(
+            query,
+            "🔮 *Jido — Autonomous Executor*\n\nChoose execution mode:",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
+    elif action == "evaluate_confirm":
+        await _run_waifu_and_edit(query, "evaluate", timeout=120)
+
+    elif action == "evaluate_dry":
+        await _run_waifu_and_edit(query, "evaluate --dry-run", timeout=120)
+
+    elif action == "evaluate_cancel":
+        await _answer_and_edit(query, "✅ Evaluate cancelled.")
+
+    elif action == "evaluate_prompt":
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
+                InlineKeyboardButton("🔍 Dry Run", callback_data="act:evaluate_dry"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
+        ])
+        await _answer_and_edit(
+            query,
+            "⚡ *Evaluate — Signal Processor*\n\nChoose execution mode:",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
+    elif action == "status_refresh":
+        waifu_bin = shutil.which("waifu")
+        if not waifu_bin:
+            await _answer_and_edit(query, "❌ waifu-cli not found in PATH.")
+            return
+        await query.answer()
+        await _safe_edit(query, "⏳ Refreshing status...", parse_mode="Markdown")
+        output = await run_script_async([waifu_bin, "status"], timeout=60)
+        if len(output) > 3800:
+            output = output[:3700] + "\n\n_(truncated)_"
+        keyboard = _build_status_keyboard()
+        await _safe_edit(
+            query,
+            f"```\n{output}\n```",
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
+    elif action == "review_run":
+        await _run_waifu_and_edit(query, "review", timeout=120)
+
+    elif action == "gates_view":
+        waifu_bin = shutil.which("waifu")
+        if not waifu_bin:
+            await _answer_and_edit(query, "❌ waifu-cli not found in PATH.")
+            return
+        await query.answer()
+        await _safe_edit(query, "⏳ Loading gates...", parse_mode="Markdown")
+        output = await run_script_async([waifu_bin, "gates"], timeout=60)
+        if len(output) > 4000:
+            output = output[:3900] + "\n\n_(truncated)_"
+        await _safe_edit(query, f"```\n{output}\n```", parse_mode="Markdown")
+
+    else:
+        await _answer_and_edit(query, f"⚠️ Unknown action: {action}")
+
+
+@authorized
+async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Central callback router — dispatches by prefix."""
+    query = update.callback_query
+    if not query:
+        return
+
+    data = query.data or ""
+
+    if data == "noop":
+        await query.answer()
+        return
+
+    if data.startswith("act:"):
+        action = data[4:]
+        await _handle_action_callback(query, action)
+    else:
+        await query.answer()
+        logger.warning("unhandled callback_data: %s", data)
+
+
+# ---------------------------------------------------------------------------
 # Bot setup
 # ---------------------------------------------------------------------------
 
@@ -1242,6 +1544,9 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("gates_reset", cmd_gates_reset))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_free_text))
+
+    # Callback query handler — must be AFTER all CommandHandlers
+    app.add_handler(CallbackQueryHandler(handle_callback))
 
     return app
 
