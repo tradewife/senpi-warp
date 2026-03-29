@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-29T13:10:25Z",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC slope +0.4%, ATR 0.4%; ETH slope +0.3%, ATR 0.4% \u2014 both assets stabilized after selloff, low volatility",
+  "updatedAt": "2026-03-29T14:00:20Z",
+  "updatedBy": "waifu-regime",
+  "reason": "No candle data available (No candle data in response)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
