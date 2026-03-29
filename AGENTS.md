@@ -538,9 +538,9 @@ Check "Pending entries" section.
 
 ---
 
-## Safety Rules (Non-Negotiable)
+## Safety Gates
 
-These gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEvaluator`. The CLI cannot override them:
+These 10 gates are enforced in `waifu_cli/safety.py` by `TradeEvaluator`. Gates 1–3 and 5 are automatic (regime/brain-controlled). Gates 4, 6–10 are user-configurable via `/set` in Telegram, with the defaults shown below:
 
 | # | Gate | Value | Enforced In |
 |---|------|-------|-------------|

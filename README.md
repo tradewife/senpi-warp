@@ -13,7 +13,7 @@ The system utilizes a **Single Execution Path** architecture: scanners act as pa
 The system operates on three layers of authority to ensure selectivity and account protection:
 
 1.  **Passive Probes (Scanners):** Strategies like POLAR, ORCA, MANTIS, and others continuously monitor markets for signals. They have **zero trading authority** and only queue detections into `state/pending-entries.json`.
-2.  **Manual Gateway (`waifu evaluate`):** The primary Human-in-the-Loop (HITL) interface. It applies **10 Hardcoded Safety Gates** and notifies you via Telegram for approval on valid signals.
+2.  **Manual Gateway (`waifu evaluate`):** The primary Human-in-the-Loop (HITL) interface. It applies **10 Safety Gates** and notifies you via Telegram for approval on valid signals.
 3.  **Autonomous Overlay (`waifu jido`):** A high-conviction wrapper that imports the same `TradeEvaluator` engine. Executes trades automatically **only** if a signal passes all 10 safety gates AND the scanner's ROI exceeds your threshold (default 15% from `arena-learnings.json`). Below threshold, falls back to Telegram for manual approval.
 
 ---
@@ -46,9 +46,9 @@ The system operates on three layers of authority to ensure selectivity and accou
 
 ---
 
-## 🛡 Non-Negotiable Safety Gates
+## 🛡 Safety Gates
 
-These 10 gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEvaluator`. They cannot be overridden by config, user rules, or AI agents:
+These 10 gates are enforced in `waifu_cli/safety.py` by `TradeEvaluator`. Gates 1–3 and 5 are automatic (regime/brain-controlled). Gates 4, 6–10 are user-configurable via `/set` in Telegram or `/gates_set`, with the defaults shown below:
 
 | # | Gate | Default | Description |
 | :--- | :--- | :--- | :--- |
