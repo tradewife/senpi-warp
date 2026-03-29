@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """
-POLAR v1.0 — ETH Alpha Hunter with Position Lifecycle.
+POLAR v2.0 — ETH Alpha Hunter with Position Lifecycle.
 
 Single-asset focus. ETH only. Every signal source available (SM, funding, OI,
 4-timeframe trend, volume, BTC correlation). Maximum conviction.
 
-Three-mode position lifecycle:
-  MODE 1 — HUNTING: normal scanning, all signals must align, score 10+ to enter
-  MODE 2 — RIDING: position open, DSL trails, monitor thesis
-  MODE 3 — STALKING: DSL closed, watch for reload on dip, or reset if thesis dies
+v1.0 → v2.0: Thesis exit removed. DSL manages ALL exits.
+When position is active, scanner outputs NO_REPLY. Let DSL trail winners.
+Polar v1.0 data: thesis exits killed 25 of 27 trades. The one trade let
+run (+29.9% ROE) was worth more than all other winners combined.
+
+Three-mode lifecycle (still used):
+  MODE 1 — HUNTING: scanning for entries, score 10+
+  MODE 2 — RIDING: position open, NO_REPLY (DSL manages exits)
+  MODE 3 — STALKING: DSL closed, watch for reload
 """
 
 import sys
@@ -562,26 +567,17 @@ def scan():
                 target_strat = strat
                 break
 
-    # RIDING MODE
+    # RIDING MODE — v2.0: DSL manages ALL exits. Scanner does NOT thesis-exit.
     if active_pos and mode in ("RIDING", "HUNTING"):
         if mode != "RIDING":
             state["currentMode"] = "RIDING"
             save_json(POLAR_STATE_FILE, state)
 
-        direction = active_pos["direction"]
-        valid, reasons = evaluate_eth_position(direction, config.get("entry", {}))
-
-        if not valid:
-            log(f"POLAR: Thesis failed for ETH {direction}: {reasons}")
-            active_pos["active"] = False
-            active_pos["closedAt"] = now_iso()
-            active_pos["closeReason"] = "polar_thesis_exit"
-            sfile = get_strategy_state_dir(target_strat["_key"]) / "dsl-ETH.json"
-            save_json(sfile, active_pos)
-            send_telegram(f"🐻‍❄️ POLAR THESIS EXIT: ETH\nReasons: {', '.join(reasons)}")
-            state["currentMode"] = "HUNTING"
-            state.pop("exitState", None)
-            save_json(POLAR_STATE_FILE, state)
+        # v2.0: NO_REPLY. Let DSL trail. Do not re-evaluate thesis.
+        # Polar v1.0 data: thesis exits killed 25/27 trades. Let DSL work.
+        log(
+            f"POLAR: RIDING ETH {active_pos['direction']} — DSL manages exit. NO_REPLY."
+        )
         return
 
     # DETECT DSL EXIT

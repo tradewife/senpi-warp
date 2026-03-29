@@ -628,9 +628,14 @@ def load_global_guardrails() -> dict:
     # Layer: user-rules safety_gates overrides (Telegram /gates_set)
     user_rules = load_json(CONFIG_DIR / "user-rules.json", default={})
     user_gates = user_rules.get("safety_gates", {})
-    for key in ("maxPositionsTotal", "perAssetCooldownMinutes",
-                "directionalCapPct", "minLeverage", "maxLeverage",
-                "bannedAssetPrefixes"):
+    for key in (
+        "maxPositionsTotal",
+        "perAssetCooldownMinutes",
+        "directionalCapPct",
+        "minLeverage",
+        "maxLeverage",
+        "bannedAssetPrefixes",
+    ):
         if key in user_gates and user_gates[key] is not None:
             merged[key] = user_gates[key]
 
@@ -639,9 +644,10 @@ def load_global_guardrails() -> dict:
 
 # Default per-scanner minimum signal scores
 DEFAULT_MIN_SCORES = {
-    "orca": 6,
+    "orca": 7,  # v1.3: was 6 — score 6 entries were 100% losers (Fox data)
     "mantis": 7,
     "fox": 7,
+    "roach": 9,  # Striker-only: high conviction required
     "komodo": 10,
     "condor": 10,
     "polar": 10,
@@ -1004,15 +1010,13 @@ def check_stale_heartbeats(
     Defaults to 2x the expected interval for safety margin.
     """
     defaults = {
-        "orca": 3,  # runs every 60s, stale after 3 min
+        "orca": 10,  # v1.3: runs every 3min, stale after 10 min
         "mantis": 4,  # runs every 90s, stale after 4 min
         "fox": 4,  # runs every 90s, stale after 4 min
+        "roach": 4,  # runs every 90s, stale after 4 min
         "komodo": 12,  # runs every 5min, stale after 12 min
         "condor": 8,  # runs every 3min, stale after 8 min
         "polar": 8,  # runs every 3min, stale after 8 min
-        # PAUSED: barracuda — removed from schedule
-        # PAUSED: bison     — removed from schedule
-        # PAUSED: shark     — Senpi paused (v1.0, -4.3% ROI)
         "rhino": 8,  # runs every 3min, stale after 8 min
         "sentinel": 8,  # runs every 3min, stale after 8 min
         "dsl-runner": 8,  # runs every 3min, stale after 8 min

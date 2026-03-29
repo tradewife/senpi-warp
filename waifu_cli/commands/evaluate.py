@@ -80,6 +80,81 @@ def build_strategic_overrides(user_rules: dict) -> dict:
     return overrides
 
 
+# Proven DSL tiers from senpi-skills (across 30+ live agents).
+# consecutiveBreachesRequired=3 prevents single-wick kills.
+DEFAULT_DSL_TIERS = [
+    {"triggerPct": 7, "lockHwPct": 40, "consecutiveBreachesRequired": 3},
+    {"triggerPct": 12, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
+    {"triggerPct": 15, "lockHwPct": 75, "consecutiveBreachesRequired": 2},
+    {"triggerPct": 20, "lockHwPct": 85, "consecutiveBreachesRequired": 1},
+]
+
+# Default conviction tiers — Phase 1 timing scaled by entry score.
+# senpi-skills v1.2: score-7 tier with tighter dead weight (8 min).
+DEFAULT_CONVICTION_TIERS = [
+    {
+        "minScore": 6,
+        "absoluteFloorRoe": -18,
+        "hardTimeoutMin": 25,
+        "weakPeakCutMin": 12,
+        "deadWeightCutMin": 8,
+    },
+    {
+        "minScore": 8,
+        "absoluteFloorRoe": -25,
+        "hardTimeoutMin": 45,
+        "weakPeakCutMin": 20,
+        "deadWeightCutMin": 15,
+    },
+    {
+        "minScore": 10,
+        "absoluteFloorRoe": -30,
+        "hardTimeoutMin": 60,
+        "weakPeakCutMin": 30,
+        "deadWeightCutMin": 20,
+    },
+]
+
+DEFAULT_STAGNATION_TP = {"enabled": True, "roeMin": 10, "hwStaleMin": 45}
+
+
+def _resolve_conviction_tier(score: float, scanner: str) -> dict:
+    """Resolve conviction tier from scanner config, falling back to defaults."""
+    scanner_key = str(scanner).lower()
+    config_file = sc.CONFIG_DIR / f"{scanner_key}-config.json"
+
+    tiers = DEFAULT_CONVICTION_TIERS
+    if config_file.exists():
+        scanner_cfg = sc.load_json(config_file, default={})
+        cfg_tiers = scanner_cfg.get("dsl", {}).get("convictionTiers")
+        if cfg_tiers and isinstance(cfg_tiers, list):
+            tiers = cfg_tiers
+
+    # Select highest tier whose minScore <= entry score
+    selected = tiers[-1]  # default to lowest tier
+    for tier in tiers:
+        if score >= tier.get("minScore", 0):
+            selected = tier
+    return selected
+
+
+def _load_scanner_dsl_config(scanner: str) -> dict:
+    """Load scanner-specific DSL config (tiers, stagnationTp, phase2)."""
+    scanner_key = str(scanner).lower()
+    config_file = sc.CONFIG_DIR / f"{scanner_key}-config.json"
+
+    cfg = {}
+    if config_file.exists():
+        cfg = sc.load_json(config_file, default={}).get("dsl", {})
+
+    return {
+        "tiers": cfg.get("tiers", DEFAULT_DSL_TIERS),
+        "stagnationTp": cfg.get("stagnationTp", DEFAULT_STAGNATION_TP),
+        "lockMode": cfg.get("lockMode", "pct_of_high_water"),
+        "phase2TriggerRoe": cfg.get("phase2TriggerRoe", 7),
+    }
+
+
 def build_dsl_state(
     asset: str,
     direction: str,
@@ -91,13 +166,21 @@ def build_dsl_state(
     scanner: str,
     score: float,
     strategic: dict,
+    wallet: str = "",
 ) -> dict:
-    """Build DSL state file for a newly opened position.
+    """Build DSL state file for a newly opened position (DSL v1.1.1 pattern).
+
+    Uses conviction-tiered Phase 1 settings based on entry score. Includes
+    wallet + strategyWalletAddress fields so the DSL runner can match state
+    to on-chain positions (fixing the #1 bug that cost $3,000+ across 8 agents).
 
     Includes strategic overrides from user-rules.json. These are
     trade-level parameters that sit above the DSL defaults but below
     the account-level safety floor.
     """
+    tier = _resolve_conviction_tier(score, scanner)
+    dsl_cfg = _load_scanner_dsl_config(scanner)
+
     dsl = {
         "active": True,
         "asset": asset,
@@ -107,30 +190,54 @@ def build_dsl_state(
         "margin": margin,
         "strategyId": strategy_id,
         "strategyKey": strat_key,
+        "strategyWalletAddress": wallet,
+        "wallet": wallet,
         "scanner": scanner,
         "entryScore": score,
+        "size": None,  # Agent MUST set from clearinghouse after entry fills
         "phase": 1,
-        "highWaterPrice": entry_price,
-        "highWaterRoe": 0,
+        "highWaterPrice": None,  # NOT 0 — DSL runner sets from first price update
+        "highWaterRoe": None,
         "currentTierIndex": -1,
-        "currentBreachCount": 0,
-        "lockMode": "pct_of_high_water",
-        "phase2TriggerRoe": 7,
+        "consecutiveBreaches": 0,
+        "lockMode": dsl_cfg["lockMode"],
+        "phase2TriggerRoe": dsl_cfg["phase2TriggerRoe"],
         "createdAt": sc.now_iso(),
         "highWaterUpdatedAt": sc.now_iso(),
+        # Phase 1: conviction-tiered, consecutiveBreachesRequired=3 (NOT 1)
         "phase1": {
-            "absoluteFloorRoe": -20,
-            "hardTimeoutSec": 2700,
-            "weakPeakCutSec": 1800,
-            "deadWeightCutMin": 15,
+            "enabled": True,
+            "retraceThreshold": 0.03,
+            "consecutiveBreachesRequired": 3,  # Prevents single-wick kills
+            "phase1MaxMinutes": tier.get("hardTimeoutMin", 25),
+            "weakPeakCutMinutes": tier.get("weakPeakCutMin", 12),
+            "deadWeightCutMin": tier.get("deadWeightCutMin", 8),
+            "absoluteFloorRoe": tier.get("absoluteFloorRoe", -18),
+            "weakPeakCut": {
+                "enabled": True,
+                "intervalInMinutes": tier.get("weakPeakCutMin", 12),
+                "minValue": 3.0,
+            },
         },
-        "tiers": [
-            {"triggerPct": 5, "lockHwPct": 20, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 10, "lockHwPct": 40, "consecutiveBreachesRequired": 1},
-            {"triggerPct": 20, "lockHwPct": 55, "consecutiveBreachesRequired": 2},
-            {"triggerPct": 30, "lockHwPct": 70, "consecutiveBreachesRequired": 2},
-        ],
-        "stagnationTp": {"enabled": True, "roeMin": 10, "hwStaleMin": 45},
+        # Phase 2: tiered high-water lock
+        "phase2": {
+            "enabled": True,
+            "retraceThreshold": 0.015,
+            "consecutiveBreachesRequired": 2,
+        },
+        # Trailing tiers (proven across 30 agents)
+        "tiers": dsl_cfg["tiers"],
+        # Stagnation TP: mandatory
+        "stagnationTp": dsl_cfg["stagnationTp"],
+        # Execution defaults
+        "execution": {
+            "phase1SlOrderType": "MARKET",
+            "phase2SlOrderType": "MARKET",
+            "breachCloseOrderType": "MARKET",
+        },
+        "_waifu_version": "dsl-v1.1.1",
+        "_note": "Built by waifu evaluate with senpi-skills DSL v1.1.1 pattern. "
+        "wallet + strategyWalletAddress MUST be present or DSL skips position.",
     }
 
     if "strategicSlRoe" in strategic:
@@ -385,7 +492,8 @@ class TradeEvaluator:
                     }
                 )
 
-                # Save DSL state with strategic overrides
+                # Save DSL state with strategic overrides (DSL v1.1.1 pattern)
+                wallet = strategy.get("wallet", "")
                 dsl = build_dsl_state(
                     asset,
                     direction,
@@ -397,6 +505,7 @@ class TradeEvaluator:
                     scanner,
                     score,
                     strategic,
+                    wallet=wallet,
                 )
                 state_dir = sc.get_strategy_state_dir(strat_key)
                 sc.save_json(state_dir / f"dsl-{asset}.json", dsl)

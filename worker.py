@@ -162,6 +162,10 @@ def job_condor():
     run_py("scripts/vps/condor-scanner-cron.py")
 
 
+def job_roach():
+    run_py("scripts/vps/roach-scanner-cron.py")
+
+
 # PAUSED: job_barracuda — BARRACUDA removed per user request (check if Senpi-paused)
 # PAUSED: job_bison     — BISON removed per user request (check if Senpi-paused)
 # PAUSED: job_shark     — SHARK paused by Senpi (v1.0, -4.3% ROI)
@@ -280,14 +284,17 @@ def main():
         job_defaults={"max_instances": 1, "coalesce": True, "misfire_grace_time": 30},
     )
 
-    # ORCA Dual-Mode Scanner — every 60s
-    scheduler.add_job(job_orca, "interval", seconds=60, id="orca")
+    # ORCA Dual-Mode Scanner — v1.3: every 3min (was 60s, reduced to prevent fee bleed)
+    scheduler.add_job(job_orca, "interval", minutes=3, id="orca")
 
     # MANTIS Dual-Mode Scanner — every 90s
     scheduler.add_job(job_mantis, "interval", seconds=90, id="mantis")
 
     # FOX Dual-Mode Scanner — every 90s
     scheduler.add_job(job_fox, "interval", seconds=90, id="fox")
+
+    # ROACH Striker-Only Scanner — every 90s (NEW: v1.0, Stalker disabled)
+    scheduler.add_job(job_roach, "interval", seconds=90, id="roach")
 
     # KOMODO Momentum Scanner — every 5min (offset 1min to avoid pile-up)
     scheduler.add_job(job_komodo, "interval", minutes=5, id="komodo", seconds=60)
@@ -349,9 +356,10 @@ def main():
     scheduler.add_job(job_jido, "interval", minutes=5, id="jido", seconds=90)
 
     print("\nSchedule:")
-    print("  🐋 ORCA Scanner:    every 60s")
+    print("  🐋 ORCA Scanner:    every 3min (v1.3)")
     print("  🦗 MANTIS Scanner:  every 90s")
     print("  🦊 FOX Scanner:     every 90s")
+    print("  🪳 ROACH Scanner:   every 90s (NEW: striker-only)")
     print("  🦎 KOMODO Scanner:  every 5min")
     print("  🦅 CONDOR Scanner:  every 3min")
     print("  🐻‍❄️ POLAR Scanner:   every 3min")
