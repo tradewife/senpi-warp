@@ -1,24 +1,79 @@
 {
-  "generatedAt": "2026-03-28T21:01:29Z",
+  "generatedAt": "2026-03-29T13:20:15Z",
+  "type": "ARENA_LEARNINGS",
+  "arenaWeek": 1,
+  "arenaPool": "$5,300.55",
+  "totalAgents": 56,
   "ourStats": {
-    "closes": 0,
-    "winRate": 0,
-    "totalPnl": 0
+    "name": "trade_wife",
+    "rank": 38,
+    "roePct": -55.16,
+    "totalPnl": -54.39,
+    "currentBalance": 45.11,
+    "tradeCount": 0,
+    "status": "CRITICAL"
   },
-  "arenaTop5AvgWinRate": 93.0,
+  "top5Summary": [
+    {"rank": 1, "name": "GopiB", "roe": "41.35%", "pnl": "$138.42", "trades": 65, "prize": "$2,120.22"},
+    {"rank": 2, "name": "KK256", "roe": "38.13%", "pnl": "$203.29", "trades": 610, "prize": "$1,325.14"},
+    {"rank": 3, "name": "openclawJaime", "roe": "17.26%", "pnl": "$96.88", "trades": 6, "prize": "$795.08"},
+    {"rank": 4, "name": "str4t0s", "roe": "10.16%", "pnl": "$100.94", "trades": 111, "prize": "$636.07"},
+    {"rank": 5, "name": "Grizzly2", "roe": "9.96%", "pnl": "$92.54", "trades": 8, "prize": "$424.04"}
+  ],
+  "keyInsights": {
+    "winningTraits": ["high conviction", "low trade frequency", "capital efficiency", "selective entry"],
+    "losingTraits": ["over-trading", "high volume without edge", "many concurrent positions"],
+    "bestApproach": "Selective high-conviction entries (3-65 trades) beat hyper-active (600+ trades) — GopiB and openclawJaime prove it"
+  },
   "recommendations": [
     {
-      "action": "study_top_strategies",
-      "confidence": "medium",
-      "reason": "Arena top 5 avg WR (93%) exceeds ours (0%). Study their patterns.",
-      "risk": "neutral"
+      "scanner": "TOP_PERFORMER_ANALYSIS",
+      "action": "INCREASE_WEIGHT",
+      "confidence": "HIGH",
+      "reason": "Top 3 agents (GopiB 41.35% ROE, KK256 38.13% ROE, openclawJaime 17.26% ROE) show winning pattern: GopiB achieved #1 with only 65 trades ($1.465K volume) — high-conviction, moderate frequency. openclawJaime at #3 with just 6 trades ($9.1K volume) proves extreme selectivity wins. KK256 at #2 is the outlier with 610 trades (copy-trading). The CONVICTION approach dominates top ranks."
     },
     {
-      "action": "reminder_max_leverage",
-      "confidence": "absolute",
-      "reason": "Max leverage is 10x. Never increase. Proven across 22 agents.",
-      "risk": "rule"
+      "scanner": "FREQUENCY_ANALYSIS",
+      "action": "INCREASE_WEIGHT",
+      "confidence": "HIGH",
+      "reason": "Strong inverse correlation between trade count and ROE among top performers. 3 of top 5 have ≤8 trades. Bottom half is dominated by high-frequency traders (305, 207, 118, 96 trades). Arena insights correctly identified 'over-trading' as a losing trait. Our Polar config's selective entry model is aligned — maintain strict entry criteria."
+    },
+    {
+      "scanner": "VOLUME_EFFICIENCY",
+      "action": "MAINTAIN_WEIGHT",
+      "confidence": "MEDIUM",
+      "reason": "GopiB (#1) is hyper capital-efficient: 41.35% ROE on only $1.465K volume — highest ROE-per-dollar in the entire competition. str4t0s (#4) has 10.16% ROE but $218.4K volume — 148x more volume for 4x less ROE. Quality over quantity of trades confirmed. Our position sizing approach is correct but we need to improve signal quality."
+    },
+    {
+      "scanner": "SKILL_USAGE_ANALYSIS",
+      "action": "MAINTAIN_WEIGHT",
+      "confidence": "MEDIUM",
+      "reason": "Published skills appear in both top and bottom performers. Grizzly2 (rank 5) uses grizzly-strategy skill, but Jaqif (rank 31, -10.92% ROE) uses polar/roach/wolf skills. MustardRoller (rank 10) uses bison/fox/polar — 3 skills combined. Skills are tools, not strategy. Our custom approach (no public skills) is fine — the top 2 agents use no skills at all."
+    },
+    {
+      "scanner": "TOOLS_USAGE_ANALYSIS",
+      "action": "MAINTAIN_WEIGHT",
+      "confidence": "LOW",
+      "reason": "No clear correlation between tools count and performance. Top 3 range from 6-16 tools. Bottom performers often have MORE tools (22). The differentiator is decision quality, not tool access. Our Polar stack (market data + clearinghouse state + scanner) is sufficient."
+    },
+    {
+      "scanner": "SELF_DIAGNOSIS",
+      "action": "INCREASE_WEIGHT",
+      "confidence": "CRITICAL",
+      "reason": "CRITICAL: trade_wife at rank 38/56 with -55.16% ROE, $45.11 remaining from original budget. Zero trades executed in the current week. This suggests either: (a) positions were opened and liquidated before this week, or (b) the strategy engine is not firing. The Polar config was the #1 Predators strategy (28.09% ROE in the old competition), so the logic works — we need to verify the cron jobs are running and the scanner/entry pipeline is functional."
+    },
+    {
+      "scanner": "SYNDICATE_ANALYSIS",
+      "action": "MAINTAIN_WEIGHT",
+      "confidence": "MEDIUM",
+      "reason": "betashop syndicate runs 10+ agents but only Grizzly2 (rank 5, +9.96%) is profitable. Their other entries range from -0.04% to -37.16% ROE. This confirms that even with many strategies, quality of execution matters more than quantity. Having multiple variants doesn't diversify away bad execution."
+    },
+    {
+      "scanner": "IMMEDIATE_ACTION",
+      "action": "INCREASE_WEIGHT",
+      "confidence": "HIGH",
+      "reason": "PRIORITY: Verify Polar/Wolf cron pipeline is executing trades. Our best competition data showed Polar at 28.09% ROE with 29 trades — now at 0 trades. Check: (1) scanner cron running, (2) entry signals firing, (3) position creation succeeding, (4) no auth/MCP errors blocking execution. The arena is winnable — GopiB leads with only $138 PnL and we have the Predators-proven Polar logic."
     }
   ],
-  "appliedChanges": []
+  "note": "Generated from live Arena Week 1 data: 56 agents, $5,300.55 pool. trade_wife at rank 38 needs immediate attention — zero trades, -55.16% ROE. Top performers prove selective high-conviction approach wins."
 }
