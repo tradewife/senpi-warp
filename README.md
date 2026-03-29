@@ -30,13 +30,18 @@ The system operates on three layers of authority to ensure selectivity and accou
 
 | Command | Purpose |
 | :--- | :--- |
+| `/start` | Full control panel with live status + inline buttons |
 | `/status` | Regime, positions, PnL, cron health |
-| `/rules` | View strategic thresholds |
-| `/rules_set <key> <val>` | Update thresholds without code push |
+| `/settings` | Unified view of rules, gates, and scanner scores |
+| `/set <key> <val>` | Change any setting (rules, gates, or scores) |
 | `/jido` | Trigger autonomous executor |
+| `/evaluate` | Process pending scanner signals |
 | `/regime` | Run regime classifier |
 | `/review` | Portfolio health report |
-| `/emergency_stop` | Immediate RISK_OFF + alert |
+| `/howl` | Nightly self-improvement analysis |
+| `/whale` | Copy-trade rebalance |
+| `/arena` | Predator leaderboard |
+| `/emergency_stop` | Immediate RISK\_OFF + alert |
 | Free text | Chat with the Strategic Brain |
 
 ---
@@ -52,7 +57,7 @@ These 10 gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEval
 | 3 | Valid Strategy | Required | Strategy ID must be configured and valid |
 | 4 | Slots Available | 3 max | Concentration over diversification |
 | 5 | Scanner Not Blocked | Brain policy | Brain can disable underperforming scanners |
-| 6 | Score Threshold | Per-scanner | ORCA ≥6, MANTIS ≥7, FOX ≥7, KOMODO ≥10, etc. |
+| 6 | Score Threshold | Per-scanner | ORCA ≥7, MANTIS ≥7, FOX ≥7, ROACH ≥9, KOMODO ≥10, etc. |
 | 7 | Asset Ban | `xyz:*` | Prefixed assets strictly prohibited |
 | 8 | Cooldown | 2 hours | Mandatory per-asset waiting period after exit |
 | 9 | Directional Exposure | 70% cap | Prevents one-directional concentration |
@@ -67,7 +72,7 @@ These 10 gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEval
 
 ### Customizing Rules
 
-Users control strategic parameters via `config/user-rules.json` or the `/rules_set` Telegram command:
+Users control strategic parameters via `config/user-rules.json` or the `/set` Telegram command:
 
 ```json
 {
@@ -90,12 +95,13 @@ These rules sit **above** DSL defaults but **below** the 10-gate safety floor. T
 
 | Scanner | Version | Interval | Description |
 | :--- | :--- | :--- | :--- |
-| 🐋 ORCA | v1.2 | 60s | Hardened dual-mode scanner |
+| 🐋 ORCA | v1.3 | 3min | Hardened dual-mode scanner |
 | 🦗 MANTIS | v3.0 | 90s | Smart money sniper with contribution acceleration gate |
 | 🦊 FOX | v2.0 | 90s | Dual-mode scanner with minReasons gate |
+| 🪳 ROACH | v1.0 | 90s | Striker-only explosion signals |
 | 🦎 KOMODO | v1.0 | 5min | Momentum event consensus |
-| 🦅 CONDOR | v1.0.1 | 3min | Multi-asset alpha hunter |
-| 🐻‍❄️ POLAR | v1.0 | 3min | ETH alpha hunter (HUNT → RIDE → STALK → RELOAD lifecycle) |
+| 🦅 CONDOR | v2.0 | 3min | Multi-asset alpha hunter |
+| 🐻‍❄️ POLAR | v2.0 | 3min | ETH alpha hunter (HUNT → RIDE → STALK → RELOAD lifecycle) |
 | 🛡 SENTINEL | v1.0 | 3min | Quality trader convergence |
 | 🦏 RHINO | v1.0 | 3min | Momentum pyramider |
 
@@ -189,7 +195,6 @@ Push to your repository to trigger an automatic build. The `worker.py` schedules
 | `waifu arena` | Predator leaderboard analysis | Intelligence |
 | `waifu whale` | Copy-trade portfolio management | Intelligence |
 | `waifu emergency-stop` | Immediate RISK_OFF + Telegram alert | Emergency |
-| `waifu rules` / `waifu rules_set` | View/edit strategic rules | Config |
 | `waifu dev brain-ping` | LLM provider connectivity check | Diagnostic |
 | `waifu dev list-skills` | Browse Senpi Skills catalog | Dev |
 | `waifu dev add-skill <name>` | Install a skill from the catalog | Dev |

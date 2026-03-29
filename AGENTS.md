@@ -26,6 +26,11 @@ waifu review                    # Portfolio report
 # Skill management
 waifu dev list-skills           # Browse catalog
 waifu dev add-skill orca        # Install skill
+
+# Telegram bot (commands via Telegram)
+/start                          # Control panel
+/settings                       # View all settings
+/set eval_minscore 8            # Change a setting
 ```
 
 ---
@@ -378,7 +383,7 @@ waifu debug tail arbiter  # Risk arbiter
 waifu debug tail brain    # Autonomous brain
 ```
 
-Valid scanners: orca, mantis, fox, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena, regime, elite, jido, reconcile
+Valid scanners: orca, mantis, fox, roach, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena, regime, elite, jido, reconcile
 
 ### waifu debug deploy --trigger
 
@@ -431,6 +436,71 @@ waifu dev show-skill orca
 
 ---
 
+## Telegram Bot
+
+### /start — Control Panel
+
+Opens a full control panel with:
+- Live regime, open positions, pending signals, cron health
+- Inline button grid: Status, Regime, Review, Jido, Evaluate, Whale, Settings, Emergency Stop
+- Any non-command text goes to the Strategic Brain (Hermes Apollo)
+
+### /settings — Unified Settings View
+
+Single view combining rules, gates, and scanner scores. Replaces the separate `/rules` and `/gates` commands. Shows:
+- Execution thresholds (Evaluate + Jido)
+- Position management (TP/SL/partial/DSL)
+- Safety gates (positions, cooldown, leverage, directional cap)
+- Scanner score thresholds
+
+Edit buttons open key reference for each section.
+
+### /set <key> <value> — Change Any Setting
+
+Unified command replacing `/rules_set` and `/gates_set`. Routes automatically to the correct handler.
+
+```bash
+# Execution
+/set eval_minscore 8
+/set jido_roi 0.20
+/set jido_auto false
+
+# Position management
+/set fixed_tp 25
+/set fixed_sl -15
+
+# Safety gates
+/set max_positions 2
+/set cooldown 60
+/set dir_cap 60
+
+# Scanner scores
+/set score_orca 8
+/set score_roach 10
+```
+
+Backward-compatible: `/rules_set` and `/gates_set` still work.
+
+### Telegram Command Reference
+
+| Command | Purpose |
+|---------|---------|
+| `/start` | Control panel with live status + inline buttons |
+| `/status` | Full CLI status output |
+| `/settings` | Unified rules + gates + scores view |
+| `/set <key> <val>` | Change any setting |
+| `/jido` | Autonomous executor (with confirmation) |
+| `/evaluate` | Signal processor (with confirmation) |
+| `/regime` | Market regime classification |
+| `/review` | Portfolio health report |
+| `/howl` | Nightly analysis |
+| `/whale` | Copy-trade rebalance |
+| `/arena` | Predator leaderboard |
+| `/emergency_stop` | Immediate RISK_OFF (with confirmation) |
+| Free text | Strategic Brain (Hermes Apollo) |
+
+---
+
 ## Observability Patterns
 
 ### Is the system healthy?
@@ -479,7 +549,7 @@ These gates are hardcoded in `waifu_cli/safety.py` and enforced by `TradeEvaluat
 | 3 | Valid strategy ID | Required | `safety.py` — must be configured |
 | 4 | Slots available | 3 max | `safety.py` — concentration > diversification |
 | 5 | Scanner not blocked | Brain policy | `safety.py` — brain can disable scanners |
-| 6 | Score threshold | Per-scanner | `safety.py` — ORCA ≥6, MANTIS ≥7, KOMODO ≥10 |
+| 6 | Score threshold | Per-scanner | `safety.py` — ORCA ≥7, MANTIS ≥7, ROACH ≥9, KOMODO ≥10 |
 | 7 | XYZ asset ban | BANNED | `safety.py` — `xyz:*` prefix prohibited |
 | 8 | Per-asset cooldown | 2 hours | `safety.py` — prevents re-entry after exit |
 | 9 | Directional exposure | 70% cap | `safety.py` — prevents one-sided concentration |
