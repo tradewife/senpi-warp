@@ -1,8 +1,20 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100,
+  "dayStartEquity": 53.12,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-30T19:01:08Z",
-  "lastEquity": 0,
-  "dayStartDate": "2026-03-30"
+  "lastCheckAt": "2026-03-30T23:03:00Z",
+  "lastEquity": 53.12,
+  "dayStartDate": "2026-03-30",
+  "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -46.9% exceeds catastrophicDrawdownPct (20%). RISK_OFF set by jido-emergency.",
+      "timestamp": "2026-03-30T23:03:00Z"
+    },
+    {
+      "type": "EMERGENCY_SL_SET",
+      "message": "AVAX LONG 10x — SL set at $8.45 (market). Liq at $8.17, current $8.77. Buffer $0.32.",
+      "timestamp": "2026-03-30T23:03:00Z"
+    }
+  ]
 }

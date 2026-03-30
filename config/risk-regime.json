@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-30T23:00:46Z",
-  "updatedBy": "waifu-regime",
-  "reason": "No candle data available (No candle data in response)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-30T23:03:00Z",
+  "updatedBy": "jido-emergency",
+  "reason": "AVAX LONG 10x at -89.8% ROE. Account value $53.12 from $100 budget (-46.9% drawdown). Breaches catastrophicDrawdownPct (20%) and dailyLossLimitPct (10%). Emergency SL set at $8.45. No new entries until position resolved.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,

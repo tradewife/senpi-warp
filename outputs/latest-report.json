@@ -1,15 +1,33 @@
 {
-  "generatedAt": "2026-03-30T19:01:08Z",
-  "regime": "BASELINE",
-  "equity": 0.0,
-  "peakEquity": 0.0,
-  "drawdownPct": 0,
+  "generatedAt": "2026-03-30T23:03:00Z",
+  "regime": "RISK_OFF",
+  "equity": 53.12,
+  "peakEquity": 100,
+  "drawdownPct": 46.88,
   "dailyPnl": 0,
   "dailyCloses": 0,
   "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [],
-  "deadWeight": [],
+  "openPositions": 1,
+  "alerts": [
+    "CATASTROPHIC_DRAWDOWN: -46.9% from peak ($100 → $53.12)",
+    "EMERGENCY_SL: AVAX LONG 10x SL at $8.45, liq at $8.17",
+    "RISK_OFF: No new entries allowed"
+  ],
+  "deadWeight": [
+    {
+      "coin": "AVAX",
+      "direction": "LONG",
+      "leverage": 10,
+      "entryPrice": 9.658,
+      "currentPrice": 8.772,
+      "unrealizedPnl": -44.90,
+      "roePct": -89.8,
+      "ageDays": 3,
+      "liquidationPrice": 8.174,
+      "stopLoss": 8.45,
+      "status": "CRITICAL"
+    }
+  ],
   "guardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
