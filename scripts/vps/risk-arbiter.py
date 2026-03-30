@@ -114,16 +114,25 @@ def flatten_all():
     for strat in strategies:
         positions = get_open_positions(strat["_key"])
         for pos in positions:
-            log(f"FLATTEN: closing {pos['asset']} in {strat['_key']}")
-            mcporter_call(
+            asset = pos["asset"]
+            log(f"FLATTEN: closing {asset} in {strat['_key']}")
+            result = mcporter_call(
                 "strategy_close_position",
                 {
                     "strategyId": strat.get("strategyId", pos.get("strategyId")),
-                    "asset": pos["asset"],
+                    "asset": asset,
                 },
                 timeout=15,
             )
-            # Deactivate DSL state
+            if "error" in result:
+                log(f"FLATTEN FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated")
+                send_telegram(
+                    f"⚠️ Flatten FAILED for {asset}\n"
+                    f"Error: {result.get('error')}\n"
+                    f"Position may still be open — manual close required"
+                )
+                continue
+            # Only deactivate DSL state after confirmed close
             if "_file" in pos:
                 state = load_json(Path(pos["_file"]))
                 state["active"] = False
@@ -254,8 +263,10 @@ def main():
         # Fetch equity
         equity = get_account_equity()
         if equity is None:
-            log("Risk arbiter: could not fetch equity — skipping")
-            save_arbiter_state(arb_state)
+            log("Risk arbiter: could not fetch equity — skipping (lastCheckAt NOT updated)")
+            # Do NOT call save_arbiter_state here — it would update lastCheckAt
+            # and mask the fact that no real check occurred. Stale detection relies
+            # on lastCheckAt staying old when checks fail.
             return
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -356,7 +367,7 @@ def main():
                         log(
                             f"RISK ARBITER: Single trade loss ${abs(pos_pnl):.0f} > {single_loss_pct}% of equity — closing {asset}"
                         )
-                        mcporter_call(
+                        result = mcporter_call(
                             "strategy_close_position",
                             {
                                 "strategyId": strat.get(
@@ -366,6 +377,14 @@ def main():
                             },
                             timeout=15,
                         )
+                        if "error" in result:
+                            log(f"RISK ARBITER: Close FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated")
+                            send_telegram(
+                                f"⚠️ Single trade close FAILED for {asset}\n"
+                                f"Error: {result.get('error')}\n"
+                                f"Position may still be open — manual close required"
+                            )
+                            continue
                         if "_file" in pos:
                             state = load_json(Path(pos["_file"]))
                             state["active"] = False
