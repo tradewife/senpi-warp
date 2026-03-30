@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-30T19:00:31Z",
-  "updatedBy": "waifu-regime",
-  "reason": "No candle data available (No candle data in response)",
+  "updatedAt": "2026-03-30T20:02:33Z",
+  "updatedBy": "hermes-regime",
+  "reason": "BTC 4H slope -4.291%, ATR 0.657%; ETH 4H slope -4.541%, ATR 0.925%; no strong RISK_ON or RISK_OFF signals",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
