@@ -65,6 +65,8 @@ COMMANDS = [
     ("arena", "Predator leaderboard", "Top predator strategies and recommendations."),
     ("settings", "View all settings", "Unified view of rules, gates, and scanner scores."),
     ("set", "Change a setting", "Usage: /set <key> <value>"),
+    ("flatten", "Close all trades", "Close all open positions across all strategies."),
+    ("close", "Close a trade", "Select and close a specific open position."),
     ("emergency_stop", "Immediate RISK_OFF", "Block all entries and send alert."),
 ]
 
@@ -148,6 +150,10 @@ def _build_status_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton("🔄 Jido", callback_data="act:jido_prompt"),
             InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
         ])
+        buttons.append([
+            InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
+            InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
+        ])
     buttons.append([
         InlineKeyboardButton("🔃 Refresh", callback_data="act:status_refresh"),
         InlineKeyboardButton("📊 Review", callback_data="act:review_run"),
@@ -216,6 +222,25 @@ def _count_open_positions() -> tuple[int, list[dict]]:
                 state["_key"] = key
                 positions.append(state)
     return len(positions), positions
+
+
+def _deactivate_dsl_state(pos: dict, reason: str) -> None:
+    """Mark a DSL state file as closed after user-initiated close."""
+    strat_key = pos.get("_key", "")
+    asset = pos.get("asset", "")
+    strat_dir = POSITION_STATE_DIR / strat_key
+    if not strat_dir.exists():
+        return
+    for f in strat_dir.glob("dsl-*.json"):
+        state = load_json(f)
+        if state and state.get("active") and state.get("asset") == asset:
+            state["active"] = False
+            state["closedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            state["closeReason"] = reason
+            with open(f, "w") as fh:
+                json.dump(state, fh, indent=2)
+                fh.write("\n")
+            break
 
 
 def _daily_stats(journal: list[dict]) -> dict:
@@ -320,6 +345,10 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton("⚡ Jido", callback_data="act:jido_prompt"),
             InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
             InlineKeyboardButton("🐋 Whale", callback_data="act:whale_run"),
+        ],
+        [
+            InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
+            InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
         ],
         [
             InlineKeyboardButton("⚙️ Settings", callback_data="act:settings_view"),
@@ -539,6 +568,65 @@ async def cmd_emergency_stop(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
 
 
+@authorized
+async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    _, positions = _count_open_positions()
+    if not positions:
+        await _safe_reply(update, "ℹ️ No open positions to close.")
+        return
+    pos_lines = []
+    for pos in positions:
+        asset = pos.get("asset", "?")
+        direction = pos.get("direction", "?")
+        roe = float(pos.get("currentRoe", 0) or 0)
+        pos_lines.append(f"  • {asset} {direction} ({roe:+.1f}%)")
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔴 CLOSE ALL", callback_data="act:flatten_confirm"),
+            InlineKeyboardButton("❌ Cancel", callback_data="act:flatten_cancel"),
+        ],
+    ])
+    await _safe_reply(
+        update,
+        f"🔴 *Flatten — Close All Positions*\n\n"
+        f"{len(positions)} open position(s):\n" + "\n".join(pos_lines) + "\n\n"
+        f"_This will close ALL positions immediately._\n"
+        f"_Are you sure?_",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
+
+
+@authorized
+async def cmd_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    _, positions = _count_open_positions()
+    if not positions:
+        await _safe_reply(update, "ℹ️ No open positions to close.")
+        return
+    buttons = []
+    for pos in positions:
+        asset = pos.get("asset", "?")
+        direction = pos.get("direction", "?")
+        roe = float(pos.get("currentRoe", 0) or 0)
+        strat_key = pos.get("_key", "")
+        label = f"{asset} {direction} ({roe:+.1f}%)"
+        callback = f"act:close_single:{strat_key}:{asset}"
+        buttons.append([InlineKeyboardButton(f"🔴 {label}", callback_data=callback)])
+    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")])
+    keyboard = InlineKeyboardMarkup(buttons)
+    await _safe_reply(
+        update,
+        "🔴 *Close Trade — Select Position*\n\n"
+        "Choose which position to close:",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
+
+
 # ---------------------------------------------------------------------------
 # /help — Full command reference
 # ---------------------------------------------------------------------------
@@ -564,6 +652,8 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/settings — View all rules, gates, and scores\n"
         "/set — Change a setting (usage: /set <key> <value>)\n\n"
         "*Safety*\n"
+        "/flatten — Close all open positions\n"
+        "/close — Close a specific position\n"
         "/emergency\\_stop — Immediate RISK\\_OFF\n\n"
         "_Any non-command text → Strategic Brain_"
     )
@@ -1439,7 +1529,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     logger.info("brain dispatch: hermes=%s query=%r", hermes_bin, message[:80])
-    await _safe_reply(update, "🧠 Thinking...")
+    progress_msg = await _progress_reply(update, "🤖 Thinking...")
 
     hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
     hermes_model = os.environ.get("HERMES_MODEL", "").strip()
@@ -1530,27 +1620,35 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         if returncode != 0:
-            # Show last 30 lines of stderr to capture the actual exception
             err_lines = stderr_text.splitlines() if stderr_text else []
             err_tail = "\n".join(err_lines[-30:]) if err_lines else f"exit code {returncode}"
             logger.error("brain error: rc=%d stderr_tail=%s", returncode, err_tail[:2000])
-            await _safe_reply(
-                update,
-                f"❌ Brain Error (rc={returncode})\n\n{err_tail[:3500]}",
-            )
+            reply_text = f"❌ Brain Error (rc={returncode})\n\n{err_tail[:3500]}"
+            if progress_msg:
+                try:
+                    await progress_msg.edit_text(reply_text)
+                except Exception:
+                    await _safe_reply(update, reply_text)
+            else:
+                await _safe_reply(update, reply_text)
             return
 
         if not stdout_text:
             stderr_hint = f"\n\n_stderr: {stderr_text[:500]}_" if stderr_text else ""
             if stderr_text and not stdout_text:
                 logger.error("brain empty output: stderr=%s", stderr_text[:300])
-            await _safe_reply(
-                update,
+            reply_text = (
                 f"⚠️ *Brain returned no output.*{stderr_hint}\n\n"
                 f"_Check that `OPENAI_API_KEY` and `OPENAI_BASE_URL` "
-                f"are set in Railway._",
-                parse_mode="Markdown",
+                f"are set in Railway._"
             )
+            if progress_msg:
+                try:
+                    await progress_msg.edit_text(reply_text, parse_mode="Markdown")
+                except Exception:
+                    await _safe_reply(update, reply_text, parse_mode="Markdown")
+            else:
+                await _safe_reply(update, reply_text, parse_mode="Markdown")
             return
 
         output = _strip_tui_artifacts(stdout_text)
@@ -1566,19 +1664,34 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if stderr_text and returncode == 0:
             logger.warning("brain stderr (rc=0): %s", stderr_text[:500])
 
-        await _safe_reply(
-            update,
-            f"🧠 {output}",
-        )
+        reply_text = f"🤖 {output}"
+        if progress_msg:
+            try:
+                await progress_msg.edit_text(reply_text)
+            except Exception:
+                await _safe_reply(update, reply_text)
+        else:
+            await _safe_reply(update, reply_text)
 
     except asyncio.TimeoutError:
-        await _safe_reply(
-            update,
-            "⏱ Brain timed out (120s limit).\n_Try a shorter query or retry._",
-        )
+        reply_text = "⏱ Brain timed out (120s limit).\n_Try a shorter query or retry._"
+        if progress_msg:
+            try:
+                await progress_msg.edit_text(reply_text)
+            except Exception:
+                await _safe_reply(update, reply_text)
+        else:
+            await _safe_reply(update, reply_text)
     except Exception as e:
         logger.error("brain exception: %s", e, exc_info=True)
-        await _safe_reply(update, f"❌ Brain error: {e}")
+        reply_text = f"❌ Brain error: {e}"
+        if progress_msg:
+            try:
+                await progress_msg.edit_text(reply_text)
+            except Exception:
+                await _safe_reply(update, reply_text)
+        else:
+            await _safe_reply(update, reply_text)
 
 
 # ---------------------------------------------------------------------------
@@ -1839,6 +1952,164 @@ async def _handle_action_callback(query, action: str) -> None:
             parse_mode="Markdown",
         )
 
+    elif action == "flatten_confirm":
+        await query.answer()
+        await _safe_edit(query, "⏳ Closing all positions...")
+        _, positions = _count_open_positions()
+        if not positions:
+            await _safe_edit(query, "ℹ️ No open positions found.")
+            return
+        results = []
+        for pos in positions:
+            asset = pos.get("asset", "?")
+            strat_key = pos.get("_key", "")
+            strategy_id = pos.get("strategyId", "")
+            close_script = (
+                "import sys; sys.path.insert(0,'scripts/lib'); "
+                "import senpi_common as sc; "
+                f"r = sc.mcporter_call('strategy_close_position', "
+                f"{{'strategyId': '{strategy_id}', 'asset': '{asset}'}}, timeout=15); "
+                "print('OK' if 'error' not in r else f\"FAIL:{r.get('error')}\")"
+            )
+            try:
+                proc = await asyncio.create_subprocess_exec(
+                    "python3", "-c", close_script,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    env=CHILD_ENV,
+                    cwd=str(STATE_DIR),
+                )
+                stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=20)
+                result = stdout.decode().strip()
+                if result.startswith("OK"):
+                    results.append(f"✅ {asset} — closed")
+                    _deactivate_dsl_state(pos, "user_flatten")
+                else:
+                    results.append(f"❌ {asset} — {result}")
+            except asyncio.TimeoutError:
+                results.append(f"❌ {asset} — timeout")
+            except Exception as e:
+                results.append(f"❌ {asset} — {e}")
+        await _safe_edit(query, "🔴 *Flatten Results*\n\n" + "\n".join(results), parse_mode="Markdown")
+
+    elif action == "flatten_cancel":
+        await _answer_and_edit(query, "✅ Flatten cancelled.")
+
+    elif action == "close_cancel":
+        await _answer_and_edit(query, "✅ Close cancelled.")
+
+    elif action.startswith("close_single_confirm:"):
+        parts = action.split(":", 2)
+        if len(parts) < 3:
+            await _answer_and_edit(query, "❌ Invalid close action.")
+            return
+        strat_key, asset = parts[1], parts[2]
+        await query.answer()
+        await _safe_edit(query, f"⏳ Closing {asset}...")
+        _, positions = _count_open_positions()
+        target = None
+        for pos in positions:
+            if pos.get("_key") == strat_key and pos.get("asset") == asset:
+                target = pos
+                break
+        if not target:
+            await _safe_edit(query, f"ℹ️ Position {asset} not found (may already be closed).")
+            return
+        strategy_id = target.get("strategyId", "")
+        close_script = (
+            "import sys; sys.path.insert(0,'scripts/lib'); "
+            "import senpi_common as sc; "
+            f"r = sc.mcporter_call('strategy_close_position', "
+            f"{{'strategyId': '{strategy_id}', 'asset': '{asset}'}}, timeout=15); "
+            "print('OK' if 'error' not in r else f\"FAIL:{r.get('error')}\")"
+        )
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "python3", "-c", close_script,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=CHILD_ENV,
+                cwd=str(STATE_DIR),
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=20)
+            result = stdout.decode().strip()
+            if result.startswith("OK"):
+                _deactivate_dsl_state(target, "user_close")
+                await _safe_edit(query, f"✅ Closed {asset}")
+            else:
+                await _safe_edit(query, f"❌ Failed to close {asset}\n{result}")
+        except asyncio.TimeoutError:
+            await _safe_edit(query, f"❌ Close {asset} timed out")
+        except Exception as e:
+            await _safe_edit(query, f"❌ Close {asset} error: {e}")
+
+    elif action.startswith("close_single:"):
+        parts = action.split(":", 2)
+        if len(parts) < 3:
+            await _answer_and_edit(query, "❌ Invalid close action.")
+            return
+        strat_key, asset = parts[1], parts[2]
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔴 CONFIRM", callback_data=f"act:close_single_confirm:{strat_key}:{asset}"),
+                InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel"),
+            ],
+        ])
+        await _answer_and_edit(
+            query,
+            f"🔴 *Close {asset}?*\n\n_This will close the position immediately._",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
+    elif action == "flatten_prompt":
+        _, positions = _count_open_positions()
+        if not positions:
+            await _answer_and_edit(query, "ℹ️ No open positions to close.")
+            return
+        pos_lines = []
+        for pos in positions:
+            asset = pos.get("asset", "?")
+            direction = pos.get("direction", "?")
+            roe = float(pos.get("currentRoe", 0) or 0)
+            pos_lines.append(f"  • {asset} {direction} ({roe:+.1f}%)")
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔴 CLOSE ALL", callback_data="act:flatten_confirm"),
+                InlineKeyboardButton("❌ Cancel", callback_data="act:flatten_cancel"),
+            ],
+        ])
+        await _answer_and_edit(
+            query,
+            f"🔴 *Flatten — Close All Positions*\n\n"
+            f"{len(positions)} open position(s):\n" + "\n".join(pos_lines) + "\n\n"
+            f"_This will close ALL positions immediately._",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
+    elif action == "close_prompt":
+        _, positions = _count_open_positions()
+        if not positions:
+            await _answer_and_edit(query, "ℹ️ No open positions to close.")
+            return
+        buttons = []
+        for pos in positions:
+            asset = pos.get("asset", "?")
+            direction = pos.get("direction", "?")
+            roe = float(pos.get("currentRoe", 0) or 0)
+            strat_key = pos.get("_key", "")
+            label = f"{asset} {direction} ({roe:+.1f}%)"
+            buttons.append([InlineKeyboardButton(f"🔴 {label}", callback_data=f"act:close_single:{strat_key}:{asset}")])
+        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")])
+        keyboard = InlineKeyboardMarkup(buttons)
+        await _answer_and_edit(
+            query,
+            "🔴 *Close Trade — Select Position*\n\nChoose which position to close:",
+            reply_markup=keyboard,
+            parse_mode="Markdown",
+        )
+
     else:
         await _answer_and_edit(query, f"⚠️ Unknown action: {action}")
 
@@ -1886,6 +2157,8 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("howl", cmd_howl))
     app.add_handler(CommandHandler("whale", cmd_whale))
     app.add_handler(CommandHandler("arena", cmd_arena))
+    app.add_handler(CommandHandler("flatten", cmd_flatten))
+    app.add_handler(CommandHandler("close", cmd_close))
     app.add_handler(CommandHandler("emergency_stop", cmd_emergency_stop))
     app.add_handler(CommandHandler("settings", cmd_settings))
     app.add_handler(CommandHandler("set", cmd_set))
