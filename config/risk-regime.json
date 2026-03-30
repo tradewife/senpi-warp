@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-03-30T16:08:00Z",
-  "updatedBy": "hermes-regime",
-  "reason": "No strong signals (BTC slope: -5.07%, ATR: 0.74%; ETH slope: -5.89%, ATR: 0.92%; funding normal)",
+  "updatedAt": "2026-03-30T08:01:00Z",
+  "updatedBy": "waifu-regime",
+  "reason": "No candle data available (No candle data in response)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
