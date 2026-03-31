@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-03-31T19:32:23.813423+00:00",
-  "updatedBy": "jido-emergency",
-  "reason": "Drawdown -51.11% persists (account $48.89 from peak $100.00). Overrode BASELINE->RISK_OFF (#6). Regime-classifier race condition ongoing.",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-31T20:00:51Z",
+  "updatedBy": "waifu-regime",
+  "reason": "No candle data available (No candle data in response)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
