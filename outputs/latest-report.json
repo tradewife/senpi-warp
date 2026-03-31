@@ -1,28 +1,63 @@
 {
-  "generatedAt": "2026-03-31T01:01:58Z",
-  "regime": "BASELINE",
-  "equity": 56.62,
-  "peakEquity": 100.0,
-  "drawdownPct": 43.38,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 43.4%"
+  "timestamp": "2026-03-31T02:03:32Z",
+  "source": "jido-cron",
+  "regime": "RISK_OFF",
+  "regimeReason": "Drawdown exceeds catastrophic threshold (36.5% > 20%)",
+  "equity": {
+    "current": 63.448517,
+    "peak": 100.0,
+    "drawdownPct": 36.6,
+    "dayStart": 63.45,
+    "dayChangePct": -0.0
+  },
+  "accountValue": 63.448517,
+  "withdrawable": 16.894155,
+  "positions": [
+    {
+      "coin": "AVAX",
+      "direction": "LONG",
+      "leverage": 10,
+      "leverageType": "cross",
+      "size": 51.78,
+      "entryPrice": 9.658,
+      "currentPrice": 8.9892,
+      "liquidationPrice": 8.1742,
+      "unrealizedPnl": -34.55,
+      "roePct": -69.1,
+      "positionValue": 465.54,
+      "marginUsed": 46.55,
+      "slPrice": 8.72,
+      "slOrderId": 365895928375,
+      "slOrderType": "MARKET",
+      "slBufferAboveLiq": 0.55,
+      "tpPrice": null,
+      "pctToLiq": 9.1,
+      "pctToSl": 3.0
+    }
   ],
-  "deadWeight": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ]
-  }
+    "catastrophicDrawdown": {
+      "limit": 20,
+      "current": 36.5,
+      "breached": true
+    },
+    "dailyLossLimit": {
+      "limit": 10,
+      "current": 0.0,
+      "breached": false
+    },
+    "consecutiveStopOuts": {
+      "limit": 4,
+      "current": 0,
+      "breached": false
+    }
+  },
+  "actionsTaken": [
+    "AVAX LONG SL widened: $8.45 -> $8.72 (old SL only $0.28 above liq, risk of wick-out liquidation)"
+  ],
+  "warnings": [
+    "RISK_OFF active \u2014 no new entries allowed",
+    "Drawdown at 36.5% \u2014 deeply underwater from $100 peak",
+    "AVAX position accounts for 73% of account value \u2014 high concentration risk"
+  ]
 }

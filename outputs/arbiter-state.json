@@ -1,20 +1,20 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 56.619937,
-  "dayStartEquity": 56.62,
+  "lastEquity": 63.448517,
+  "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T01:01:58Z",
+  "lastCheckAt": "2026-03-31T02:03:32Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -43.4% exceeds catastrophicDrawdownPct (20%). RISK_OFF confirmed.",
-      "timestamp": "2026-03-31T00:46:31Z"
+      "message": "Drawdown -36.5% exceeds catastrophicDrawdownPct (20%). RISK_OFF active.",
+      "timestamp": "2026-03-31T02:03:32Z"
     },
     {
-      "type": "DEEP_LOSS_POSITION",
-      "message": "AVAX LONG 10x ROE -82.8%. Entry $9.658, current $8.86, liq $8.17. SL at $8.45 active.",
-      "timestamp": "2026-03-31T00:46:31Z"
+      "type": "SL_ADJUSTED",
+      "message": "AVAX LONG SL widened from $8.45 to $8.72. Old SL was only $0.28 above liq ($8.174), risking wick-out. Buffer now $0.55.",
+      "timestamp": "2026-03-31T02:03:32Z"
     }
   ]
 }
