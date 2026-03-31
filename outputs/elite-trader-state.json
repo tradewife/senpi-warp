@@ -1,22 +1,17 @@
 {
-  "run_id": "c1aeb913",
-  "timestamp_aest": "2026-04-01T10:46:54.662580+11:00",
+  "run_id": "78f5d8ce",
+  "timestamp_aest": "2026-04-01T10:57:47.836568+11:00",
   "trending_universe": [
     "BTC",
     "ETH",
-    "SOL",
-    "XYZ:CL",
-    "XYZ:BRENTOIL",
-    "XYZ:XYZ100",
-    "XYZ:SP500",
-    "XYZ:SILVER"
+    "SOL"
   ],
   "signal_scores": [],
   "trades": [],
   "memory_writes": {
-    "graph_edges": 8,
+    "graph_edges": 0,
     "journal_rows": 0
   },
   "gaps": [],
-  "internal_memory_used": true
+  "internal_memory_used": false
 }

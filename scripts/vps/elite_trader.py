@@ -285,6 +285,9 @@ def discover_universe(all_mkts: list, sm_markets: dict, scanner_bias: dict) -> l
         asset = str(mkt.get("name", "")).upper()
         if not asset or asset in CORE_SYMBOLS or mkt.get("is_delisted"):
             continue
+        # Exclude XYZ DEX equities — we only trade crypto perps
+        if asset.startswith("XYZ:") or ":" in asset:
+            continue
 
         # Instruments format: data under context sub-dict
         ctx = mkt.get("context", mkt)
