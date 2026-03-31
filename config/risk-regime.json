@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-31T00:00:45Z",
-  "updatedBy": "waifu-regime",
-  "reason": "No candle data available (No candle data in response)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-31T00:46:31Z",
+  "updatedBy": "jido-emergency",
+  "reason": "Drawdown -43.4% exceeds catastrophicDrawdownPct (20%). AVAX position ROE -82.8%.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
