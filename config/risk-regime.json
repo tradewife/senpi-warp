@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-31T10:01:26.894570+00:00",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC slope=-0.00%, ETH slope=0.08%; BTC ATR=0.80%, ETH ATR=1.04%",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-31T10:18:00.326445+00:00",
+  "updatedBy": "jido-emergency",
+  "reason": "Drawdown -51.11% exceeds catastrophicDrawdownPct (20%). Account $48.89 from peak $100.00. Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,

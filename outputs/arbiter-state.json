@@ -1,9 +1,9 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 51.120625,
+  "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T09:33:31Z",
+  "lastCheckAt": "2026-03-31T10:18:00Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
     {
@@ -70,6 +70,21 @@
       "type": "SL_CLOSE_PROXIMITY",
       "message": "AVAX LONG SL at $8.72 is only 0.34% below current ($8.7495). Position imminent SL trigger. Buffer above liq $8.175 is $0.545.",
       "timestamp": "2026-03-31T09:33:31Z"
+    },
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -51.11% (account $48.89 from peak $100.00). No open positions \u2014 capital preserved at $48.89.",
+      "timestamp": "2026-03-31T10:18:00Z"
+    },
+    {
+      "type": "DAILY_LOSS_BREACH",
+      "message": "Daily loss 22.95% exceeds dailyLossLimitPct (10%). Day start $63.45, current $48.89.",
+      "timestamp": "2026-03-31T10:18:00Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown. Recurring override needed \u2014 race condition persists.",
+      "timestamp": "2026-03-31T10:18:00Z"
     }
   ]
 }
