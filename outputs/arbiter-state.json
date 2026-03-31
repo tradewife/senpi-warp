@@ -3,9 +3,19 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T10:18:00Z",
+  "lastCheckAt": "2026-03-31T18:16:44Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "timestamp": "2026-03-31T18:16:44Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#5). Regime-classifier reset to BASELINE at ~18:00Z despite 51% drawdown. Race condition still active.",
+      "timestamp": "2026-03-31T18:16:44Z"
+    },
     {
       "type": "CATASTROPHIC_DRAWDOWN",
       "message": "Drawdown -39.96% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",

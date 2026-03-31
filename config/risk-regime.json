@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-31T18:00:40Z",
-  "updatedBy": "waifu-regime",
-  "reason": "No candle data available (No candle data in response)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-31T18:16:44Z",
+  "updatedBy": "jido-emergency",
+  "reason": "Drawdown -51.11% exceeds catastrophicDrawdownPct (20%). No open positions. Capital preserved at $48.89. Overrode BASELINE->RISK_OFF. Regime-classifier race condition persists.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,

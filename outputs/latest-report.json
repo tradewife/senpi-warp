@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-31T10:18:00Z",
+  "timestamp": "2026-03-31T18:16:44Z",
   "regime": "RISK_OFF",
   "regimeOverriddenFrom": "BASELINE",
   "accountValue": 48.887581,
@@ -10,9 +10,20 @@
   "openOrders": [],
   "withdrawable": 48.887581,
   "actions": [
-    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (#4)"
+    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (#5)",
+    "NO_POSITIONS: All clear \u2014 no open positions, no open orders"
   ],
   "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "timestamp": "2026-03-31T18:16:44Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#5). Regime-classifier reset to BASELINE at ~18:00Z despite 51% drawdown. Race condition still active.",
+      "timestamp": "2026-03-31T18:16:44Z"
+    },
     {
       "type": "CATASTROPHIC_DRAWDOWN",
       "message": "Drawdown -39.96% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
@@ -93,5 +104,13 @@
       "message": "Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown. Recurring override needed \u2014 race condition persists.",
       "timestamp": "2026-03-31T10:18:00Z"
     }
-  ]
+  ],
+  "guardrails": {
+    "catastrophicDrawdownPct": 20,
+    "dailyLossLimitPct": 10,
+    "maxConsecutiveStopOuts": 4,
+    "drawdownBreached": true,
+    "dailyLossBreached": true
+  },
+  "regimeOverrideCount": 5
 }
