@@ -1,15 +1,20 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 63.448517,
+  "lastEquity": 60.038263,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T02:03:32Z",
+  "lastCheckAt": "2026-03-31T23:47:30Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -36.5% exceeds catastrophicDrawdownPct (20%). RISK_OFF active.",
-      "timestamp": "2026-03-31T02:03:32Z"
+      "message": "Drawdown -39.96% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
+      "timestamp": "2026-03-31T23:47:30Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF. Regime-classifier incorrectly set BASELINE at 07:01Z despite 40% drawdown.",
+      "timestamp": "2026-03-31T23:47:30Z"
     },
     {
       "type": "SL_ADJUSTED",

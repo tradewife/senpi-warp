@@ -1,63 +1,70 @@
 {
-  "timestamp": "2026-03-31T02:03:32Z",
-  "source": "jido-cron",
-  "regime": "RISK_OFF",
-  "regimeReason": "Drawdown exceeds catastrophic threshold (36.5% > 20%)",
-  "equity": {
-    "current": 63.448517,
-    "peak": 100.0,
-    "drawdownPct": 36.6,
-    "dayStart": 63.45,
-    "dayChangePct": -0.0
+  "timestamp": "2026-03-31T23:47:30Z",
+  "runBy": "jido",
+  "regime": {
+    "current": "RISK_OFF",
+    "previous": "BASELINE",
+    "changed": true,
+    "changeReason": "Catastrophic drawdown 39.96% exceeds threshold 20%. Overriding regime-classifier mistake."
   },
-  "accountValue": 63.448517,
-  "withdrawable": 16.894155,
+  "equity": {
+    "peak": 100.0,
+    "current": 60.038263,
+    "dayStart": 63.45,
+    "drawdownPct": 39.96,
+    "dailyChangePct": -5.38,
+    "withdrawable": 13.822024
+  },
   "positions": [
     {
       "coin": "AVAX",
       "direction": "LONG",
-      "leverage": 10,
-      "leverageType": "cross",
       "size": 51.78,
       "entryPrice": 9.658,
-      "currentPrice": 8.9892,
-      "liquidationPrice": 8.1742,
-      "unrealizedPnl": -34.55,
-      "roePct": -69.1,
-      "positionValue": 465.54,
-      "marginUsed": 46.55,
-      "slPrice": 8.72,
-      "slOrderId": 365895928375,
-      "slOrderType": "MARKET",
-      "slBufferAboveLiq": 0.55,
-      "tpPrice": null,
-      "pctToLiq": 9.1,
-      "pctToSl": 3.0
+      "currentPrice": 8.9261,
+      "notional": 462.16239,
+      "leverage": 10,
+      "leverageType": "cross",
+      "unrealizedPnl": -37.931439,
+      "roePct": -75.85,
+      "liquidationPrice": 8.1747,
+      "pctToLiquidation": 8.42,
+      "stopLoss": {
+        "exists": true,
+        "price": 8.72,
+        "orderType": "Stop Market",
+        "orderId": 365895928375,
+        "bufferAboveLiq": 0.5453,
+        "bufferAdequate": true,
+        "pctFromCurrent": 2.31
+      },
+      "funding": 0.544001,
+      "status": "CRITICAL"
     }
   ],
   "guardrails": {
     "catastrophicDrawdown": {
       "limit": 20,
-      "current": 36.5,
+      "actual": 39.96,
       "breached": true
     },
-    "dailyLossLimit": {
+    "dailyLoss": {
       "limit": 10,
-      "current": 0.0,
+      "actual": 5.38,
       "breached": false
     },
     "consecutiveStopOuts": {
       "limit": 4,
-      "current": 0,
+      "actual": 0,
       "breached": false
     }
   },
   "actionsTaken": [
-    "AVAX LONG SL widened: $8.45 -> $8.72 (old SL only $0.28 above liq, risk of wick-out liquidation)"
+    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (regime-classifier error corrected)",
+    "SL_VERIFIED: AVAX LONG SL at $8.72, $0.55 buffer above liq $8.17 — adequate"
   ],
   "warnings": [
-    "RISK_OFF active \u2014 no new entries allowed",
-    "Drawdown at 36.5% \u2014 deeply underwater from $100 peak",
-    "AVAX position accounts for 73% of account value \u2014 high concentration risk"
+    "Regime-classifier at 07:01Z set BASELINE despite 40% drawdown — needs investigation",
+    "AVAX LONG at -75.8% ROE — SL trigger would close at ~-$10.10 total loss from peak"
   ]
 }
