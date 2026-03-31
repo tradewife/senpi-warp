@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-31T08:01:00Z",
-  "updatedBy": "waifu-regime",
-  "reason": "No candle data available (No candle data in response)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-31T08:34:48Z",
+  "updatedBy": "jido-emergency",
+  "reason": "Drawdown 42.16% exceeds catastrophicDrawdownPct (20%). Regime-classifier incorrectly set BASELINE at 08:01Z despite ongoing catastrophic drawdown. JIDO override #2.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
