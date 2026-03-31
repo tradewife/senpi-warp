@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-03-31T23:47:30Z",
-  "updatedBy": "jido-emergency",
-  "reason": "Catastrophic drawdown 39.96% (peakEquity=100, currentEquity=60.04) exceeds catastrophicDrawdownPct=20%. AVAX LONG -75.8% ROE. Overriding BASELINE set by regime-classifier at 07:01Z.",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-31T08:01:00Z",
+  "updatedBy": "waifu-regime",
+  "reason": "No candle data available (No candle data in response)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
