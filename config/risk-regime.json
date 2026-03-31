@@ -1,8 +1,8 @@
 {
   "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-01T08:50:00Z",
-  "updatedBy": "manual-override",
-  "reason": "Catastrophic DD -51.1% (limit 20%). Manual override while fixing arbiter race condition. Peak $100 -> current $48.89.",
+  "updatedAt": "2026-03-31T23:01:48Z",
+  "updatedBy": "waifu-regime (arbiter-override)",
+  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
