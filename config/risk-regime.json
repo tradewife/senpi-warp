@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-01T07:01:54Z",
-  "updatedBy": "jido-emergency",
-  "reason": "CATASTROPHIC_DRAWDOWN: -51.11% ($48.89 from peak $100.00). Regime-classifier race condition — override #7.",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-31T21:00:45Z",
+  "updatedBy": "waifu-regime",
+  "reason": "No candle data available (No candle data in response)",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
