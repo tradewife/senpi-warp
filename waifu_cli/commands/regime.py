@@ -89,6 +89,44 @@ def _run(dry_run: bool):
     click.echo(f"[regime] {sc.now_iso()} starting{' (dry-run)' if dry_run else ''}")
     sync_before()
 
+    # Check arbiter state FIRST — never override catastrophic DD or daily loss
+    arb_state = sc.load_json(sc.OUTPUTS_DIR / "arbiter-state.json", default={})
+    peak_equity = float(arb_state.get("peakEquity", 0))
+    last_equity = float(arb_state.get("lastEquity", 0))
+    day_start_equity = float(arb_state.get("dayStartEquity", 0))
+    regime_cfg = sc.load_regime()
+    guardrails = regime_cfg.get("globalGuardrails", {})
+
+    arbiter_override = False
+    arbiter_reason = ""
+
+    if peak_equity > 0 and last_equity > 0:
+        peak_dd = (peak_equity - last_equity) / peak_equity * 100
+        catastrophic_pct = float(guardrails.get("catastrophicDrawdownPct", 20))
+        if peak_dd >= catastrophic_pct:
+            arbiter_override = True
+            arbiter_reason = f"Catastrophic DD {peak_dd:.1f}% (limit {catastrophic_pct}%)"
+
+    if not arbiter_override and day_start_equity > 0 and last_equity > 0:
+        daily_dd = (day_start_equity - last_equity) / day_start_equity * 100
+        daily_loss_pct = float(guardrails.get("dailyLossLimitPct", 10))
+        if daily_dd >= daily_loss_pct:
+            arbiter_override = True
+            arbiter_reason = f"Daily loss {daily_dd:.1f}% (limit {daily_loss_pct}%)"
+
+    if arbiter_override:
+        click.echo(f"  ARBITER OVERRIDE: forcing RISK_OFF — {arbiter_reason}")
+        if not dry_run:
+            current = sc.load_regime()
+            current["riskMode"] = "RISK_OFF"
+            current["updatedAt"] = sc.now_iso()
+            current["updatedBy"] = "waifu-regime (arbiter-override)"
+            current["reason"] = arbiter_reason
+            sc.save_json(sc.RISK_REGIME_FILE, current)
+            sync_after(f"waifu regime: RISK_OFF (arbiter override)")
+        click.echo(f"[regime] {sc.now_iso()} done (arbiter override)")
+        return
+
     mode, reason = _classify_regime()
     click.echo(f"  -> {mode} ({reason})")
 

@@ -1654,9 +1654,29 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         output = _strip_tui_artifacts(stdout_text)
 
         # Deduplicate: Hermes may echo the response twice (streaming + final)
+        # Strategy 1: exact half-split (original)
         half = len(output) // 2
         if half > 50 and output[:half].strip() == output[half:].strip():
             output = output[:half].strip()
+        else:
+            # Strategy 2: find duplicated block — split on double newline,
+            # check if any large consecutive chunk appears twice
+            chunks = output.split("\n\n")
+            if len(chunks) >= 4:
+                # Look for the largest repeated chunk sequence
+                best_dedup = None
+                for split_at in range(1, len(chunks)):
+                    first_half = "\n\n".join(chunks[:split_at]).strip()
+                    second_half = "\n\n".join(chunks[split_at:]).strip()
+                    if (
+                        len(first_half) > 100
+                        and len(second_half) > 100
+                        and first_half == second_half
+                    ):
+                        best_dedup = first_half
+                        break
+                if best_dedup:
+                    output = best_dedup
 
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"

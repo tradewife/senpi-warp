@@ -29,6 +29,7 @@ from senpi_common import (
     save_json,
     load_strategies,
     get_open_positions,
+    get_all_open_positions,
     get_enabled_strategies,
     STRATEGIES_FILE,
     mcporter_call,
@@ -311,22 +312,34 @@ def main():
         if peak > 0:
             peak_drawdown = (peak - equity) / peak * 100
             if peak_drawdown >= catastrophic_pct:
-                log(
-                    f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL"
-                )
-                flatten_all()
-                set_risk_mode(
-                    "RISK_OFF",
-                    f"CATASTROPHIC: {peak_drawdown:.1f}% drawdown from peak. ALL POSITIONS CLOSED.",
-                    "risk-arbiter",
-                )
-                arb_state["flattenedAt"] = now_iso()
-                send_telegram(
-                    f"🚨🚨 CATASTROPHIC FLATTEN 🚨🚨\n"
-                    f"Drawdown: {peak_drawdown:.1f}% from peak\n"
-                    f"All positions closed. Manual intervention required."
-                )
-                git_sync("EMERGENCY: risk arbiter flatten")
+                # Idempotency: skip if already flattened and no open positions
+                already_flattened = arb_state.get("flattenedAt") is not None
+                open_positions = get_all_open_positions()
+                if already_flattened and not open_positions:
+                    # Already handled — just ensure regime stays RISK_OFF
+                    if regime.get("riskMode") != "RISK_OFF":
+                        set_risk_mode(
+                            "RISK_OFF",
+                            f"CATASTROPHIC persists: {peak_drawdown:.1f}% DD. Already flattened.",
+                            "risk-arbiter",
+                        )
+                else:
+                    log(
+                        f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL"
+                    )
+                    flatten_all()
+                    set_risk_mode(
+                        "RISK_OFF",
+                        f"CATASTROPHIC: {peak_drawdown:.1f}% drawdown from peak. ALL POSITIONS CLOSED.",
+                        "risk-arbiter",
+                    )
+                    arb_state["flattenedAt"] = now_iso()
+                    send_telegram(
+                        f"🚨🚨 CATASTROPHIC FLATTEN 🚨🚨\n"
+                        f"Drawdown: {peak_drawdown:.1f}% from peak\n"
+                        f"All positions closed. Manual intervention required."
+                    )
+                    git_sync("EMERGENCY: risk arbiter flatten")
 
         # --- CHECK 3: Consecutive stop-outs ---
         max_stop_outs = guardrails.get("maxConsecutiveStopOuts", 4)
