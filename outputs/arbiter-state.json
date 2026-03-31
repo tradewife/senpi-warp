@@ -1,9 +1,9 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 57.842196,
+  "lastEquity": 54.087619,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T08:34:48Z",
+  "lastCheckAt": "2026-03-31T09:04:25Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
     {
@@ -35,6 +35,26 @@
       "type": "SL_CLOSE_PROXIMITY",
       "message": "AVAX LONG SL at $8.72 is only 1.77% below current ($8.877). SL buffer above liq $8.174 is $0.546 \u2014 adequate but position is highly stressed.",
       "timestamp": "2026-03-31T08:34:48Z"
+    },
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -45.91% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
+      "timestamp": "2026-03-31T09:04:25Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#3). Regime-classifier reset to BASELINE at 09:00:28Z despite 45.9% drawdown. Recurring override needed \u2014 race condition persists.",
+      "timestamp": "2026-03-31T09:04:25Z"
+    },
+    {
+      "type": "DAILY_LOSS_BREACH",
+      "message": "Daily loss 14.76% exceeds dailyLossLimitPct (10%). Day start $63.45, current $54.09.",
+      "timestamp": "2026-03-31T09:04:25Z"
+    },
+    {
+      "type": "SL_CLOSE_PROXIMITY",
+      "message": "AVAX LONG SL at $8.72 is only 1.04% below current ($8.8113). Position highly stressed \u2014 any further decline triggers SL. Buffer above liq $8.175 is $0.545.",
+      "timestamp": "2026-03-31T09:04:25Z"
     }
   ]
 }

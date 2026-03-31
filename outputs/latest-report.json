@@ -1,50 +1,53 @@
 {
-  "timestamp": "2026-03-31T08:34:48Z",
+  "timestamp": "2026-03-31T09:04:25Z",
+  "runBy": "jido",
   "regime": "RISK_OFF",
-  "previousRegime": "BASELINE",
-  "regimeChangeReason": "CATASTROPHIC_DRAWDOWN + REGIME_OVERRIDE (#2)",
-  "equity": 57.842196,
-  "peakEquity": 100.0,
-  "drawdownPct": 42.16,
-  "dayStartEquity": 63.45,
-  "dailyLossPct": 8.84,
+  "regimeOverridden": true,
+  "overrideCount": 3,
+  "equity": {
+    "current": 54.087619,
+    "peak": 100.0,
+    "drawdownPct": 45.91,
+    "dayStart": 63.45,
+    "dailyLossPct": 14.76
+  },
   "positions": [
     {
       "coin": "AVAX",
       "direction": "LONG",
       "size": 51.78,
-      "entryPrice": 9.658,
-      "currentPrice": 8.877,
+      "entryPx": 9.658,
+      "currentPx": 8.8113,
       "leverage": 10,
-      "unrealizedPnl": -40.12,
-      "roePct": -80.23,
-      "liquidationPrice": 8.174,
+      "marginUsed": 45.622322,
+      "unrealizedPnl": -43.870605,
+      "roePct": -87.72,
+      "liquidationPx": 8.175,
       "slPrice": 8.72,
-      "slBufferAboveLiq": 0.546,
-      "distanceToSl": 0.157,
-      "distanceToSlPct": 1.77,
-      "marginUsed": 45.997,
-      "fundingAllTime": 0.55
+      "slType": "Stop Market (reduce-only)",
+      "slDistancePct": 1.04,
+      "slBufferAboveLiq": 0.545,
+      "status": "CRITICAL \u2014 SL 1.04% away, drawdown -87.7% ROE"
     }
   ],
   "guardrails": {
     "catastrophicDrawdownPct": 20,
-    "currentDrawdownPct": 42.16,
+    "currentDrawdownPct": 45.91,
     "catastrophicBreached": true,
     "dailyLossLimitPct": 10,
-    "dailyLossPct": 8.84,
-    "dailyBreached": false,
+    "currentDailyLossPct": 14.76,
+    "dailyLossBreached": true,
     "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4,
-    "stopOutsBreached": false
+    "maxConsecutiveStopOuts": 4
   },
-  "actionsTaken": [
-    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (regime-classifier keeps undoing)",
-    "SL verified: AVAX $8.72 Stop Market, $0.55 buffer above liq \u2014 adequate"
+  "actions": [
+    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (#3)",
+    "SL_VERIFIED: AVAX SL at $8.72, buffer $0.545 above liq",
+    "NO_NEW_SL: Existing SL adequate, position too stressed to tighten"
   ],
   "warnings": [
-    "RECURRING: Regime-classifier (waifu-regime cron) keeps resetting RISK_OFF to BASELINE. Consider disabling waifu-regime or adding drawdown-awareness to it.",
-    "AVAX SL only 1.77% below current price \u2014 any further drop may trigger stop-out.",
-    "Account value $57.84 with $11.84 withdrawable. Further losses will accelerate liquidation proximity."
+    "REGIME_RACE_CONDITION: waifu-regime classifier keeps resetting to BASELINE despite 45.9% drawdown. Third override in ~21 hours.",
+    "SL_CLOSE_PROXIMITY: AVAX SL only 1.04% below current price",
+    "POSITION_STRESS: -87.7% ROE on AVAX LONG, near total loss"
   ]
 }
