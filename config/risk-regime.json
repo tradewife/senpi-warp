@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-03-31T09:04:25Z",
-  "updatedBy": "jido-emergency",
-  "reason": "JIDO override #3. Drawdown -45.91% (catastrophic > 20%), daily loss -14.76% (> 10%). Regime-classifier keeps resetting to BASELINE despite drawdown. Equity $54.09 from peak $100.00.",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-31T10:01:26.894570+00:00",
+  "updatedBy": "hermes-regime",
+  "reason": "BTC slope=-0.00%, ETH slope=0.08%; BTC ATR=0.80%, ETH ATR=1.04%",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
