@@ -1,49 +1,28 @@
 {
-  "generatedAt": "2026-03-31T00:46:31Z",
-  "regime": "RISK_OFF",
-  "accountValue": 56.619937,
+  "generatedAt": "2026-03-31T01:01:58Z",
+  "regime": "BASELINE",
+  "equity": 56.62,
   "peakEquity": 100.0,
-  "drawdownPct": 43.4,
-  "positions": [
-    {
-      "coin": "AVAX",
-      "direction": "LONG",
-      "leverage": 10,
-      "entryPrice": 9.658,
-      "currentPrice": 8.8595,
-      "size": 51.78,
-      "notional": 458.7,
-      "unrealizedPnl": -41.39,
-      "roePct": -82.8,
-      "liquidationPrice": 8.1739,
-      "slPrice": 8.45,
-      "slOrderType": "Stop Market",
-      "slBufferAboveLiq": 0.28,
-      "slActive": true,
-      "distanceToSlPct": 4.6,
-      "distanceToLiqPct": 7.7
-    }
+  "drawdownPct": 43.38,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 43.4%"
   ],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdown": {
-      "threshold": 20,
-      "actual": 43.4,
-      "breached": true
-    },
-    "dailyLossLimit": {
-      "threshold": 10,
-      "actual": "N/A (day start ~$56.62)",
-      "breached": false
-    },
-    "consecutiveStopOuts": {
-      "threshold": 4,
-      "actual": 0,
-      "breached": false
-    }
-  },
-  "actionsTaken": [
-    "RISK_OFF confirmed \u2014 drawdown remains above catastrophic threshold",
-    "AVAX SL verified active at $8.45 (Stop Market) \u2014 no changes needed"
-  ],
-  "warnings": []
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ]
+  }
 }
