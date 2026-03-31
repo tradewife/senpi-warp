@@ -190,6 +190,9 @@ def write_journal_row(row: dict):
     conn.close()
 
 
+DRY_RUN = "--dry-run" in sys.argv
+
+
 def check_preconditions() -> dict:
     if not os.environ.get("SENPI_AUTH_TOKEN") and not os.environ.get("SENPI_API_KEY"):
         raise RuntimeError("No Senpi auth token - aborting ELITE-TRADER")
@@ -197,9 +200,12 @@ def check_preconditions() -> dict:
     regime_cfg = load_regime()
     risk_mode = regime_cfg.get("riskMode", "BASELINE")
 
-    if risk_mode == "RISK_OFF":
+    if risk_mode == "RISK_OFF" and not DRY_RUN:
         send_telegram("? ELITE-TRADER: RISK_OFF regime - no new entries.")
         raise SystemExit("RISK_OFF")
+    elif risk_mode == "RISK_OFF" and DRY_RUN:
+        log("ELITE-TRADER: RISK_OFF bypassed (dry-run mode)")
+        risk_mode = "BASELINE"  # Use BASELINE params for scan
 
     active = regime_cfg.get("regimes", {}).get(risk_mode, {})
     max_slots = min(active.get("maxSlots", 2), MAX_ELITE_SLOTS)
@@ -224,7 +230,14 @@ def count_open_slots() -> int:
 def fetch_sm_markets() -> dict:
     sm_raw = mcporter_call("leaderboard_get_markets", {})
     sm_markets = {}
-    for m in sm_raw.get("data", {}).get("markets", []) or []:
+    raw_markets = sm_raw.get("data", sm_raw)
+    if isinstance(raw_markets, dict):
+        raw_markets = raw_markets.get("markets", [])
+    if not isinstance(raw_markets, list):
+        raw_markets = []
+    for m in raw_markets:
+        if not isinstance(m, dict):
+            continue
         asset = m.get("token", m.get("asset", ""))
         if asset:
             sm_markets[asset] = {
@@ -267,15 +280,20 @@ def build_scanner_bias(pending_entries: list) -> dict:
 def discover_universe(all_mkts: list, sm_markets: dict, scanner_bias: dict) -> list:
     candidates = []
     for mkt in all_mkts:
-        asset = mkt.get("token", mkt.get("symbol", mkt.get("asset", "")))
-        if not asset or asset in CORE_SYMBOLS:
+        if not isinstance(mkt, dict):
             continue
-        vol24 = float(mkt.get("volume24h", mkt.get("vol24h", 0)) or 0)
+        asset = str(mkt.get("name", "")).upper()
+        if not asset or asset in CORE_SYMBOLS or mkt.get("is_delisted"):
+            continue
+
+        # Instruments format: data under context sub-dict
+        ctx = mkt.get("context", mkt)
+        vol24 = float(ctx.get("dayNtlVlm", ctx.get("volume24h", 0)) or 0)
         if vol24 < MIN_VOL_24H_USD:
             continue
 
-        oi = float(mkt.get("openInterest", mkt.get("oi", 0)) or 0)
-        fr = float(mkt.get("fundingRate", mkt.get("funding", 0)) or 0)
+        oi = float(ctx.get("openInterest", 0) or 0)
+        fr = float(ctx.get("funding", 0) or 0)
         sm = sm_markets.get(asset, {})
         sb = scanner_bias.get(asset, {})
 
@@ -314,7 +332,8 @@ def compute_gss(
 ) -> dict:
     score = {k: 0.0 for k in WEIGHTS}
 
-    fr = float(mkt.get("fundingRate", mkt.get("funding", 0)) or 0)
+    ctx = mkt.get("context", mkt)
+    fr = float(ctx.get("funding", mkt.get("fundingRate", 0)) or 0)
     fr8h = fr * 3
     score["funding_stretch"] = min(abs(fr8h) / 0.0001, 1.0)
 
@@ -378,48 +397,50 @@ def build_trade(candidate: dict, account_equity: float, kg_triples: list) -> dic
     direction = candidate["direction"]
     gss = candidate["gss"]
 
-    candles_1h = mcporter_call(
-        "market_get_candles", {"asset": asset, "interval": "1h", "limit": 20}
-    )
-    c1h = candles_1h.get("data", candles_1h.get("candles", []))
+    # Fetch candles + context via market_get_asset_data (single call)
+    ad = mcporter_call("market_get_asset_data", {
+        "asset": asset,
+        "candle_intervals": ["1h", "4h"],
+        "include_order_book": True,
+        "include_funding": False,
+    }, timeout=20)
+    ad_data = ad.get("data", ad)
+
+    # Parse candles
+    candles_map = ad_data.get("candles", {})
+    c1h = candles_map.get("1h", [])
     if not c1h or len(c1h) < 10:
         return None
 
-    closes = [
-        float(c.get("close", c.get("c", 0)))
-        for c in c1h[-14:]
-        if c.get("close", c.get("c"))
-    ]
+    closes = [float(c.get("c", c.get("close", 0))) for c in c1h[-14:] if float(c.get("c", c.get("close", 0))) > 0]
     tr = [abs(closes[i] - closes[i - 1]) / closes[i - 1] for i in range(1, len(closes))]
     atr = sum(tr) / len(tr) * closes[-1] if tr else closes[-1] * 0.01
 
-    candles_4h = mcporter_call(
-        "market_get_candles", {"asset": asset, "interval": "4h", "limit": 10}
-    )
-    c4h = candles_4h.get("data", candles_4h.get("candles", []))
+    # 4h slope
+    c4h = candles_map.get("4h", [])
     if c4h and len(c4h) >= 5:
-        closes_4h = [float(c.get("close", c.get("c", 0))) for c in c4h]
-        slope = (closes_4h[-1] - closes_4h[0]) / closes_4h[0] * 100
+        closes_4h = [float(c.get("c", c.get("close", 0))) for c in c4h]
+        slope = (closes_4h[-1] - closes_4h[0]) / closes_4h[0] * 100 if closes_4h[0] > 0 else 0
         if direction == "LONG" and slope < -1.5:
             return None
         if direction == "SHORT" and slope > 1.5:
             return None
 
-    ob = mcporter_call("market_get_orderbook", {"asset": asset}, timeout=10)
-    ob_data = ob.get("data", ob)
-    bids = ob_data.get("bids", []) if isinstance(ob_data, dict) else []
-    asks = ob_data.get("asks", []) if isinstance(ob_data, dict) else []
-    best_bid = float(bids[0][0]) if bids else 0
-    best_ask = float(asks[0][0]) if asks else 1
+    # Mark price from asset context
+    ctx = ad_data.get("asset_context", ad_data)
+    mark = float(ctx.get("markPx", ctx.get("markPrice", closes[-1] if closes else 1)) or 1)
 
-    specs = mcporter_call("market_get_instrument_specs", {"asset": asset}, timeout=10)
-    spec_data = specs.get("data", specs)
-    tick = float(spec_data.get("tickSize", 0.0001) or 0)
-    lot = float(spec_data.get("lotSize", 0.01) or 1)
+    # Order book from asset data (may be empty)
+    ob = ad_data.get("order_book", {})
+    levels = ob.get("levels", {})
+    bids = levels.get("bids", []) if isinstance(levels, dict) else []
+    asks = levels.get("asks", []) if isinstance(levels, dict) else []
+    best_bid = float(bids[0][0]) if bids else mark * 0.9999
+    best_ask = float(asks[0][0]) if asks else mark * 1.0001
 
-    ad = mcporter_call("market_get_asset_data", {"asset": asset}, timeout=10)
-    ad_data = ad.get("data", ad)
-    mark = float(ad_data.get("markPrice", ad_data.get("mark", 0)) or 1)
+    # Tick/lot from instruments data (cached in candidate if available)
+    tick = 0.01
+    lot = 0.001
 
     if direction == "LONG":
         alo_price = min(mark - 0.3 * atr, best_bid)
@@ -506,6 +527,12 @@ def execute_trade(
 ) -> dict:
     asset = trade["asset"]
     direction = trade["direction"]
+
+    if DRY_RUN:
+        log(f"ELITE-TRADER DRY-RUN: would queue {direction} {asset} "
+            f"gss={trade['entryScore']:.2f} px={trade['price']} "
+            f"lev={trade['leverage']}x margin=${trade['marginUsd']}")
+        return {"queued": False, "asset": asset, "dry_run": True}
 
     add_pending_entry(
         {
@@ -689,11 +716,12 @@ def main():
         sm_markets = fetch_sm_markets()
         scanner_bias = build_scanner_bias(pending_entries)
 
-        all_mkts_raw = mcporter_call("market_get_prices", {})
+        # Use market_list_instruments for volume/OI/funding (not just prices)
+        all_mkts_raw = mcporter_call("market_list_instruments", {})
         all_mkts = all_mkts_raw.get("data", all_mkts_raw)
         if isinstance(all_mkts, dict):
-            all_mkts = list(all_mkts.values())
-        if not all_mkts:
+            all_mkts = all_mkts.get("instruments", all_mkts.get("assets", list(all_mkts.values())))
+        if not isinstance(all_mkts, list):
             all_mkts = []
 
         universe = discover_universe(all_mkts, sm_markets, scanner_bias)
@@ -701,11 +729,7 @@ def main():
         scored = []
         for asset in universe:
             mkt = next(
-                (
-                    m
-                    for m in all_mkts
-                    if m.get("token", m.get("symbol", m.get("asset", ""))) == asset
-                ),
+                (m for m in all_mkts if isinstance(m, dict) and m.get("name", "").upper() == asset),
                 None,
             )
             if not mkt:
@@ -766,7 +790,7 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--stale":
+    if "--stale" in sys.argv:
         check_stale_elite_orders()
     else:
         main()
