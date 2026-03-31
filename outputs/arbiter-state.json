@@ -1,9 +1,9 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 54.087619,
+  "lastEquity": 51.120625,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T09:04:25Z",
+  "lastCheckAt": "2026-03-31T09:33:31Z",
   "dayStartDate": "2026-03-31",
   "alerts": [
     {
@@ -55,6 +55,21 @@
       "type": "SL_CLOSE_PROXIMITY",
       "message": "AVAX LONG SL at $8.72 is only 1.04% below current ($8.8113). Position highly stressed \u2014 any further decline triggers SL. Buffer above liq $8.175 is $0.545.",
       "timestamp": "2026-03-31T09:04:25Z"
+    },
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -48.88% (worsening from -45.91%). Account value $51.12 from peak $100.00.",
+      "timestamp": "2026-03-31T09:33:31Z"
+    },
+    {
+      "type": "DAILY_LOSS_BREACH",
+      "message": "Daily loss 19.43% exceeds dailyLossLimitPct (10%). Day start $63.45, current $51.12.",
+      "timestamp": "2026-03-31T09:33:31Z"
+    },
+    {
+      "type": "SL_CLOSE_PROXIMITY",
+      "message": "AVAX LONG SL at $8.72 is only 0.34% below current ($8.7495). Position imminent SL trigger. Buffer above liq $8.175 is $0.545.",
+      "timestamp": "2026-03-31T09:33:31Z"
     }
   ]
 }

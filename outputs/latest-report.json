@@ -1,53 +1,71 @@
 {
-  "timestamp": "2026-03-31T09:04:25Z",
-  "runBy": "jido",
+  "timestamp": "2026-03-31T09:33:31Z",
   "regime": "RISK_OFF",
-  "regimeOverridden": true,
-  "overrideCount": 3,
+  "regimeUpdatedBy": "jido-emergency",
   "equity": {
-    "current": 54.087619,
+    "current": 51.120625,
     "peak": 100.0,
-    "drawdownPct": 45.91,
     "dayStart": 63.45,
-    "dailyLossPct": 14.76
+    "drawdownPct": 48.88,
+    "dailyLossPct": 19.43
   },
   "positions": [
     {
       "coin": "AVAX",
       "direction": "LONG",
       "size": 51.78,
-      "entryPx": 9.658,
-      "currentPx": 8.8113,
-      "leverage": 10,
-      "marginUsed": 45.622322,
-      "unrealizedPnl": -43.870605,
-      "roePct": -87.72,
-      "liquidationPx": 8.175,
+      "entryPrice": 9.658,
+      "currentPrice": 8.7495,
+      "notional": 453.26,
+      "unrealizedPnl": -46.84,
+      "roePct": -93.66,
+      "liquidationPrice": 8.1749833303,
+      "pctAboveLiq": 6.57,
       "slPrice": 8.72,
-      "slType": "Stop Market (reduce-only)",
-      "slDistancePct": 1.04,
+      "slPctBelowCurrent": 0.34,
       "slBufferAboveLiq": 0.545,
-      "status": "CRITICAL \u2014 SL 1.04% away, drawdown -87.7% ROE"
+      "leverage": 10,
+      "marginUsed": 45.33,
+      "fundingSinceOpen": 0.555
     }
   ],
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
-    "currentDrawdownPct": 45.91,
-    "catastrophicBreached": true,
-    "dailyLossLimitPct": 10,
-    "currentDailyLossPct": 14.76,
-    "dailyLossBreached": true,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
+    "catastrophicDrawdown": {
+      "limit": 20,
+      "actual": 48.88,
+      "breached": true
+    },
+    "dailyLossLimit": {
+      "limit": 10,
+      "actual": 19.43,
+      "breached": true
+    },
+    "consecutiveStopOuts": {
+      "limit": 4,
+      "actual": 0,
+      "breached": false
+    }
   },
-  "actions": [
-    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (#3)",
-    "SL_VERIFIED: AVAX SL at $8.72, buffer $0.545 above liq",
-    "NO_NEW_SL: Existing SL adequate, position too stressed to tighten"
+  "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -48.88% (worsening from -45.91%). Account value $51.12 from peak $100.00.",
+      "timestamp": "2026-03-31T09:33:31Z"
+    },
+    {
+      "type": "DAILY_LOSS_BREACH",
+      "message": "Daily loss 19.43% exceeds dailyLossLimitPct (10%). Day start $63.45, current $51.12.",
+      "timestamp": "2026-03-31T09:33:31Z"
+    },
+    {
+      "type": "SL_CLOSE_PROXIMITY",
+      "message": "AVAX LONG SL at $8.72 is only 0.34% below current ($8.7495). Position imminent SL trigger. Buffer above liq $8.175 is $0.545.",
+      "timestamp": "2026-03-31T09:33:31Z"
+    }
   ],
-  "warnings": [
-    "REGIME_RACE_CONDITION: waifu-regime classifier keeps resetting to BASELINE despite 45.9% drawdown. Third override in ~21 hours.",
-    "SL_CLOSE_PROXIMITY: AVAX SL only 1.04% below current price",
-    "POSITION_STRESS: -87.7% ROE on AVAX LONG, near total loss"
-  ]
+  "actionsTaken": [
+    "RISK_OFF confirmed active",
+    "AVAX SL at $8.72 confirmed adequate (buffer $0.545 above liq)"
+  ],
+  "warnings": []
 }
