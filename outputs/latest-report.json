@@ -1,39 +1,32 @@
 {
-  "timestamp": "2026-03-31T19:32:23.813423+00:00",
+  "timestamp": "2026-04-01T07:01:54Z",
+  "source": "jido",
   "regime": "RISK_OFF",
-  "regimePrevious": "BASELINE",
-  "overridden": true,
-  "equity": 48.887581,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyLossPct": 0.0,
-  "dayStartEquity": 63.45,
-  "consecutiveStopOuts": 0,
+  "regimeChanged": true,
+  "previousRegime": "BASELINE",
+  "overrideCount": 7,
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "drawdownPct": -51.11,
+    "dayStart": 63.45,
+    "dayChangePct": -22.95
+  },
   "positions": [],
   "openOrders": [],
   "guardrails": {
-    "catastrophicDrawdown": {
-      "threshold": 20,
-      "current": 51.11,
-      "breached": true
-    },
-    "dailyLoss": {
-      "threshold": 10,
-      "current": 0.0,
-      "breached": false
-    },
-    "consecutiveStopOuts": {
-      "threshold": 4,
-      "current": 0,
-      "breached": false
-    }
+    "catastrophicDrawdownPct": 20,
+    "drawdownBreached": true,
+    "dailyLossLimitPct": 10,
+    "dailyLossBreached": true,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4,
+    "consecutiveStopOutsBreached": false
   },
-  "actions": [
-    "REGIME_OVERRIDE: BASELINE->RISK_OFF (#6) \u2014 regime-classifier race condition"
+  "actionsTaken": [
+    "REGIME_OVERRIDE: BASELINE->RISK_OFF (#7) — regime-classifier race condition"
   ],
-  "alerts": [
-    "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
-    "Overrode BASELINE->RISK_OFF (#6). Regime-classifier set BASELINE at ~19:02Z despite 51% drawdown. Race condition still active."
-  ],
-  "overrideCount": 6
+  "warnings": [
+    "Regime-classifier cron continues overriding RISK_OFF->BASELINE despite 51% drawdown. 7 overrides in ~20h. FIX NEEDED: patch waifu-regime to read arbiter-state drawdown before setting regime."
+  ]
 }

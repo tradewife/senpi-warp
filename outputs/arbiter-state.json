@@ -3,12 +3,22 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T19:32:23.813423+00:00",
-  "dayStartDate": "2026-03-31",
+  "lastCheckAt": "2026-04-01T07:01:54Z",
+  "dayStartDate": "2026-04-01",
   "alerts": [
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions — capital preserved.",
+      "timestamp": "2026-04-01T07:01:54Z"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#7). Regime-classifier set BASELINE at ~20:00Z despite 51% drawdown. Race condition still active — 7 overrides in ~20h.",
+      "timestamp": "2026-04-01T07:01:54Z"
+    },
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions — capital preserved.",
       "timestamp": "2026-03-31T19:32:23.813423+00:00"
     },
     {
@@ -18,7 +28,7 @@
     },
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions — capital preserved.",
       "timestamp": "2026-03-31T18:16:44Z"
     },
     {
@@ -53,7 +63,7 @@
     },
     {
       "type": "SL_CLOSE_PROXIMITY",
-      "message": "AVAX LONG SL at $8.72 is only 1.77% below current ($8.877). SL buffer above liq $8.174 is $0.546 \u2014 adequate but position is highly stressed.",
+      "message": "AVAX LONG SL at $8.72 is only 1.77% below current ($8.877). SL buffer above liq $8.174 is $0.546 — adequate but position is highly stressed.",
       "timestamp": "2026-03-31T08:34:48Z"
     },
     {
@@ -63,7 +73,7 @@
     },
     {
       "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#3). Regime-classifier reset to BASELINE at 09:00:28Z despite 45.9% drawdown. Recurring override needed \u2014 race condition persists.",
+      "message": "Overrode BASELINE->RISK_OFF (#3). Regime-classifier reset to BASELINE at 09:00:28Z despite 45.9% drawdown. Recurring override needed — race condition persists.",
       "timestamp": "2026-03-31T09:04:25Z"
     },
     {
@@ -73,7 +83,7 @@
     },
     {
       "type": "SL_CLOSE_PROXIMITY",
-      "message": "AVAX LONG SL at $8.72 is only 1.04% below current ($8.8113). Position highly stressed \u2014 any further decline triggers SL. Buffer above liq $8.175 is $0.545.",
+      "message": "AVAX LONG SL at $8.72 is only 1.04% below current ($8.8113). Position highly stressed — any further decline triggers SL. Buffer above liq $8.175 is $0.545.",
       "timestamp": "2026-03-31T09:04:25Z"
     },
     {
@@ -93,7 +103,7 @@
     },
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% (account $48.89 from peak $100.00). No open positions \u2014 capital preserved at $48.89.",
+      "message": "Drawdown -51.11% (account $48.89 from peak $100.00). No open positions — capital preserved at $48.89.",
       "timestamp": "2026-03-31T10:18:00Z"
     },
     {
@@ -103,7 +113,7 @@
     },
     {
       "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown. Recurring override needed \u2014 race condition persists.",
+      "message": "Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown. Recurring override needed — race condition persists.",
       "timestamp": "2026-03-31T10:18:00Z"
     }
   ]
