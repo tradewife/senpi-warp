@@ -1,116 +1,29 @@
 {
-  "timestamp": "2026-03-31T18:16:44Z",
-  "regime": "RISK_OFF",
-  "regimeOverriddenFrom": "BASELINE",
-  "accountValue": 48.887581,
+  "generatedAt": "2026-03-31T19:02:47Z",
+  "regime": "BASELINE",
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyLossPct": 22.95,
-  "positions": [],
-  "openOrders": [],
-  "withdrawable": 48.887581,
-  "actions": [
-    "REGIME_OVERRIDE: BASELINE -> RISK_OFF (#5)",
-    "NO_POSITIONS: All clear \u2014 no open positions, no open orders"
-  ],
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
   "alerts": [
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
-      "timestamp": "2026-03-31T18:16:44Z"
-    },
-    {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#5). Regime-classifier reset to BASELINE at ~18:00Z despite 51% drawdown. Race condition still active.",
-      "timestamp": "2026-03-31T18:16:44Z"
-    },
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -39.96% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
-      "timestamp": "2026-03-31T23:47:30Z"
-    },
-    {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF. Regime-classifier incorrectly set BASELINE at 07:01Z despite 40% drawdown.",
-      "timestamp": "2026-03-31T23:47:30Z"
-    },
-    {
-      "type": "SL_ADJUSTED",
-      "message": "AVAX LONG SL widened from $8.45 to $8.72. Old SL was only $0.28 above liq ($8.174), risking wick-out. Buffer now $0.55.",
-      "timestamp": "2026-03-31T02:03:32Z"
-    },
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -42.16% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
-      "timestamp": "2026-03-31T08:34:48Z"
-    },
-    {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#2). Regime-classifier keeps resetting to BASELINE at 08:01Z despite 42% drawdown. Recurring override needed.",
-      "timestamp": "2026-03-31T08:34:48Z"
-    },
-    {
-      "type": "SL_CLOSE_PROXIMITY",
-      "message": "AVAX LONG SL at $8.72 is only 1.77% below current ($8.877). SL buffer above liq $8.174 is $0.546 \u2014 adequate but position is highly stressed.",
-      "timestamp": "2026-03-31T08:34:48Z"
-    },
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -45.91% exceeds catastrophicDrawdownPct (20%). RISK_OFF activated by JIDO.",
-      "timestamp": "2026-03-31T09:04:25Z"
-    },
-    {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#3). Regime-classifier reset to BASELINE at 09:00:28Z despite 45.9% drawdown. Recurring override needed \u2014 race condition persists.",
-      "timestamp": "2026-03-31T09:04:25Z"
-    },
-    {
-      "type": "DAILY_LOSS_BREACH",
-      "message": "Daily loss 14.76% exceeds dailyLossLimitPct (10%). Day start $63.45, current $54.09.",
-      "timestamp": "2026-03-31T09:04:25Z"
-    },
-    {
-      "type": "SL_CLOSE_PROXIMITY",
-      "message": "AVAX LONG SL at $8.72 is only 1.04% below current ($8.8113). Position highly stressed \u2014 any further decline triggers SL. Buffer above liq $8.175 is $0.545.",
-      "timestamp": "2026-03-31T09:04:25Z"
-    },
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -48.88% (worsening from -45.91%). Account value $51.12 from peak $100.00.",
-      "timestamp": "2026-03-31T09:33:31Z"
-    },
-    {
-      "type": "DAILY_LOSS_BREACH",
-      "message": "Daily loss 19.43% exceeds dailyLossLimitPct (10%). Day start $63.45, current $51.12.",
-      "timestamp": "2026-03-31T09:33:31Z"
-    },
-    {
-      "type": "SL_CLOSE_PROXIMITY",
-      "message": "AVAX LONG SL at $8.72 is only 0.34% below current ($8.7495). Position imminent SL trigger. Buffer above liq $8.175 is $0.545.",
-      "timestamp": "2026-03-31T09:33:31Z"
-    },
-    {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% (account $48.89 from peak $100.00). No open positions \u2014 capital preserved at $48.89.",
-      "timestamp": "2026-03-31T10:18:00Z"
-    },
-    {
-      "type": "DAILY_LOSS_BREACH",
-      "message": "Daily loss 22.95% exceeds dailyLossLimitPct (10%). Day start $63.45, current $48.89.",
-      "timestamp": "2026-03-31T10:18:00Z"
-    },
-    {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#4). Regime-classifier reset at ~10:01Z despite 51% drawdown. Recurring override needed \u2014 race condition persists.",
-      "timestamp": "2026-03-31T10:18:00Z"
-    }
+    "DAILY LOSS LIMIT: 23.0%",
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
     "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
     "maxConsecutiveStopOuts": 4,
-    "drawdownBreached": true,
-    "dailyLossBreached": true
-  },
-  "regimeOverrideCount": 5
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ]
+  }
 }
