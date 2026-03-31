@@ -27,11 +27,15 @@ def _classify_regime() -> tuple[str, str]:
         "include_funding": False
     })
 
-    if btc_data.get("error") or not btc_data.get("candles"):
-        err = btc_data.get("error", "No candle data in response")
-        return "BASELINE", f"No candle data available ({err})"
+    # MCP returns {success, data: {candles: {4h: [...]}}} — unwrap data envelope
+    if btc_data.get("error"):
+        return "BASELINE", f"MCP error: {btc_data.get('error')}"
 
-    candles = btc_data.get("candles", {}).get("4h", [])
+    payload = btc_data.get("data", btc_data)
+    if not payload.get("candles"):
+        return "BASELINE", "No candle data in response"
+
+    candles = payload.get("candles", {}).get("4h", [])
     if not candles or len(candles) < 5:
         return "BASELINE", f"Insufficient candle data ({len(candles)} candles)"
 

@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "action": "OPEN",
+    "asset": "AVAX",
+    "direction": "LONG",
+    "scanner": "fox",
+    "strategyKey": "wolf-primary",
+    "leverage": 7,
+    "entryPrice": 0,
+    "margin": 0,
+    "recordedAt": "2026-03-25T12:00:00Z",
+    "note": "Reconstructed from arbiter alerts \u2014 exact entry params unknown"
+  },
+  {
+    "action": "CLOSE",
+    "asset": "AVAX",
+    "direction": "LONG",
+    "scanner": "fox",
+    "strategyKey": "wolf-primary",
+    "leverage": 7,
+    "closeReason": "risk_arbiter_flatten",
+    "realizedPnl": -51.11,
+    "recordedAt": "2026-03-31T10:18:00Z",
+    "note": "Reconstructed \u2014 catastrophic DD flatten. Peak $100 -> $48.89."
+  }
+]
