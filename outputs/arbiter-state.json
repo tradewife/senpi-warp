@@ -3,9 +3,19 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-31T19:02:47Z",
+  "lastCheckAt": "2026-03-31T19:32:23.813423+00:00",
   "dayStartDate": "2026-03-31",
   "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "timestamp": "2026-03-31T19:32:23.813423+00:00"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "Overrode BASELINE->RISK_OFF (#6). Regime-classifier set BASELINE at ~19:02Z despite 51% drawdown. Race condition still active.",
+      "timestamp": "2026-03-31T19:32:23.813423+00:00"
+    },
     {
       "type": "CATASTROPHIC_DRAWDOWN",
       "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",

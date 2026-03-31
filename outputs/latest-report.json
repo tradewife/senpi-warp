@@ -1,29 +1,39 @@
 {
-  "generatedAt": "2026-03-31T19:02:47Z",
-  "regime": "BASELINE",
-  "equity": 48.89,
+  "timestamp": "2026-03-31T19:32:23.813423+00:00",
+  "regime": "RISK_OFF",
+  "regimePrevious": "BASELINE",
+  "overridden": true,
+  "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "DAILY LOSS LIMIT: 23.0%",
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "dailyLossPct": 0.0,
+  "dayStartEquity": 63.45,
+  "consecutiveStopOuts": 0,
+  "positions": [],
+  "openOrders": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ]
-  }
+    "catastrophicDrawdown": {
+      "threshold": 20,
+      "current": 51.11,
+      "breached": true
+    },
+    "dailyLoss": {
+      "threshold": 10,
+      "current": 0.0,
+      "breached": false
+    },
+    "consecutiveStopOuts": {
+      "threshold": 4,
+      "current": 0,
+      "breached": false
+    }
+  },
+  "actions": [
+    "REGIME_OVERRIDE: BASELINE->RISK_OFF (#6) \u2014 regime-classifier race condition"
+  ],
+  "alerts": [
+    "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+    "Overrode BASELINE->RISK_OFF (#6). Regime-classifier set BASELINE at ~19:02Z despite 51% drawdown. Race condition still active."
+  ],
+  "overrideCount": 6
 }

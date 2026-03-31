@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-03-31T19:02:03Z",
-  "updatedBy": "hermes-regime",
-  "reason": "4H slopes: BTC=-2.5344%, ETH=-1.98%; 1H ATR: BTC=1.0374%, ETH=1.2924%; funding: BTC=-1.68316e-05, ETH=-4.9177e-06",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-03-31T19:32:23.813423+00:00",
+  "updatedBy": "jido-emergency",
+  "reason": "Drawdown -51.11% persists (account $48.89 from peak $100.00). Overrode BASELINE->RISK_OFF (#6). Regime-classifier race condition ongoing.",
   "globalGuardrails": {
     "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
