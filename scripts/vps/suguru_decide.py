@@ -104,7 +104,7 @@ CONSIDER:
 
 Pick the BEST candidate (or REJECT all if none are strong enough).
 
-Return EXACTLY this JSON (no other text):
+Return ONLY the JSON below. Do not repeat yourself. Do not add any text before or after the JSON:
 {{"recommendation": "TRADE|REJECT", "asset": "BTC", "direction": "LONG", "leverage": 8, "margin_pct": 25, "reasoning": "2-3 sentence explanation for the user", "confidence": 0.0-1.0, "alternatives": ["list of other viable candidates if any"]}}
 """
     return prompt
@@ -128,7 +128,15 @@ def call_hermes(prompt: str, timeout: int = 90) -> str:
     if glm_base:
         env["GLM_BASE_URL"] = glm_base
 
+    # Get model/provider from env (same as telegram bot brain)
+    hermes_model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+    hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
+
     cmd = [hermes_bin, "chat", "-Q", "-q", prompt]
+    if hermes_model:
+        cmd += ["-m", hermes_model]
+    if hermes_provider:
+        cmd += ["--provider", hermes_provider]
 
     proc = subprocess.run(
         cmd, capture_output=True, text=True, timeout=timeout,

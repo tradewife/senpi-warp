@@ -1721,6 +1721,14 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if best_dedup:
                     output = best_dedup
 
+        # Strategy 3: first-line dedup (waifu sometimes repeats opening line)
+        lines = output.split("\n")
+        non_empty = [(i, l.strip()) for i, l in enumerate(lines) if l.strip()]
+        if len(non_empty) >= 2 and non_empty[0][1] == non_empty[1][1]:
+            # Remove the duplicate line
+            lines.pop(non_empty[1][0])
+            output = "\n".join(lines)
+
         if len(output) > 4000:
             output = output[:3900] + "\n\n_(truncated)_"
 
