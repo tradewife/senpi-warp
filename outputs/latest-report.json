@@ -1,34 +1,32 @@
 {
-  "timestamp": "2026-04-02T07:45:00Z",
+  "timestamp": "2026-04-01T22:47:02Z",
+  "source": "jido-portfolio-review",
+  "regime": "RISK_OFF",
+  "regimeChanged": true,
+  "previousRegime": "BASELINE",
   "strategy": "wolf-primary",
   "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "regime": "RISK_OFF",
-  "regimeSource": "jido-emergency",
-  "equity": {
-    "accountValue": 48.89,
-    "budget": 100.0,
-    "withdrawable": 48.89,
-    "drawdownPct": 51.1,
-    "peakEquity": 100.0
-  },
-  "positions": {
-    "main": [],
-    "xyz": [],
-    "totalOpen": 0
-  },
-  "orders": [],
+  "accountValue": 48.89,
+  "budget": 100.0,
+  "drawdownPct": 51.1,
+  "peakEquity": 100.0,
+  "openPositions": 0,
+  "positions": [],
   "guardrails": {
-    "catastrophicDD breached": true,
-    "dailyLossLimit breached": false,
-    "consecutiveStopOuts breached": false
+    "catastrophicDrawdown": { "threshold": 20, "actual": 51.1, "breached": true },
+    "dailyLossLimit": { "threshold": 10, "actual": 0, "breached": false },
+    "maxConsecutiveStopOuts": { "threshold": 4, "actual": 0, "breached": false }
   },
-  "actions": [
-    "REGIME_OVERRIDE #7: BASELINE → RISK_OFF (DD 51.1% >> 20% threshold)",
-    "peakEquity initialized to 100.0 (was 0)",
-    "arbiter-state.json updated with current equity snapshot"
+  "actionsTaken": [
+    "Resolved 7 merge conflicts (took theirs)",
+    "Set risk-regime.json to RISK_OFF (was BASELINE)",
+    "Initialized peakEquity to $100 in arbiter-state.json",
+    "Logged REGIME_OVERRIDE and CAPITAL_HALVED alerts"
   ],
   "warnings": [
-    "regime-classifier race condition confirmed (override #7) — hourly cron resets RISK_OFF to BASELINE",
-    "account down 51.1% from budget — consider winding down strategy"
+    "Strategy has lost >50% of capital with no open positions — all losses are realized",
+    "arbiter-state.json had peakEquity=0 (never initialized) — JIDO set to budget $100",
+    "Regime was BASELINE despite 51% drawdown — regime-classifier may override again",
+    "Consider whether to top-up or close this strategy"
   ]
 }
