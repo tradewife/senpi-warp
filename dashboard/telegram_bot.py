@@ -1721,11 +1721,32 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if best_dedup:
                     output = best_dedup
 
-        # Strategy 3: first-line dedup (waifu sometimes repeats opening line)
+        # Strategy 3: aggressive full-block dedup
+        # Normalize whitespace for comparison, then find where content repeats
+        normalized = re.sub(r"\s+", " ", output.strip()).lower()
+        if len(normalized) > 60:
+            # Check each possible split point for repetition
+            for split in range(30, len(normalized) // 2 + 1):
+                first_half = normalized[:split].strip()
+                second_half = normalized[split:split*2].strip() if split*2 <= len(normalized) else ""
+                if len(first_half) > 30 and first_half == second_half:
+                    # Found repeat — keep only first half from original output
+                    # Find the approximate boundary in original text
+                    words = output.split()
+                    word_count = len(output[:output.lower().index(first_half[-20:]) + 20].split())
+                    # Take roughly half the words
+                    half_words = len(words) // 2
+                    # Check if second half starts with same text
+                    first_text = " ".join(words[:half_words])
+                    second_text = " ".join(words[half_words:half_words*2])
+                    if first_text.lower().strip() == second_text.lower().strip():
+                        output = " ".join(words[:half_words])
+                    break
+
+        # Strategy 4: first-line dedup (single repeated opening line)
         lines = output.split("\n")
         non_empty = [(i, l.strip()) for i, l in enumerate(lines) if l.strip()]
         if len(non_empty) >= 2 and non_empty[0][1] == non_empty[1][1]:
-            # Remove the duplicate line
             lines.pop(non_empty[1][0])
             output = "\n".join(lines)
 
@@ -1848,11 +1869,16 @@ async def _handle_action_callback(query, action: str) -> None:
             await _safe_edit(query, "🧠 *Hermes Scan*\n\nNo candidates found.", parse_mode="Markdown")
             return
         await _safe_edit(query, "🧠 Hermes deliberating...")
-        await run_script_async(
+        output = await run_script_async(
             ["python3", str(STATE_DIR / "scripts/vps/suguru_decide.py")],
-            timeout=120,
+            timeout=180,
         )
         rec = load_json(OUTPUTS_DIR / "suguru-recommendation.json", default={})
+        if not rec or not rec.get("recommendation"):
+            # Show raw output if no valid recommendation
+            err_msg = output[:500] if output else "No output from hermes"
+            await _safe_edit(query, "🧠 *Hermes Error*\n\n" + err_msg, parse_mode="Markdown")
+            return
         if rec.get("recommendation") == "TRADE":
             tp = rec.get("trade_params", {})
             text = (
@@ -1873,7 +1899,7 @@ async def _handle_action_callback(query, action: str) -> None:
                 ],
                 [InlineKeyboardButton("💬 Chat to customize", callback_data="act:suguru_chat")],
             ])
-            await _safe_edit(query, text, parse_mode="Markdown", reply_markup=keyboard)
+            await _safe_edit(query, text, reply_markup=keyboard)
         else:
             await _safe_edit(
                 query,

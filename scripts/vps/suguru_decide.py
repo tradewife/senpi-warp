@@ -81,7 +81,7 @@ def build_prompt(candidates: dict, regime: dict, brain: dict) -> str:
 
     brain_mode = brain.get("mode", "UNKNOWN")
 
-    prompt = f"""You are SUGURU, a Hyperliquid perps trading advisor.
+    prompt = f"""You are SUGURU, a concise trading advisor.
 
 CURRENT STATE:
 - Risk regime: {risk_mode}
@@ -110,7 +110,7 @@ Return ONLY the JSON below. Do not repeat yourself. Do not add any text before o
     return prompt
 
 
-def call_hermes(prompt: str, timeout: int = 90) -> str:
+def call_hermes(prompt: str, timeout: int = 45) -> str:
     hermes_bin = find_hermes()
     hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
 
