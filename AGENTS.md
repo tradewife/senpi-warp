@@ -383,7 +383,7 @@ waifu debug tail arbiter  # Risk arbiter
 waifu debug tail brain    # Autonomous brain
 ```
 
-Valid scanners: orca, mantis, fox, roach, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena, regime, elite, jido, reconcile
+Valid scanners: orca, mantis, fox, roach, komodo, condor, polar, sentinel, rhino, dsl, arbiter, brain, watchdog, health, arena, regime, suguru, jido, reconcile
 
 ### waifu debug deploy --trigger
 

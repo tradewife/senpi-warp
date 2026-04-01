@@ -28,7 +28,7 @@ RAILWAY_BIN = "/home/kt/.nvm/versions/node/v24.10.0/bin/railway"
 VALID_SCANNERS = [
     "orca", "mantis", "fox", "komodo", "condor", "polar",
     "sentinel", "rhino", "dsl", "arbiter", "brain",
-    "watchdog", "health", "arena", "elite",
+    "watchdog", "health", "arena", "suguru",
 ]
 
 

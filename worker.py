@@ -229,12 +229,25 @@ def job_reconcile():
     run_py("scripts/vps/reconcile-closes.py")
 
 
-def job_elite_trader():
-    run_py("scripts/vps/elite_trader.py")
+def job_suguru():
+    """Suguru pipeline: scan → hermes decide → execute approved."""
+    import subprocess as _sp
+
+    # Step 1: Scan — write candidates to suguru-candidates.json
+    print("[suguru] Step 1/3: scanning...")
+    run_py("scripts/vps/suguru.py", ["--scan-only"])
+
+    # Step 2: Decide — hermes evaluates candidates → suguru-approved.json
+    print("[suguru] Step 2/3: hermes deciding...")
+    run_py("scripts/vps/suguru_decide.py")
+
+    # Step 3: Execute — run hermes-approved trades
+    print("[suguru] Step 3/3: executing approved...")
+    run_py("scripts/vps/suguru.py", ["--execute-approved"])
 
 
-def job_elite_stale():
-    run_py("scripts/vps/elite_trader.py", ["--stale"])
+def job_suguru_stale():
+    run_py("scripts/vps/suguru.py", ["--stale"])
 
 
 def job_jido():
@@ -342,14 +355,14 @@ def main():
     # Reconcile closes — every 15min
     scheduler.add_job(job_reconcile, "interval", minutes=15, id="reconcile", seconds=30)
 
-    # ELITE-TRADER — every 30min, offset 7min
+    # SUGURU (scan → hermes decide → execute) — every 30min, offset 7min
     scheduler.add_job(
-        job_elite_trader, "interval", minutes=30, id="elite_trader", seconds=420
+        job_suguru, "interval", minutes=30, id="suguru", seconds=420
     )
 
-    # ELITE Stale Order Check — every 5min, offset 3min
+    # SUGURU Stale Order Check — every 5min, offset 3min
     scheduler.add_job(
-        job_elite_stale, "interval", minutes=5, id="elite_stale", seconds=180
+        job_suguru_stale, "interval", minutes=5, id="suguru_stale", seconds=180
     )
 
     # JIDO Autonomous Trade Executor — every 5min, offset 90s
@@ -373,8 +386,8 @@ def main():
     print("  🌡  Regime Class:    every 15min")
     print("  🚨 Risk Arbiter:    every 30s")
     print("  🔃 Reconcile:       every 15min")
-    print("  ⚡ ELITE-TRADER:    every 30min")
-    print("  ⏰ ELITE Stale:     every 5min")
+    print("  ⚡ SUGURU Pipeline: every 30min (scan→hermes→execute)")
+    print("  ⏰ SUGURU Stale:   every 5min")
     print("  ⚡ JIDO Executor:   every 5min")
     print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
     print("\nWorker running. Ctrl+C to stop.\n")
