@@ -1,14 +1,14 @@
 {
   "peakEquity": 100.0,
-  "lastEquity": 48.89,
+  "lastEquity": 48.887581,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-02T05:31:00Z",
+  "lastCheckAt": "2026-04-01T20:35:47Z",
   "alerts": [
     {
       "type": "REGIME_OVERRIDE",
       "severity": "CRITICAL",
-      "message": "JIDO set RISK_OFF — catastrophic DD 51.1% (peak $100.00, current $48.89, limit 20%). Regime was BASELINE. All positions flat.",
+      "message": "JIDO set RISK_OFF \u2014 catastrophic DD 51.1% (peak $100.00, current $48.89, limit 20%). Regime was BASELINE. All positions flat.",
       "timestamp": "2026-04-02T05:31:00Z",
       "source": "jido"
     },
@@ -17,6 +17,13 @@
       "severity": "INFO",
       "message": "peakEquity was 0 (uninitialized). Set to 100.0 from wolf-strategies.json budget.",
       "timestamp": "2026-04-02T05:31:00Z",
+      "source": "jido"
+    },
+    {
+      "type": "JIDO_CHECK",
+      "severity": "INFO",
+      "message": "Portfolio review \u2014 no positions, no orders. Account $48.89. RISK_OFF remains active (DD 51.1%). No action needed.",
+      "timestamp": "2026-04-01T20:35:47Z",
       "source": "jido"
     }
   ]
