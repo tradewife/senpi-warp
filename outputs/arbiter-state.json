@@ -1,21 +1,6 @@
 {
-  "peakEquity": 100.0,
-  "lastEquity": 48.89,
-  "dayStartEquity": 48.89,
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-01T22:47:02Z",
-  "alerts": [
-    {
-      "type": "REGIME_OVERRIDE",
-      "severity": "CRITICAL",
-      "message": "JIDO override #1: Drawdown 51.1% exceeds catastrophic 20% threshold. Setting RISK_OFF. Previous regime was BASELINE set by hermes-strategic.",
-      "timestamp": "2026-04-01T22:47:02Z"
-    },
-    {
-      "type": "CAPITAL_HALVED",
-      "severity": "CRITICAL",
-      "message": "Strategy has lost >50% of initial $100 budget. Current value $48.89. No open positions — capital was consumed by prior losses.",
-      "timestamp": "2026-04-01T22:47:02Z"
-    }
-  ]
+  "lastCheckAt": "2026-03-24T02:04:37Z"
 }
