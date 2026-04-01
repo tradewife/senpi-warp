@@ -55,16 +55,32 @@ CHILD_ENV = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
 # Command descriptions — registered with BotFather and shown in /help.
 # Each tuple: (command, short_desc_for_menu, detailed_desc_for_help)
 COMMANDS = [
-    ("status", "System snapshot", "Regime, open positions, daily PnL, equity, and arbiter status."),
+    (
+        "status",
+        "System snapshot",
+        "Regime, open positions, daily PnL, equity, and arbiter status.",
+    ),
     ("jido", "Autonomous executor", "Process high-conviction trades via brain policy."),
     ("evaluate", "Process signals", "HITL evaluation of queued scanner signals."),
     ("regime", "Market regime", "BTC/ETH macro classification and parameters."),
-    ("review", "Portfolio review", "Equity, drawdown, daily PnL, dead-weight detection."),
+    (
+        "review",
+        "Portfolio review",
+        "Equity, drawdown, daily PnL, dead-weight detection.",
+    ),
     ("howl", "Nightly analysis", "10-pillar self-improvement analysis."),
     ("whale", "Copy-trade rebalance", "Mirror-trade portfolio management."),
     ("arena", "Predator leaderboard", "Top predator strategies and recommendations."),
-    ("suguru", "Elite scanner", "Scan markets + AI deliberation → trade recommendation."),
-    ("settings", "View all settings", "Unified view of rules, gates, and scanner scores."),
+    (
+        "suguru",
+        "Elite scanner",
+        "Scan markets + AI deliberation → trade recommendation.",
+    ),
+    (
+        "settings",
+        "View all settings",
+        "Unified view of rules, gates, and scanner scores.",
+    ),
     ("set", "Change a setting", "Usage: /set <key> <value>"),
     ("flatten", "Close all trades", "Close all open positions across all strategies."),
     ("close", "Close a trade", "Select and close a specific open position."),
@@ -147,19 +163,27 @@ def _build_status_keyboard() -> InlineKeyboardMarkup:
     _, positions = _count_open_positions()
     buttons = []
     if positions:
-        buttons.append([
-            InlineKeyboardButton("🔄 Jido", callback_data="act:jido_prompt"),
-            InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
-        ])
-        buttons.append([
-            InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
-            InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
-        ])
-    buttons.append([
-        InlineKeyboardButton("🔃 Refresh", callback_data="act:status_refresh"),
-        InlineKeyboardButton("📊 Review", callback_data="act:review_run"),
-        InlineKeyboardButton("🛡 Gates", callback_data="act:gates_view"),
-    ])
+        buttons.append(
+            [
+                InlineKeyboardButton("🔄 Jido", callback_data="act:jido_prompt"),
+                InlineKeyboardButton(
+                    "⚡ Evaluate", callback_data="act:evaluate_prompt"
+                ),
+            ]
+        )
+        buttons.append(
+            [
+                InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
+                InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
+            ]
+        )
+    buttons.append(
+        [
+            InlineKeyboardButton("🔃 Refresh", callback_data="act:status_refresh"),
+            InlineKeyboardButton("📊 Review", callback_data="act:review_run"),
+            InlineKeyboardButton("🛡 Gates", callback_data="act:gates_view"),
+        ]
+    )
     return InlineKeyboardMarkup(buttons)
 
 
@@ -236,7 +260,9 @@ def _deactivate_dsl_state(pos: dict, reason: str) -> None:
         state = load_json(f)
         if state and state.get("active") and state.get("asset") == asset:
             state["active"] = False
-            state["closedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            state["closedAt"] = datetime.now(timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
             state["closeReason"] = reason
             with open(f, "w") as fh:
                 json.dump(state, fh, indent=2)
@@ -278,9 +304,18 @@ def _regime_header() -> str:
 def _check_stale_crons(heartbeats: dict) -> list[str]:
     """Check for stale cron heartbeats. Returns list of stale cron names."""
     stale_limits = {
-        "orca": 10, "mantis": 4, "fox": 4, "roach": 4, "komodo": 12,
-        "condor": 8, "polar": 8, "rhino": 8, "sentinel": 8,
-        "dsl-runner": 8, "risk-arbiter": 3, "brain": 12,
+        "orca": 10,
+        "mantis": 4,
+        "fox": 4,
+        "roach": 4,
+        "komodo": 12,
+        "condor": 8,
+        "polar": 8,
+        "rhino": 8,
+        "sentinel": 8,
+        "dsl-runner": 8,
+        "risk-arbiter": 3,
+        "brain": 12,
     }
     now = datetime.now(timezone.utc)
     stale = []
@@ -336,28 +371,34 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines.append("\n_Any message → Strategic Brain_")
 
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("📊 Status", callback_data="act:status_run"),
-            InlineKeyboardButton("🌐 Regime", callback_data="act:regime_run"),
-            InlineKeyboardButton("📋 Review", callback_data="act:review_run"),
-        ],
-        [
-            InlineKeyboardButton("⚡ Jido", callback_data="act:jido_prompt"),
-            InlineKeyboardButton("⚡ Suguru", callback_data="act:suguru_scan_menu"),
-            InlineKeyboardButton("🐋 Whale", callback_data="act:whale_run"),
-        ],
-        [
-            InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
-            InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
-        ],
-        [
-            InlineKeyboardButton("⚙️ Settings", callback_data="act:settings_view"),
-            InlineKeyboardButton("🚨 Emergency Stop", callback_data="act:emergency_prompt"),
-        ],
-    ])
+            [
+                InlineKeyboardButton("📊 Status", callback_data="act:status_run"),
+                InlineKeyboardButton("🌐 Regime", callback_data="act:regime_run"),
+                InlineKeyboardButton("📋 Review", callback_data="act:review_run"),
+            ],
+            [
+                InlineKeyboardButton("⚡ Jido", callback_data="act:jido_prompt"),
+                InlineKeyboardButton("⚡ Suguru", callback_data="act:suguru_scan_menu"),
+                InlineKeyboardButton("🐋 Whale", callback_data="act:whale_run"),
+            ],
+            [
+                InlineKeyboardButton("🔴 Flatten", callback_data="act:flatten_prompt"),
+                InlineKeyboardButton("✂️ Close", callback_data="act:close_prompt"),
+            ],
+            [
+                InlineKeyboardButton("⚙️ Settings", callback_data="act:settings_view"),
+                InlineKeyboardButton(
+                    "🚨 Emergency Stop", callback_data="act:emergency_prompt"
+                ),
+            ],
+        ]
+    )
 
-    await _safe_reply(update, "\n".join(lines), parse_mode="Markdown", reply_markup=keyboard)
+    await _safe_reply(
+        update, "\n".join(lines), parse_mode="Markdown", reply_markup=keyboard
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -415,13 +456,15 @@ async def cmd_jido(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not isinstance(pending, list):
         pending = []
 
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("▶️ Run", callback_data="act:jido_confirm"),
-            InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
-        ],
-        [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
-    ])
+            [
+                InlineKeyboardButton("▶️ Run", callback_data="act:jido_confirm"),
+                InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
+        ]
+    )
     await update.message.reply_text(
         f"🔮 *Jido — Autonomous Executor*\n\n"
         f"Regime: *{mode}*  •  Auto-execute: *{auto}*\n"
@@ -444,13 +487,15 @@ async def cmd_evaluate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pending = []
     _, positions = _count_open_positions()
 
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
-            InlineKeyboardButton("🔍 Dry Run", callback_data="act:evaluate_dry"),
-        ],
-        [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
-    ])
+            [
+                InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
+                InlineKeyboardButton("🔍 Dry Run", callback_data="act:evaluate_dry"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
+        ]
+    )
     await update.message.reply_text(
         f"⚡ *Evaluate — Signal Processor*\n\n"
         f"Regime: *{mode}*  •  {len(positions)} open  •  {len(pending)} pending\n\n"
@@ -554,13 +599,19 @@ async def cmd_suguru(update: Update, context: ContextTypes.DEFAULT_TYPE):
     regime = load_json(CONFIG_DIR / "risk-regime.json")
     mode = regime.get("riskMode", "UNKNOWN")
 
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("🔍 Scan Only", callback_data="act:suguru_scan_only"),
-            InlineKeyboardButton("🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"),
-        ],
-        [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
-    ])
+            [
+                InlineKeyboardButton(
+                    "🔍 Scan Only", callback_data="act:suguru_scan_only"
+                ),
+                InlineKeyboardButton(
+                    "🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"
+                ),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
+        ]
+    )
     await update.message.reply_text(
         f"⚡ *Suguru — Elite Scanner*\n\n"
         f"Regime: *{mode}*\n\n"
@@ -575,12 +626,18 @@ async def cmd_suguru(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_emergency_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("🚨 CONFIRM", callback_data="act:emergency_stop_confirm"),
-            InlineKeyboardButton("❌ Cancel", callback_data="act:emergency_stop_cancel"),
-        ],
-    ])
+            [
+                InlineKeyboardButton(
+                    "🚨 CONFIRM", callback_data="act:emergency_stop_confirm"
+                ),
+                InlineKeyboardButton(
+                    "❌ Cancel", callback_data="act:emergency_stop_cancel"
+                ),
+            ],
+        ]
+    )
     await update.message.reply_text(
         "🚨 *Emergency Stop Confirmation*\n\n"
         "This will:\n"
@@ -608,12 +665,16 @@ async def cmd_flatten(update: Update, context: ContextTypes.DEFAULT_TYPE):
         direction = pos.get("direction", "?")
         roe = float(pos.get("currentRoe", 0) or 0)
         pos_lines.append(f"  • {asset} {direction} ({roe:+.1f}%)")
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("🔴 CLOSE ALL", callback_data="act:flatten_confirm"),
-            InlineKeyboardButton("❌ Cancel", callback_data="act:flatten_cancel"),
-        ],
-    ])
+            [
+                InlineKeyboardButton(
+                    "🔴 CLOSE ALL", callback_data="act:flatten_confirm"
+                ),
+                InlineKeyboardButton("❌ Cancel", callback_data="act:flatten_cancel"),
+            ],
+        ]
+    )
     await _safe_reply(
         update,
         f"🔴 *Flatten — Close All Positions*\n\n"
@@ -642,12 +703,13 @@ async def cmd_close(update: Update, context: ContextTypes.DEFAULT_TYPE):
         label = f"{asset} {direction} ({roe:+.1f}%)"
         callback = f"act:close_single:{strat_key}:{asset}"
         buttons.append([InlineKeyboardButton(f"🔴 {label}", callback_data=callback)])
-    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")])
+    buttons.append(
+        [InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")]
+    )
     keyboard = InlineKeyboardMarkup(buttons)
     await _safe_reply(
         update,
-        "🔴 *Close Trade — Select Position*\n\n"
-        "Choose which position to close:",
+        "🔴 *Close Trade — Select Position*\n\nChoose which position to close:",
         parse_mode="Markdown",
         reply_markup=keyboard,
     )
@@ -958,33 +1020,43 @@ async def cmd_rules_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------------------------
 
 GATES_KEY_MAP = {
-    "max_positions":  ("safety_gates", "maxPositionsTotal", int),
-    "cooldown":       ("safety_gates", "perAssetCooldownMinutes", int),
-    "dir_cap":        ("safety_gates", "directionalCapPct", int),
-    "min_lev":        ("safety_gates", "minLeverage", int),
-    "max_lev":        ("safety_gates", "maxLeverage", int),
-    "banned_prefix":  ("safety_gates", "bannedAssetPrefixes", lambda v: [p.strip() for p in v.split(",") if p.strip()]),
-    "score_orca":     ("safety_gates:minScores", "orca", int),
-    "score_mantis":   ("safety_gates:minScores", "mantis", int),
-    "score_fox":      ("safety_gates:minScores", "fox", int),
-    "score_komodo":   ("safety_gates:minScores", "komodo", int),
-    "score_condor":   ("safety_gates:minScores", "condor", int),
-    "score_polar":    ("safety_gates:minScores", "polar", int),
+    "max_positions": ("safety_gates", "maxPositionsTotal", int),
+    "cooldown": ("safety_gates", "perAssetCooldownMinutes", int),
+    "dir_cap": ("safety_gates", "directionalCapPct", int),
+    "min_lev": ("safety_gates", "minLeverage", int),
+    "max_lev": ("safety_gates", "maxLeverage", int),
+    "banned_prefix": (
+        "safety_gates",
+        "bannedAssetPrefixes",
+        lambda v: [p.strip() for p in v.split(",") if p.strip()],
+    ),
+    "score_orca": ("safety_gates:minScores", "orca", int),
+    "score_mantis": ("safety_gates:minScores", "mantis", int),
+    "score_fox": ("safety_gates:minScores", "fox", int),
+    "score_komodo": ("safety_gates:minScores", "komodo", int),
+    "score_condor": ("safety_gates:minScores", "condor", int),
+    "score_polar": ("safety_gates:minScores", "polar", int),
     "score_sentinel": ("safety_gates:minScores", "sentinel", int),
-    "score_rhino":    ("safety_gates:minScores", "rhino", int),
+    "score_rhino": ("safety_gates:minScores", "rhino", int),
 }
 
 GATES_BOUNDS = {
-    "maxPositionsTotal":       (1, 10, "1-10 positions"),
+    "maxPositionsTotal": (1, 10, "1-10 positions"),
     "perAssetCooldownMinutes": (0, 1440, "0-1440 min (0=disabled)"),
-    "directionalCapPct":       (50, 100, "50-100%"),
-    "minLeverage":             (1, 50, "1-50x"),
-    "maxLeverage":             (1, 50, "1-50x"),
+    "directionalCapPct": (50, 100, "50-100%"),
+    "minLeverage": (1, 50, "1-50x"),
+    "maxLeverage": (1, 50, "1-50x"),
 }
 
 DEFAULT_MIN_SCORES = {
-    "orca": 6, "mantis": 7, "fox": 7, "komodo": 10,
-    "condor": 10, "polar": 10, "sentinel": 5, "rhino": 5,
+    "orca": 6,
+    "mantis": 7,
+    "fox": 7,
+    "komodo": 10,
+    "condor": 10,
+    "polar": 10,
+    "sentinel": 5,
+    "rhino": 5,
 }
 
 DEFAULT_GUARDRAILS = {
@@ -1003,6 +1075,7 @@ DEFAULT_GUARDRAILS = {
 def _get_current_gates() -> dict:
     """Read effective gate values (defaults + user overrides)."""
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "lib"))
     from senpi_common import load_global_guardrails, load_user_min_scores
 
@@ -1034,11 +1107,17 @@ def _validate_gate(key: str, value) -> tuple[bool, str]:
     if key == "minLeverage":
         current = _get_current_gates()
         if value > current.get("maxLeverage", 50):
-            return False, f"min ({value}) > current max ({current['maxLeverage']}). Set max_lev first."
+            return (
+                False,
+                f"min ({value}) > current max ({current['maxLeverage']}). Set max_lev first.",
+            )
     if key == "maxLeverage":
         current = _get_current_gates()
         if value < current.get("minLeverage", 1):
-            return False, f"max ({value}) < current min ({current['minLeverage']}). Set min_lev first."
+            return (
+                False,
+                f"max ({value}) < current min ({current['minLeverage']}). Set min_lev first.",
+            )
 
     return True, "ok"
 
@@ -1060,7 +1139,12 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             raw = str(val)
         # Escape Telegram Markdown special chars in dynamic values
-        return raw.replace("_", "\\_").replace("*", "\\*").replace("[", "\\[").replace("`", "\\`")
+        return (
+            raw.replace("_", "\\_")
+            .replace("*", "\\*")
+            .replace("[", "\\[")
+            .replace("`", "\\`")
+        )
 
     def _src_score(scanner: str, val) -> str:
         default_val = DEFAULT_MIN_SCORES.get(scanner)
@@ -1092,10 +1176,14 @@ async def cmd_gates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lines.append(f"  {', '.join(banned)}\n")
 
     lines.append(f"*Gate 8: Cooldown*")
-    lines.append(f"  {_src('perAssetCooldownMinutes', current.get('perAssetCooldownMinutes', 120))} min\n")
+    lines.append(
+        f"  {_src('perAssetCooldownMinutes', current.get('perAssetCooldownMinutes', 120))} min\n"
+    )
 
     lines.append(f"*Gate 9: Directional Cap*")
-    lines.append(f"  {_src('directionalCapPct', current.get('directionalCapPct', 70))}%\n")
+    lines.append(
+        f"  {_src('directionalCapPct', current.get('directionalCapPct', 70))}%\n"
+    )
 
     min_lev = current.get("minLeverage", 7)
     max_lev = current.get("maxLeverage", 10)
@@ -1336,17 +1424,31 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
     text = _build_settings_text()
-    keyboard = InlineKeyboardMarkup([
+    keyboard = InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("✏️ Execution", callback_data="act:settings_help_execution"),
-            InlineKeyboardButton("✏️ Position Mgmt", callback_data="act:settings_help_position"),
-        ],
-        [
-            InlineKeyboardButton("✏️ Gates", callback_data="act:settings_help_gates"),
-            InlineKeyboardButton("✏️ Scores", callback_data="act:settings_help_scores"),
-        ],
-        [InlineKeyboardButton("🔄 Reset Gates", callback_data="act:gates_reset_prompt")],
-    ])
+            [
+                InlineKeyboardButton(
+                    "✏️ Execution", callback_data="act:settings_help_execution"
+                ),
+                InlineKeyboardButton(
+                    "✏️ Position Mgmt", callback_data="act:settings_help_position"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "✏️ Gates", callback_data="act:settings_help_gates"
+                ),
+                InlineKeyboardButton(
+                    "✏️ Scores", callback_data="act:settings_help_scores"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🔄 Reset Gates", callback_data="act:gates_reset_prompt"
+                )
+            ],
+        ]
+    )
     await _safe_reply(update, text, parse_mode="Markdown", reply_markup=keyboard)
 
 
@@ -1361,13 +1463,17 @@ def _build_settings_text() -> str:
     # Execution
     lines.append("*EXECUTION*")
     auto = "ON" if jido.get("autoExecuteEnabled", True) else "OFF"
-    lines.append(f"  Evaluate: minScore {ev.get('minScore', '?')} • maxLev {ev.get('maxLeverage', '?')}x • maxPos {ev.get('maxPositions', '?')} • cooldown {ev.get('cooldownMinutes', '?')}min")
+    lines.append(
+        f"  Evaluate: minScore {ev.get('minScore', '?')} • maxLev {ev.get('maxLeverage', '?')}x • maxPos {ev.get('maxPositions', '?')} • cooldown {ev.get('cooldownMinutes', '?')}min"
+    )
     roi_val = jido.get("roi_threshold_auto", "?")
     if isinstance(roi_val, (int, float)):
         roi_display = f"{roi_val:.0%}"
     else:
         roi_display = str(roi_val)
-    lines.append(f"  Jido: ROI threshold {roi_display} • minScore {jido.get('minScore', '?')} • auto {auto}")
+    lines.append(
+        f"  Jido: ROI threshold {roi_display} • minScore {jido.get('minScore', '?')} • auto {auto}"
+    )
     lines.append("")
 
     # Position management
@@ -1377,18 +1483,28 @@ def _build_settings_text() -> str:
     ptp = rules.get("partial_tp", {})
     psl = rules.get("partial_sl", {})
     dsl = rules.get("dsl_override", {})
-    tp_str = f"{tp.get('tpRoePct')}%" if tp.get("enabled") and tp.get("tpRoePct") else "OFF"
-    sl_str = f"{sl.get('slRoePct')}%" if sl.get("enabled") and sl.get("slRoePct") else "OFF"
+    tp_str = (
+        f"{tp.get('tpRoePct')}%" if tp.get("enabled") and tp.get("tpRoePct") else "OFF"
+    )
+    sl_str = (
+        f"{sl.get('slRoePct')}%" if sl.get("enabled") and sl.get("slRoePct") else "OFF"
+    )
     lines.append(f"  Fixed TP: {tp_str}  •  Fixed SL: {sl_str}")
-    lines.append(f"  Partial TP: {'ON' if ptp.get('enabled') else 'OFF'}  •  Partial SL: {'ON' if psl.get('enabled') else 'OFF'}")
+    lines.append(
+        f"  Partial TP: {'ON' if ptp.get('enabled') else 'OFF'}  •  Partial SL: {'ON' if psl.get('enabled') else 'OFF'}"
+    )
     lines.append(f"  DSL Override: {'ON' if dsl.get('enabled') else 'OFF'}")
     lines.append("")
 
     # Safety gates
     current = _get_current_gates()
     lines.append("*SAFETY GATES*")
-    lines.append(f"  Max positions: {current.get('maxPositionsTotal', 3)}  •  Cooldown: {current.get('perAssetCooldownMinutes', 120)}min")
-    lines.append(f"  Directional cap: {current.get('directionalCapPct', 70)}%  •  Leverage: {current.get('minLeverage', 7)}-{current.get('maxLeverage', 10)}x")
+    lines.append(
+        f"  Max positions: {current.get('maxPositionsTotal', 3)}  •  Cooldown: {current.get('perAssetCooldownMinutes', 120)}min"
+    )
+    lines.append(
+        f"  Directional cap: {current.get('directionalCapPct', 70)}%  •  Leverage: {current.get('minLeverage', 7)}-{current.get('maxLeverage', 10)}x"
+    )
     banned = current.get("bannedAssetPrefixes", ["xyz:"])
     lines.append(f"  Banned: {', '.join(banned)}")
     lines.append("")
@@ -1586,8 +1702,12 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for raw_line in hermes_env_path.read_text().splitlines():
                 if not raw_line.startswith("GLM_"):
                     env_lines.append(raw_line)
-        glm_key = (os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")).strip()
-        glm_base = (os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")).strip()
+        glm_key = (
+            os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+        ).strip()
+        glm_base = (
+            os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")
+        ).strip()
         if glm_key:
             env_lines.append(f"GLM_API_KEY={glm_key}")
         if glm_base:
@@ -1598,6 +1718,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         config_yaml_path = Path(hermes_home) / "config.yaml"
         try:
             import yaml
+
             existing = {}
             if config_yaml_path.exists():
                 existing = yaml.safe_load(config_yaml_path.read_text()) or {}
@@ -1616,8 +1737,12 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.warning("Failed to sync GLM keys to hermes .env: %s", e)
 
-    glm_key_env = (os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")).strip()
-    glm_base_env = (os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")).strip()
+    glm_key_env = (
+        os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+    ).strip()
+    glm_base_env = (
+        os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")
+    ).strip()
 
     env = {
         **CHILD_ENV,
@@ -1664,8 +1789,12 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if returncode != 0:
             err_lines = stderr_text.splitlines() if stderr_text else []
-            err_tail = "\n".join(err_lines[-30:]) if err_lines else f"exit code {returncode}"
-            logger.error("brain error: rc=%d stderr_tail=%s", returncode, err_tail[:2000])
+            err_tail = (
+                "\n".join(err_lines[-30:]) if err_lines else f"exit code {returncode}"
+            )
+            logger.error(
+                "brain error: rc=%d stderr_tail=%s", returncode, err_tail[:2000]
+            )
             reply_text = f"❌ Brain Error (rc={returncode})\n\n{err_tail[:3500]}"
             if progress_msg:
                 try:
@@ -1694,42 +1823,59 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await _safe_reply(update, reply_text, parse_mode="Markdown")
             return
 
-        output = _strip_tui_artifacts(stdout_text)
+        # Strip TUI artifacts from both streams
+        stdout_clean = _strip_tui_artifacts(stdout_text)
+        stderr_clean = _strip_tui_artifacts(stderr_text) if stderr_text else ""
 
-        # Deduplicate: hermes binary echoes entire response via stdout+stderr
-        # Find if output contains the same text repeated twice
-        import re as _re
+        # Dedup step 1: hermes echoes output via both stdout and stderr.
+        # If one stream's content is entirely contained in the other, use the longer one.
+        if stdout_clean and stderr_clean:
+            if stdout_clean in stderr_clean:
+                output = stderr_clean
+            elif stderr_clean in stdout_clean:
+                output = stdout_clean
+            else:
+                output = stdout_clean
+        else:
+            output = stdout_clean or stderr_clean
+
+        # Dedup step 2: hermes may echo the entire response twice in the same stream.
+        # Check if the second half of the text is a near-exact repeat of the first half.
         text = output.strip()
         n = len(text)
         if n > 100:
-            # Try finding the repeat boundary by scanning from 30% to 70%
+            # Normalize for comparison: collapse all whitespace runs to single spaces
+            import re as _re
+
+            def _norm(s):
+                return _re.sub(r"\s+", " ", s).strip().lower()
+
+            # Check if the full text appears again starting from the midpoint region
             best_split = None
-            for pct in range(30, 71, 2):
-                split = n * pct // 100
-                # Compare 40-char chunks around the split point
-                chunk_size = min(80, split // 2)
-                if chunk_size < 20:
-                    continue
-                # Get first chunk and find it again after the split point
-                probe = text[:chunk_size].lower()
-                search_area = text[split:]
-                idx = search_area.lower().find(probe)
+            for start_pct in range(30, 71, 5):
+                check_from = n * start_pct // 100
+                probe = text[: n // 2]
+                probe_norm = _norm(probe)
+                search = text[check_from:]
+                search_norm = _norm(search)
+                idx = search_norm.find(probe_norm)
                 if idx >= 0:
-                    # Found repeat start — check if everything from here matches from start
-                    repeat_start = split + idx
-                    first_part = text[:repeat_start].strip()
-                    second_part = text[repeat_start:repeat_start+len(first_part)].strip()
-                    # Compare with normalized whitespace
-                    if (first_part.lower().replace("  ", " ") == 
-                        second_part.lower().replace("  ", " ") and
-                        len(first_part) > 50 and
-                        len(first_part) > n * 0.3):
-                        best_split = repeat_start
+                    # Found it — confirm the remainder matches
+                    candidate = search[: len(probe) + 50]
+                    if _norm(candidate).startswith(
+                        probe_norm[: max(len(probe_norm) - 20, 50)]
+                    ):
+                        best_split = check_from
                         break
             if best_split:
                 output = text[:best_split].strip()
+            else:
+                # Fallback: check if first half equals second half (exact repeat)
+                mid = n // 2
+                if n >= 200 and _norm(text[:mid]) == _norm(text[mid:]):
+                    output = text[:mid].strip()
 
-        # First-line dedup
+        # Dedup step 3: remove duplicate first non-empty lines
         lines = output.split("\n")
         non_empty = [(i, l.strip()) for i, l in enumerate(lines) if l.strip()]
         if len(non_empty) >= 2 and non_empty[0][1] == non_empty[1][1]:
@@ -1803,13 +1949,19 @@ async def _handle_action_callback(query, action: str) -> None:
     elif action == "suguru_scan_menu":
         regime = load_json(CONFIG_DIR / "risk-regime.json")
         mode = regime.get("riskMode", "UNKNOWN")
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🔍 Scan Only", callback_data="act:suguru_scan_only"),
-                InlineKeyboardButton("🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"),
-            ],
-            [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "🔍 Scan Only", callback_data="act:suguru_scan_only"
+                    ),
+                    InlineKeyboardButton(
+                        "🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"
+                    ),
+                ],
+                [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
+            ]
+        )
         await _answer_and_edit(
             query,
             f"⚡ *Suguru — Elite Scanner*\n\n"
@@ -1829,13 +1981,15 @@ async def _handle_action_callback(query, action: str) -> None:
         scan = load_json(OUTPUTS_DIR / "suguru-candidates.json", default={})
         cands = scan.get("candidates", [])
         if not cands:
-            await _safe_edit(query, "🔍 *Suguru Scan*\n\nNo candidates found.", parse_mode="Markdown")
+            await _safe_edit(
+                query, "🔍 *Suguru Scan*\n\nNo candidates found.", parse_mode="Markdown"
+            )
             return
         lines = [f"🔍 *Suguru Scan — {len(cands)} candidates*\n"]
         for i, c in enumerate(cands[:5]):
             scores = c.get("sub_scores", {})
             lines.append(
-                f"{i+1}. *{c['direction']} {c['asset']}* GSS={c['gss']:.2f}\n"
+                f"{i + 1}. *{c['direction']} {c['asset']}* GSS={c['gss']:.2f}\n"
                 f"   px={c['entry_price']} lev={c['leverage']}x "
                 f"netRR={c['net_rr']:.2f} risk={c['risk_pct']:.1f}%\n"
                 f"   confluence={scores.get('scanner_confluence', 0):.2f} "
@@ -1852,7 +2006,9 @@ async def _handle_action_callback(query, action: str) -> None:
         scan = load_json(OUTPUTS_DIR / "suguru-candidates.json", default={})
         cands = scan.get("candidates", [])
         if not cands:
-            await _safe_edit(query, "🧠 *Hermes Scan*\n\nNo candidates found.", parse_mode="Markdown")
+            await _safe_edit(
+                query, "🧠 *Hermes Scan*\n\nNo candidates found.", parse_mode="Markdown"
+            )
             return
         await _safe_edit(query, "🧠 Hermes deliberating...")
         output = await run_script_async(
@@ -1863,7 +2019,9 @@ async def _handle_action_callback(query, action: str) -> None:
         if not rec or not rec.get("recommendation"):
             # Show raw output if no valid recommendation
             err_msg = output[:500] if output else "No output from hermes"
-            await _safe_edit(query, "🧠 *Hermes Error*\n\n" + err_msg, parse_mode="Markdown")
+            await _safe_edit(
+                query, "🧠 *Hermes Error*\n\n" + err_msg, parse_mode="Markdown"
+            )
             return
         if rec.get("recommendation") == "TRADE":
             tp = rec.get("trade_params", {})
@@ -1878,13 +2036,23 @@ async def _handle_action_callback(query, action: str) -> None:
                 f"NetRR: {tp.get('netRr', '?')}\n\n"
                 f"_{rec.get('reasoning', 'No reasoning')}_"
             )
-            keyboard = InlineKeyboardMarkup([
+            keyboard = InlineKeyboardMarkup(
                 [
-                    InlineKeyboardButton("✅ Approve", callback_data="act:suguru_approve"),
-                    InlineKeyboardButton("❌ Reject", callback_data="act:suguru_reject"),
-                ],
-                [InlineKeyboardButton("💬 Chat to customize", callback_data="act:suguru_chat")],
-            ])
+                    [
+                        InlineKeyboardButton(
+                            "✅ Approve", callback_data="act:suguru_approve"
+                        ),
+                        InlineKeyboardButton(
+                            "❌ Reject", callback_data="act:suguru_reject"
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "💬 Chat to customize", callback_data="act:suguru_chat"
+                        )
+                    ],
+                ]
+            )
             await _safe_edit(query, text, reply_markup=keyboard)
         else:
             await _safe_edit(
@@ -1899,7 +2067,11 @@ async def _handle_action_callback(query, action: str) -> None:
             ["python3", str(STATE_DIR / "scripts/vps/suguru.py"), "--execute-approved"],
             timeout=120,
         )
-        await _safe_edit(query, f"✅ *Suguru trade executed*\n\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+        await _safe_edit(
+            query,
+            f"✅ *Suguru trade executed*\n\n```\n{output[:3000]}\n```",
+            parse_mode="Markdown",
+        )
 
     elif action == "suguru_reject":
         await _safe_edit(query, "❌ Trade rejected.")
@@ -1927,13 +2099,17 @@ async def _handle_action_callback(query, action: str) -> None:
         await _answer_and_edit(query, "✅ Jido cancelled.")
 
     elif action == "jido_prompt":
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("▶️ Run Jido", callback_data="act:jido_confirm"),
-                InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
-            ],
-            [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "▶️ Run Jido", callback_data="act:jido_confirm"
+                    ),
+                    InlineKeyboardButton("🔍 Dry Run", callback_data="act:jido_dry"),
+                ],
+                [InlineKeyboardButton("❌ Cancel", callback_data="act:jido_cancel")],
+            ]
+        )
         await _answer_and_edit(
             query,
             "🔮 *Jido — Autonomous Executor*\n\nChoose execution mode:",
@@ -1951,13 +2127,23 @@ async def _handle_action_callback(query, action: str) -> None:
         await _answer_and_edit(query, "✅ Evaluate cancelled.")
 
     elif action == "evaluate_prompt":
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("▶️ Execute", callback_data="act:evaluate_confirm"),
-                InlineKeyboardButton("🔍 Dry Run", callback_data="act:evaluate_dry"),
-            ],
-            [InlineKeyboardButton("❌ Cancel", callback_data="act:evaluate_cancel")],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "▶️ Execute", callback_data="act:evaluate_confirm"
+                    ),
+                    InlineKeyboardButton(
+                        "🔍 Dry Run", callback_data="act:evaluate_dry"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "❌ Cancel", callback_data="act:evaluate_cancel"
+                    )
+                ],
+            ]
+        )
         await _answer_and_edit(
             query,
             "⚡ *Evaluate — Signal Processor*\n\nChoose execution mode:",
@@ -2000,18 +2186,34 @@ async def _handle_action_callback(query, action: str) -> None:
 
     elif action == "settings_view":
         text = _build_settings_text()
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("✏️ Execution", callback_data="act:settings_help_execution"),
-                InlineKeyboardButton("✏️ Position Mgmt", callback_data="act:settings_help_position"),
-            ],
-            [
-                InlineKeyboardButton("✏️ Gates", callback_data="act:settings_help_gates"),
-                InlineKeyboardButton("✏️ Scores", callback_data="act:settings_help_scores"),
-            ],
-            [InlineKeyboardButton("🔄 Reset Gates", callback_data="act:gates_reset_prompt")],
-        ])
-        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
+                [
+                    InlineKeyboardButton(
+                        "✏️ Execution", callback_data="act:settings_help_execution"
+                    ),
+                    InlineKeyboardButton(
+                        "✏️ Position Mgmt", callback_data="act:settings_help_position"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "✏️ Gates", callback_data="act:settings_help_gates"
+                    ),
+                    InlineKeyboardButton(
+                        "✏️ Scores", callback_data="act:settings_help_scores"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "🔄 Reset Gates", callback_data="act:gates_reset_prompt"
+                    )
+                ],
+            ]
+        )
+        await _answer_and_edit(
+            query, text, reply_markup=keyboard, parse_mode="Markdown"
+        )
 
     elif action == "settings_help_execution":
         text = (
@@ -2069,12 +2271,18 @@ async def _handle_action_callback(query, action: str) -> None:
         await _answer_and_edit(query, text, parse_mode="Markdown")
 
     elif action == "gates_reset_prompt":
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🔄 Confirm Reset", callback_data="act:gates_reset_confirm"),
-                InlineKeyboardButton("❌ Cancel", callback_data="act:settings_view"),
-            ],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "🔄 Confirm Reset", callback_data="act:gates_reset_confirm"
+                    ),
+                    InlineKeyboardButton(
+                        "❌ Cancel", callback_data="act:settings_view"
+                    ),
+                ],
+            ]
+        )
         await _answer_and_edit(
             query,
             "🔄 *Reset all gate overrides to defaults?*\n\n"
@@ -2092,7 +2300,9 @@ async def _handle_action_callback(query, action: str) -> None:
         rules = load_json(USER_RULES_FILE, default={})
         had_overrides = "safety_gates" in rules and rules["safety_gates"]
         if not had_overrides:
-            await _answer_and_edit(query, "ℹ️ No user gate overrides found — already at defaults.")
+            await _answer_and_edit(
+                query, "ℹ️ No user gate overrides found — already at defaults."
+            )
             return
         rules.pop("safety_gates", None)
         rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -2102,7 +2312,9 @@ async def _handle_action_callback(query, action: str) -> None:
             json.dump(rules, f, indent=2)
             f.write("\n")
         tmp.rename(USER_RULES_FILE)
-        await _answer_and_edit(query, "✅ All gate overrides removed — defaults restored.")
+        await _answer_and_edit(
+            query, "✅ All gate overrides removed — defaults restored."
+        )
 
     elif action == "status_run":
         waifu_bin = shutil.which("waifu")
@@ -2129,12 +2341,18 @@ async def _handle_action_callback(query, action: str) -> None:
         await _run_waifu_and_edit(query, "whale", timeout=120)
 
     elif action == "emergency_prompt":
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🚨 CONFIRM", callback_data="act:emergency_stop_confirm"),
-                InlineKeyboardButton("❌ Cancel", callback_data="act:emergency_stop_cancel"),
-            ],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "🚨 CONFIRM", callback_data="act:emergency_stop_confirm"
+                    ),
+                    InlineKeyboardButton(
+                        "❌ Cancel", callback_data="act:emergency_stop_cancel"
+                    ),
+                ],
+            ]
+        )
         await _answer_and_edit(
             query,
             "🚨 *Emergency Stop Confirmation*\n\n"
@@ -2169,7 +2387,9 @@ async def _handle_action_callback(query, action: str) -> None:
             )
             try:
                 proc = await asyncio.create_subprocess_exec(
-                    "python3", "-c", close_script,
+                    "python3",
+                    "-c",
+                    close_script,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     env=CHILD_ENV,
@@ -2186,7 +2406,11 @@ async def _handle_action_callback(query, action: str) -> None:
                 results.append(f"❌ {asset} — timeout")
             except Exception as e:
                 results.append(f"❌ {asset} — {e}")
-        await _safe_edit(query, "🔴 *Flatten Results*\n\n" + "\n".join(results), parse_mode="Markdown")
+        await _safe_edit(
+            query,
+            "🔴 *Flatten Results*\n\n" + "\n".join(results),
+            parse_mode="Markdown",
+        )
 
     elif action == "flatten_cancel":
         await _answer_and_edit(query, "✅ Flatten cancelled.")
@@ -2209,7 +2433,9 @@ async def _handle_action_callback(query, action: str) -> None:
                 target = pos
                 break
         if not target:
-            await _safe_edit(query, f"ℹ️ Position {asset} not found (may already be closed).")
+            await _safe_edit(
+                query, f"ℹ️ Position {asset} not found (may already be closed)."
+            )
             return
         strategy_id = target.get("strategyId", "")
         close_script = (
@@ -2221,7 +2447,9 @@ async def _handle_action_callback(query, action: str) -> None:
         )
         try:
             proc = await asyncio.create_subprocess_exec(
-                "python3", "-c", close_script,
+                "python3",
+                "-c",
+                close_script,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=CHILD_ENV,
@@ -2245,12 +2473,17 @@ async def _handle_action_callback(query, action: str) -> None:
             await _answer_and_edit(query, "❌ Invalid close action.")
             return
         strat_key, asset = parts[1], parts[2]
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🔴 CONFIRM", callback_data=f"act:close_single_confirm:{strat_key}:{asset}"),
-                InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel"),
-            ],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "🔴 CONFIRM",
+                        callback_data=f"act:close_single_confirm:{strat_key}:{asset}",
+                    ),
+                    InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel"),
+                ],
+            ]
+        )
         await _answer_and_edit(
             query,
             f"🔴 *Close {asset}?*\n\n_This will close the position immediately._",
@@ -2269,12 +2502,18 @@ async def _handle_action_callback(query, action: str) -> None:
             direction = pos.get("direction", "?")
             roe = float(pos.get("currentRoe", 0) or 0)
             pos_lines.append(f"  • {asset} {direction} ({roe:+.1f}%)")
-        keyboard = InlineKeyboardMarkup([
+        keyboard = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("🔴 CLOSE ALL", callback_data="act:flatten_confirm"),
-                InlineKeyboardButton("❌ Cancel", callback_data="act:flatten_cancel"),
-            ],
-        ])
+                [
+                    InlineKeyboardButton(
+                        "🔴 CLOSE ALL", callback_data="act:flatten_confirm"
+                    ),
+                    InlineKeyboardButton(
+                        "❌ Cancel", callback_data="act:flatten_cancel"
+                    ),
+                ],
+            ]
+        )
         await _answer_and_edit(
             query,
             f"🔴 *Flatten — Close All Positions*\n\n"
@@ -2296,8 +2535,17 @@ async def _handle_action_callback(query, action: str) -> None:
             roe = float(pos.get("currentRoe", 0) or 0)
             strat_key = pos.get("_key", "")
             label = f"{asset} {direction} ({roe:+.1f}%)"
-            buttons.append([InlineKeyboardButton(f"🔴 {label}", callback_data=f"act:close_single:{strat_key}:{asset}")])
-        buttons.append([InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")])
+            buttons.append(
+                [
+                    InlineKeyboardButton(
+                        f"🔴 {label}",
+                        callback_data=f"act:close_single:{strat_key}:{asset}",
+                    )
+                ]
+            )
+        buttons.append(
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:close_cancel")]
+        )
         keyboard = InlineKeyboardMarkup(buttons)
         await _answer_and_edit(
             query,

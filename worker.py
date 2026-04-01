@@ -404,10 +404,41 @@ def main():
         print("Worker stopped.")
 
 
-if __name__ == "__main__":
-    # Telegram bot runs in the dashboard service (server.py), not here.
-    # Worker is mechanical-only: scanners, DSL, arbiter, health checks.
+def start_telegram_bot():
+    """Start Telegram bot polling in a daemon thread alongside the scheduler."""
+    import threading
+
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not token:
+        print("[startup] TELEGRAM_BOT_TOKEN not set — Telegram bot disabled")
+        return
+
     try:
+        import asyncio
+        from dashboard.telegram_bot import create_bot_application, start_polling
+    except ImportError:
+        print("[startup] dashboard.telegram_bot import failed — Telegram bot disabled")
+        return
+
+    def _run():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        app = create_bot_application()
+        if not app:
+            print("[startup] Telegram bot creation returned None")
+            return
+        print("[startup] Telegram bot starting (polling)...")
+        loop.run_until_complete(start_polling(app))
+        loop.run_forever()
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    print("[startup] Telegram bot thread launched")
+
+
+if __name__ == "__main__":
+    try:
+        start_telegram_bot()
         main()
     except Exception as e:
         import traceback
