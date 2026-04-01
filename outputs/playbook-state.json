@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-03-24T02:58:28Z",
+  "generatedAt": "2026-03-24T02:38:13Z",
   "profile": {
     "mode": "BASELINE",
     "hybrid": "deterministic-mechanical + oz-supervisory"
@@ -11,8 +11,8 @@
       "maxLeverageCrypto": 10,
       "maxLeverageXYZ": 0,
       "allocPctPerSlot": 30,
-      "newEntriesAllowed": false,
-      "autoEntryEnabled": false,
+      "newEntriesAllowed": true,
+      "autoEntryEnabled": true,
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
       "cooldownAfterLossSec": 60,

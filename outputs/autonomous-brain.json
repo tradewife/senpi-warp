@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-03-24T03:02:51.584763+00:00",
-  "codebaseIndexAt": "2026-03-24T02:58:28Z",
+  "generatedAt": "2026-03-24T02:38:13Z",
+  "codebaseIndexAt": "2026-03-24T02:38:13Z",
   "riskMode": "BASELINE",
   "executionPolicy": {
-    "generatedAt": "2026-03-24T03:02:51.584752+00:00",
+    "generatedAt": "2026-03-24T02:38:13Z",
     "mode": "ACTIVE",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
+    "blockNewEntries": false,
+    "allowAutoEntry": true,
     "maxSlotsCap": 2,
     "maxLeverageCap": 10.0,
     "allocPctCap": 30.0,
@@ -452,7 +452,7 @@
       "peakEquity": 0,
       "dayStartEquity": 0,
       "consecutiveStopOuts": 0,
-      "lastCheckAt": "2026-03-24T02:24:07Z"
+      "lastCheckAt": "2026-03-24T02:37:26Z"
     }
   },
   "pending": {
