@@ -3,13 +3,18 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-01T13:01:15Z",
+  "lastCheckAt": "2026-04-01T14:47:22Z",
   "dayStartDate": "2026-04-01",
   "alerts": [
     {
-      "type": "CATASTROPHIC_DRAWDOWN",
+      "type": "CATASTROPHIC_DRAWBOWN",
       "message": "Drawdown -51.11% persists (account $48.89 from initial $100.00). No open positions \u2014 capital preserved. RISK_OFF correctly active.",
       "timestamp": "2026-04-01T12:03:08Z"
+    },
+    {
+      "type": "JIDO_CHECK",
+      "message": "JIDO check: Account flat ($48.89), no positions, no orders. RISK_OFF active. Drawdown -51.1% from initial. No new breaches.",
+      "timestamp": "2026-04-01T14:47:22Z"
     }
   ]
 }

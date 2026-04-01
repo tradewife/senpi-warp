@@ -1,28 +1,25 @@
 {
-  "generatedAt": "2026-04-01T13:01:15Z",
+  "timestamp": "2026-04-01T14:47:22Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "DAILY LOSS LIMIT: 23.0%"
-  ],
-  "deadWeight": [],
+  "regimeReason": "Daily loss 23.0% (limit 10.0%)",
+  "regimeSetBy": "waifu-regime (arbiter-override)",
+  "accountValue": 48.887581,
+  "withdrawable": 48.887581,
+  "initialBudget": 100.0,
+  "drawdownFromInitial": -51.11,
+  "drawdownFromPeak": 0.0,
+  "positions": [],
+  "openOrders": 0,
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ]
-  }
+    "drawdownActual": 51.11,
+    "breached": true,
+    "dailyLossLimitPct": 10,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
+  },
+  "actionsTaken": [
+    "JIDO check \u2014 no action needed. Account flat, RISK_OFF active."
+  ],
+  "warnings": []
 }
