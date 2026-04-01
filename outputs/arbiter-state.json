@@ -1,6 +1,15 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100.0,
+  "lastEquity": 48.89,
+  "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-24T02:04:37Z"
+  "lastCheckAt": "2026-04-01T23:49:06Z",
+  "alerts": [
+    {
+      "type": "REGIME_CONFIRMED",
+      "severity": "INFO",
+      "message": "RISK_OFF confirmed. Drawdown 51.1% (peak $100.00 \u2192 current $48.89). No open positions. Capital at rest.",
+      "timestamp": "2026-04-01T23:49:06Z"
+    }
+  ]
 }

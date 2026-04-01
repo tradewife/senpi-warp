@@ -1,32 +1,44 @@
 {
-  "timestamp": "2026-04-01T22:47:02Z",
-  "source": "jido-portfolio-review",
-  "regime": "RISK_OFF",
-  "regimeChanged": true,
-  "previousRegime": "BASELINE",
+  "timestamp": "2026-04-01T23:49:38Z",
   "strategy": "wolf-primary",
   "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "accountValue": 48.89,
-  "budget": 100.0,
-  "drawdownPct": 51.1,
-  "peakEquity": 100.0,
-  "openPositions": 0,
-  "positions": [],
+  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "regime": "RISK_OFF",
+  "regimeSource": "jido-confirmed",
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.89,
+    "peak": 100.0,
+    "drawdownPct": 51.11,
+    "initialBudget": 100.0,
+    "withdrawable": 48.89
+  },
+  "positions": {
+    "open": [],
+    "count": 0
+  },
+  "orders": {
+    "open": [],
+    "count": 0
+  },
   "guardrails": {
-    "catastrophicDrawdown": { "threshold": 20, "actual": 51.1, "breached": true },
-    "dailyLossLimit": { "threshold": 10, "actual": 0, "breached": false },
-    "maxConsecutiveStopOuts": { "threshold": 4, "actual": 0, "breached": false }
+    "catastrophicDrawdownPct": 20.0,
+    "currentDrawdownPct": 51.11,
+    "breached": true,
+    "breachType": "catastrophic_drawdown",
+    "dailyLossLimitPct": 10.0,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
   },
   "actionsTaken": [
-    "Resolved 7 merge conflicts (took theirs)",
-    "Set risk-regime.json to RISK_OFF (was BASELINE)",
-    "Initialized peakEquity to $100 in arbiter-state.json",
-    "Logged REGIME_OVERRIDE and CAPITAL_HALVED alerts"
+    "Confirmed RISK_OFF regime is correct (DD 51.1% >> 20% threshold)",
+    "No open positions \u2014 no SL/TP actions needed",
+    "Resolved git merge conflict in arbiter-state.json",
+    "Restored peakEquity to 100.0 (was wiped to 0 by conflict resolution)",
+    "Updated arbiter-state with current equity snapshot"
   ],
   "warnings": [
-    "Strategy has lost >50% of capital with no open positions — all losses are realized",
-    "arbiter-state.json had peakEquity=0 (never initialized) — JIDO set to budget $100",
-    "Regime was BASELINE despite 51% drawdown — regime-classifier may override again",
-    "Consider whether to top-up or close this strategy"
+    "Strategy has lost >50% of initial $100 budget. Capital at rest under RISK_OFF.",
+    "Peak equity conflict resolution required manual restoration \u2014 pitfall #4 in skill doc"
   ]
 }
