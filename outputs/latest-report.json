@@ -1,28 +1,28 @@
 {
-  "generatedAt": "2026-04-01T07:01:44Z",
-  "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "DAILY LOSS LIMIT: 23.0%"
-  ],
-  "deadWeight": [],
+  "generatedAt": "2026-04-01T19:17:00Z",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "regime": {
+    "riskMode": "RISK_OFF",
+    "reason": "Daily loss 23.0% (limit 10.0%)",
+    "since": "2026-04-01T08:00:52Z"
+  },
+  "equity": {
+    "accountValue": 48.89,
+    "initialBudget": 100.00,
+    "peakEquity": 48.89,
+    "dayStartEquity": 63.45,
+    "totalDrawdownPct": 51.11,
+    "dailyLossPct": 23.0,
+    "withdrawable": 48.89
+  },
+  "positions": [],
+  "openOrders": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ]
-  }
+    "dailyLossLimitPct": {"value": 10, "actual": 23.0, "status": "BREACH"},
+    "catastrophicDrawdownPct": {"value": 20, "actual": 51.11, "status": "BREACH"},
+    "maxConsecutiveStopOuts": {"value": 4, "actual": 0, "status": "CLEAR"}
+  },
+  "actions": ["No positions to manage. RISK_OFF regime confirmed active. Capital preserved."],
+  "warnings": ["Account down 51.1% from initial budget. No new trades until regime returns to BASELINE."]
 }

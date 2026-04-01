@@ -3,27 +3,23 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-01T07:01:44Z",
+  "lastCheckAt": "2026-04-01T19:17:00Z",
   "dayStartDate": "2026-04-01",
   "alerts": [
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
+      "message": "Drawdown -51.11% persists (account $48.89 from initial $100.00). No open positions — capital preserved.",
       "timestamp": "2026-04-01T07:01:54Z"
     },
     {
-      "type": "REGIME_OVERRIDE",
-      "message": "Overrode BASELINE->RISK_OFF (#7). Regime-classifier set BASELINE at ~20:00Z despite 51% drawdown. Race condition still active \u2014 7 overrides in ~20h.",
-      "timestamp": "2026-04-01T07:01:54Z"
+      "type": "DAILY_LOSS_BREACH",
+      "message": "Daily loss 23.0% (limit 10.0%). RISK_OFF active since 08:00Z.",
+      "timestamp": "2026-04-01T08:00:52Z"
     },
     {
-      "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from peak $100.00). No open positions \u2014 capital preserved.",
-      "timestamp": "2026-03-31T19:32:23.813423+00:00"
+      "type": "JIDO_CHECK",
+      "message": "No open positions, no naked exposure. Account flat at $48.89. RISK_OFF correctly active. All guardrails monitored.",
+      "timestamp": "2026-04-01T19:17:00Z"
     }
-  ],
-  "flattenedAt": null,
-  "recoveryMode": true,
-  "recoveryStartedAt": "2026-04-01T09:00:00Z",
-  "recoveryNote": "Post-catastrophic-DD recovery. Peak reset from $100 to $48.89. System will resume at RISK_ON/BASELINE once regime classifier runs and arbiter confirms no guardrail breaches. Reduced position sizing recommended."
+  ]
 }
