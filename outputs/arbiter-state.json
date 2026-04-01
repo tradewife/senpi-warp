@@ -3,23 +3,13 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 63.45,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-01T19:17:00Z",
+  "lastCheckAt": "2026-04-01T09:02:40Z",
   "dayStartDate": "2026-04-01",
   "alerts": [
     {
       "type": "CATASTROPHIC_DRAWDOWN",
-      "message": "Drawdown -51.11% persists (account $48.89 from initial $100.00). No open positions — capital preserved.",
-      "timestamp": "2026-04-01T07:01:54Z"
-    },
-    {
-      "type": "DAILY_LOSS_BREACH",
-      "message": "Daily loss 23.0% (limit 10.0%). RISK_OFF active since 08:00Z.",
-      "timestamp": "2026-04-01T08:00:52Z"
-    },
-    {
-      "type": "JIDO_CHECK",
-      "message": "No open positions, no naked exposure. Account flat at $48.89. RISK_OFF correctly active. All guardrails monitored.",
-      "timestamp": "2026-04-01T19:17:00Z"
+      "message": "Drawdown -51.11% persists (account $48.89 from initial $100.00). No open positions \u2014 capital preserved.",
+      "timestamp": "2026-04-01T09:02:40Z"
     }
   ]
 }
