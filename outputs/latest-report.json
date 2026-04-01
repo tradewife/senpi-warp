@@ -1,23 +1,42 @@
 {
-  "timestamp": "2026-04-01T09:02:40Z",
-  "regime": "RISK_OFF",
-  "regimeReason": "Daily loss 23.0% (limit 10.0%)",
-  "accountValue": 48.887581,
-  "initialBudget": 100.0,
-  "drawdownPct": 51.11,
-  "peakEquity": 48.887581,
-  "withdrawable": 48.887581,
-  "positions": [],
-  "openOrders": [],
+  "timestamp": "2026-04-01T12:02:50Z",
+  "source": "jido",
+  "regime": {
+    "mode": "RISK_OFF",
+    "reason": "Daily loss 23.0% (limit 10.0%)",
+    "setAt": "2026-04-01T09:00:39Z",
+    "setBy": "waifu-regime (arbiter-override)"
+  },
+  "equity": {
+    "current": 48.89,
+    "initial": 100.00,
+    "peak": 48.89,
+    "dayStart": 63.45,
+    "withdrawable": 48.89,
+    "drawdownPct": -51.11,
+    "dailyChangePct": -22.97
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0,
+    "details": []
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "breaches": [
-      "catastrophicDrawdown",
-      "dailyLoss"
-    ]
+    "catastrophicDrawdownPct": 20.0,
+    "currentDrawdownPct": 51.11,
+    "breached": true,
+    "breachType": "CATASTROPHIC_DRAWDOWN",
+    "dailyLossPct": 22.97,
+    "dailyLossLimitPct": 10.0,
+    "dailyLossBreached": true,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
   },
   "actions": [],
-  "status": "CAPITAL_PRESERVED_RISK_OFF"
+  "warnings": [
+    "Account at -51.11% from initial $100. RISK_OFF active. No positions open — capital preserved at $48.89."
+  ]
 }
