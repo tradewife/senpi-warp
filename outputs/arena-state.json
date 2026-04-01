@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-24T02:19:10Z",
+  "updatedAt": "2026-03-24T02:58:27Z",
   "leaderboard": [
     {
       "rank": 1,
@@ -14,17 +14,6 @@
     },
     {
       "rank": 2,
-      "name": "Orca v1.1",
-      "slug": "orca-v1-1",
-      "emoji": "\ud83d\udc0b",
-      "totalPnl": 94.90513399,
-      "roi": "9.49%",
-      "equity": "1094.91",
-      "totalVolume": 301693.790355,
-      "totalTrades": 737
-    },
-    {
-      "rank": 3,
       "name": "Roach",
       "slug": "roach",
       "emoji": "\ud83d\udc0e",
@@ -33,6 +22,17 @@
       "equity": "1094.21",
       "totalVolume": 55620.965879,
       "totalTrades": 57
+    },
+    {
+      "rank": 3,
+      "name": "Orca v1.1",
+      "slug": "orca-v1-1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 91.23531299,
+      "roi": "9.12%",
+      "equity": "1091.24",
+      "totalVolume": 302539.864565,
+      "totalTrades": 741
     },
     {
       "rank": 4,
@@ -50,9 +50,9 @@
       "name": "Orca v1.2",
       "slug": "orca-v1-2",
       "emoji": "\ud83d\udc0b",
-      "totalPnl": 6.9601,
-      "roi": "0.70%",
-      "equity": "1006.96",
+      "totalPnl": 7.475832,
+      "roi": "0.75%",
+      "equity": "1007.48",
       "totalVolume": 2742.32405,
       "totalTrades": 9
     },
@@ -184,23 +184,7 @@
       "unrealizedPnl": 0,
       "totalFeesPaid": 48.33471,
       "totalFundedActive": 1000,
-      "lastUpdated": "2026-03-24T02:15:09.537+00:00"
-    },
-    {
-      "strategy": "Orca v1.1",
-      "slug": "orca-v1-1",
-      "emoji": "\ud83d\udc0b",
-      "totalPnl": 94.90513399,
-      "roi": "9.49%",
-      "equity": "1094.91",
-      "totalVolume": 301693.790355,
-      "volume24h": 72951.953768,
-      "totalTrades": 737,
-      "realizedPnl": 16.998784,
-      "unrealizedPnl": 77.90634999,
-      "totalFeesPaid": 269.613589,
-      "totalFundedActive": 1104.3,
-      "lastUpdated": "2026-03-24T02:15:09.537+00:00"
+      "lastUpdated": "2026-03-24T02:45:10.782+00:00"
     },
     {
       "strategy": "Roach",
@@ -216,7 +200,23 @@
       "unrealizedPnl": 0,
       "totalFeesPaid": 51.838685,
       "totalFundedActive": 1004.99,
-      "lastUpdated": "2026-03-24T02:15:09.537+00:00"
+      "lastUpdated": "2026-03-24T02:45:10.782+00:00"
+    },
+    {
+      "strategy": "Orca v1.1",
+      "slug": "orca-v1-1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 91.23531299,
+      "roi": "9.12%",
+      "equity": "1091.24",
+      "totalVolume": 302539.864565,
+      "volume24h": 73798.027978,
+      "totalTrades": 741,
+      "realizedPnl": 18.926235,
+      "unrealizedPnl": 72.30907799,
+      "totalFeesPaid": 270.359822,
+      "totalFundedActive": 1104.3,
+      "lastUpdated": "2026-03-24T02:45:10.782+00:00"
     }
   ],
   "comparison": [
@@ -232,17 +232,6 @@
       "volume24h": 0
     },
     {
-      "slug": "orca-v1-1",
-      "name": "Orca v1.1",
-      "emoji": "\ud83d\udc0b",
-      "totalPnl": 94.90513399,
-      "roi": "9.49%",
-      "equity": "1094.91",
-      "totalVolume": 301693.790355,
-      "totalTrades": 737,
-      "volume24h": 72951.953768
-    },
-    {
       "slug": "roach",
       "name": "Roach",
       "emoji": "\ud83d\udc0e",
@@ -252,6 +241,17 @@
       "totalVolume": 55620.965879,
       "totalTrades": 57,
       "volume24h": 13336.817037
+    },
+    {
+      "slug": "orca-v1-1",
+      "name": "Orca v1.1",
+      "emoji": "\ud83d\udc0b",
+      "totalPnl": 91.23531299,
+      "roi": "9.12%",
+      "equity": "1091.24",
+      "totalVolume": 302539.864565,
+      "totalTrades": 741,
+      "volume24h": 73798.027978
     },
     {
       "slug": "mantis",
@@ -268,9 +268,9 @@
       "slug": "orca-v1-2",
       "name": "Orca v1.2",
       "emoji": "\ud83d\udc0b",
-      "totalPnl": 6.9601,
-      "roi": "0.70%",
-      "equity": "1006.96",
+      "totalPnl": 7.475832,
+      "roi": "0.75%",
+      "equity": "1007.48",
       "totalVolume": 2742.32405,
       "totalTrades": 9,
       "volume24h": 0

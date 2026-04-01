@@ -1,30 +1,28 @@
 {
-  "generatedAt": "2026-03-27T12:00:00Z",
+  "generatedAt": "2026-03-24T02:58:28Z",
   "root": "/home/kt/senpi-waifu",
-  "version": "post-single-execution-path-v4",
   "counts": {
     "entrypoints": 3,
     "shared_lib": 2,
-    "cli_layer": 18,
-    "mechanical": 26,
+    "mechanical": 22,
     "strategic": 2,
-    "dashboard": 5,
-    "config": 14,
-    "memory": 7
+    "dashboard": 3,
+    "config": 10,
+    "memory": 4
   },
   "categories": {
     "entrypoints": [
       {
         "path": "dashboard/server.py",
-        "summary": "Senpi Dashboard — mobile-first monitoring + chat interface."
+        "summary": "Senpi Dashboard \u2014 mobile-first monitoring + chat interface."
       },
       {
         "path": "dashboard/telegram_bot.py",
-        "summary": "Senpi Telegram Bot — full control interface for the ORCA hybrid trading agent."
+        "summary": "Senpi Telegram Bot \u2014 full control interface for the ORCA hybrid trading agent."
       },
       {
         "path": "worker.py",
-        "summary": "Senpi Railway Worker — APScheduler-based job runner replacing Linux crontab."
+        "summary": "Senpi Railway Worker \u2014 replaces the Linux crontab for Railway deployment."
       }
     ],
     "shared_lib": [
@@ -34,87 +32,13 @@
       },
       {
         "path": "scripts/lib/senpi_common.py",
-        "summary": "Shared utilities: config, state I/O, mcporter_call, git sync, Telegram, risk regime, trade locking."
-      }
-    ],
-    "cli_layer": [
-      {
-        "path": "waifu_cli/__init__.py",
-        "summary": "Package init."
-      },
-      {
-        "path": "waifu_cli/__main__.py",
-        "summary": "Entry point for python -m waifu_cli."
-      },
-      {
-        "path": "waifu_cli/main.py",
-        "summary": "Click CLI group — registers all commands (evaluate, jido, regime, review, howl, whale, arena, status, emergency-stop, debug, dev, config)."
-      },
-      {
-        "path": "waifu_cli/runtime.py",
-        "summary": "Shared CLI runtime: sync_before/sync_after, command locking."
-      },
-      {
-        "path": "waifu_cli/safety.py",
-        "summary": "Centralized 10-gate entry pipeline (evaluate_entry). SINGLE point for hard safety constraints."
-      },
-      {
-        "path": "waifu_cli/commands/__init__.py",
-        "summary": "Commands package init."
-      },
-      {
-        "path": "waifu_cli/commands/evaluate.py",
-        "summary": "TradeEvaluator class — processes pending signals through 10-gate pipeline, returns DecisionObjects (APPROVE/REJECT/MANUAL_REVIEW). Calls strategy_open_position on approval."
-      },
-      {
-        "path": "waifu_cli/commands/jido.py",
-        "summary": "Jido — autonomous trade executor with tiered governance. Uses TradeEvaluator + ROI-based auto-execute vs manual review routing. Hot-loads user rules from config/user-rules.json."
-      },
-      {
-        "path": "waifu_cli/commands/regime.py",
-        "summary": "Regime classifier — BTC 4h/1h candles -> RISK_ON / BASELINE / RISK_OFF."
-      },
-      {
-        "path": "waifu_cli/commands/review.py",
-        "summary": "Portfolio review — equity, drawdown, dead weight, guardrail alerts."
-      },
-      {
-        "path": "waifu_cli/commands/howl.py",
-        "summary": "Nightly 10-pillar self-improvement analysis."
-      },
-      {
-        "path": "waifu_cli/commands/whale.py",
-        "summary": "Copy-trade portfolio management — top traders from Senpi Discovery."
-      },
-      {
-        "path": "waifu_cli/commands/arena.py",
-        "summary": "Arena intelligence — study Senpi Predators leaderboard."
-      },
-      {
-        "path": "waifu_cli/commands/status.py",
-        "summary": "Read-only system state snapshot."
-      },
-      {
-        "path": "waifu_cli/commands/emergency_stop.py",
-        "summary": "Emergency RISK_OFF with Telegram alert."
-      },
-      {
-        "path": "waifu_cli/commands/debug.py",
-        "summary": "Debug commands: logs, status, deploy, tail."
-      },
-      {
-        "path": "waifu_cli/commands/dev.py",
-        "summary": "Dev commands: skill management (list/add/create/show)."
-      },
-      {
-        "path": "waifu_cli/commands/config.py",
-        "summary": "Config commands: show/set/validate/export."
+        "summary": "senpi_common.py \u2014 Shared utilities for all VPS cron scripts."
       }
     ],
     "mechanical": [
       {
         "path": "scripts/vps/arena-monitor.py",
-        "summary": "Arena Monitor — runs every 15 minutes."
+        "summary": "Arena Monitor \u2014 runs every 15 minutes via cron."
       },
       {
         "path": "scripts/vps/autonomous-brain.py",
@@ -122,189 +46,149 @@
       },
       {
         "path": "scripts/vps/barracuda-scanner-cron.py",
-        "summary": "BARRACUDA v1.0 — Funding Decay Collector (PAUSED)."
+        "summary": "BARRACUDA v1.0 \u2014 Funding Decay Collector."
       },
       {
         "path": "scripts/vps/bison-scanner-cron.py",
-        "summary": "BISON v1.2 — Conviction Trend Holder (PAUSED)."
+        "summary": "BISON v1.2 \u2014 Conviction Trend Holder."
       },
       {
         "path": "scripts/vps/condor-scanner-cron.py",
-        "summary": "CONDOR v1.0 — Multi-asset alpha hunter."
-      },
-      {
-        "path": "scripts/vps/dsl-runner.py",
-        "summary": "DSL Runner — High-Water Trailing Stop Manager."
-      },
-      {
-        "path": "scripts/vps/elite_trader.py",
-        "summary": "ELITE-TRADER — Knowledge-graph driven trade executor with custom TP/SL."
-      },
-      {
-        "path": "scripts/vps/emerging-movers-cron.py",
-        "summary": "[LEGACY — REPLACED BY orca-scanner-cron.py]"
-      },
-      {
-        "path": "scripts/vps/fox-scanner-cron.py",
-        "summary": "FOX v1.6 — SM accumulation scanner."
-      },
-      {
-        "path": "scripts/vps/health-check-cron.py",
-        "summary": "Health Check — runs every 10 minutes via APScheduler."
-      },
-      {
-        "path": "scripts/vps/komodo-scanner-cron.py",
-        "summary": "KOMODO v1.0 — Momentum Event Consensus Scanner. Runs every 5 minutes."
-      },
-      {
-        "path": "scripts/vps/mantis-scanner-cron.py",
-        "summary": "MANTIS — SM accumulation scanner."
-      },
-      {
-        "path": "scripts/vps/orca-scanner-cron.py",
-        "summary": "ORCA Scanner v1.0 — Dual-Mode Emerging Movers (Hardened). Passive: queues via add_pending_entry."
-      },
-      {
-        "path": "scripts/vps/polar-scanner-cron.py",
-        "summary": "POLAR v1.0 — ETH Alpha Hunter."
-      },
-      {
-        "path": "scripts/vps/reconcile-closes.py",
-        "summary": "Detects DSL positions that were closed externally."
-      },
-      {
-        "path": "scripts/vps/rhino-scanner-cron.py",
-        "summary": "RHINO v1.0 — Momentum pyramider."
-      },
-      {
-        "path": "scripts/vps/risk-arbiter.py",
-        "summary": "Risk Arbiter — runs every 30 seconds."
-      },
-      {
-        "path": "scripts/vps/sentinel-scanner-cron.py",
-        "summary": "SENTINEL v1.0 — Quality Trader Convergence Scanner."
-      },
-      {
-        "path": "scripts/vps/shark-scanner-cron.py",
-        "summary": "SHARK v1.0 — Liquidation Cascade Front-Runner (PAUSED by Senpi)."
-      },
-      {
-        "path": "scripts/vps/sm-flip-cron.py",
-        "summary": "Position Supervisor — flip, conviction collapse, dead-weight rotation."
-      },
-      {
-        "path": "scripts/vps/watchdog-cron.py",
-        "summary": "Watchdog — Margin/Liquidation Monitor. Runs every 5 minutes."
+        "summary": "CONDOR v1.0 \u2014 Multi-asset alpha hunter."
       },
       {
         "path": "scripts/vps/dsl-combined-cron.sh",
-        "summary": "DSL Combined Runner — every 3 minutes."
+        "summary": "Job 2: DSL Combined Runner \u2014 every 3 minutes"
+      },
+      {
+        "path": "scripts/vps/dsl-runner.py",
+        "summary": "DSL Runner \u2014 High-Water Trailing Stop Manager."
+      },
+      {
+        "path": "scripts/vps/emerging-movers-cron.py",
+        "summary": "[LEGACY \u2014 REPLACED BY orca-scanner-cron.py]"
+      },
+      {
+        "path": "scripts/vps/health-check-cron.py",
+        "summary": "Health Check \u2014 System health monitor. Runs every 10 minutes via APScheduler."
       },
       {
         "path": "scripts/vps/health-check-cron.sh",
-        "summary": "Health Check + git sync — every 10 minutes."
+        "summary": "Job 5: Health Check + git sync \u2014 every 10 minutes"
+      },
+      {
+        "path": "scripts/vps/komodo-scanner-cron.py",
+        "summary": "KOMODO v1.0 \u2014 Momentum Event Consensus Scanner. Runs every 5 minutes."
+      },
+      {
+        "path": "scripts/vps/orca-scanner-cron.py",
+        "summary": "ORCA Scanner v1.0 \u2014 Dual-Mode Emerging Movers (Hardened)."
       },
       {
         "path": "scripts/vps/provision-vps.sh",
-        "summary": "VPS provisioning script."
+        "summary": "set -euo pipefail"
+      },
+      {
+        "path": "scripts/vps/reconcile-closes.py",
+        "summary": "reconcile-closes.py \u2014 Detects DSL positions that were closed (by dsl-combined.py"
+      },
+      {
+        "path": "scripts/vps/rhino-scanner-cron.py",
+        "summary": "RHINO v1.0 \u2014 Momentum pyramider."
+      },
+      {
+        "path": "scripts/vps/risk-arbiter.py",
+        "summary": "Risk Arbiter \u2014 runs every 30 seconds via systemd timer."
+      },
+      {
+        "path": "scripts/vps/sentinel-scanner-cron.py",
+        "summary": "SENTINEL v1.0 \u2014 Quality Trader Convergence Scanner."
+      },
+      {
+        "path": "scripts/vps/shark-scanner-cron.py",
+        "summary": "SHARK v1.0 \u2014 Liquidation Cascade Front-Runner."
+      },
+      {
+        "path": "scripts/vps/sm-flip-cron.py",
+        "summary": "Position Supervisor \u2014 flip, conviction collapse, and dead-weight rotation."
       },
       {
         "path": "scripts/vps/sm-flip-cron.sh",
-        "summary": "SM Flip Detector — every 5 minutes."
+        "summary": "Job 3: SM Flip Detector \u2014 every 5 minutes"
+      },
+      {
+        "path": "scripts/vps/watchdog-cron.py",
+        "summary": "Watchdog \u2014 Margin/Liquidation Monitor. Runs every 5 minutes via APScheduler."
       },
       {
         "path": "scripts/vps/watchdog-cron.sh",
-        "summary": "Watchdog — every 5 minutes."
+        "summary": "Job 4: Watchdog \u2014 every 5 minutes (offset by 2min from SM flip)"
       }
     ],
     "strategic": [
       {
         "path": "scripts/oz/agent-init.sh",
-        "summary": "Oz Agent Init — run once at the start of every agent session."
+        "summary": "Oz Agent Init \u2014 run once at the start of every agent session."
       },
       {
         "path": "scripts/oz/setup-oz-agents.sh",
-        "summary": "Oz agent setup."
+        "summary": "set -euo pipefail"
       }
     ],
     "dashboard": [
-      {
-        "path": "dashboard/server.py",
-        "summary": "FastAPI dashboard server."
-      },
-      {
-        "path": "dashboard/telegram_bot.py",
-        "summary": "Telegram bot — full control interface."
-      },
-      {
-        "path": "dashboard/senpi-dashboard.service",
-        "summary": "systemd service file."
-      },
       {
         "path": "dashboard/requirements.txt",
         "summary": "fastapi>=0.115"
       },
       {
+        "path": "dashboard/senpi-dashboard.service",
+        "summary": "[Unit]"
+      },
+      {
         "path": "dashboard/templates/index.html",
-        "summary": "Dashboard HTML template."
+        "summary": "<!DOCTYPE html>"
       }
     ],
     "config": [
       {
         "path": "config/barracuda-config.json",
-        "summary": "BARRACUDA scanner config (PAUSED)."
+        "summary": "\"maxPositions\": 3,"
       },
       {
         "path": "config/bison-config.json",
-        "summary": "BISON scanner config (PAUSED)."
+        "summary": "\"topAssets\": 10,"
       },
       {
         "path": "config/condor-config.json",
-        "summary": "CONDOR scanner config."
-      },
-      {
-        "path": "config/fox-config.json",
-        "summary": "FOX scanner config."
-      },
-      {
-        "path": "config/mantis-config.json",
-        "summary": "MANTIS scanner config."
+        "summary": "\"assets\": [\"BTC\", \"ETH\", \"SOL\", \"HYPE\"],"
       },
       {
         "path": "config/mcporter.json",
-        "summary": "MCP server configuration."
-      },
-      {
-        "path": "config/polar-config.json",
-        "summary": "POLAR scanner config."
+        "summary": "\"mcpServers\": {"
       },
       {
         "path": "config/rhino-config.json",
-        "summary": "RHINO scanner config."
+        "summary": "\"strategyId\": \"\","
       },
       {
         "path": "config/risk-regime.json",
-        "summary": "Current risk regime + guardrails."
+        "summary": "\"riskMode\": \"BASELINE\","
       },
       {
         "path": "config/scanner-config.json",
-        "summary": "Global scanner settings."
+        "summary": "\"minVolume24h\": 500000,"
       },
       {
         "path": "config/sentinel-config.json",
-        "summary": "SENTINEL scanner config."
+        "summary": "\"strategyId\": \"\","
       },
       {
         "path": "config/shark-config.json",
-        "summary": "SHARK scanner config (PAUSED)."
-      },
-      {
-        "path": "config/user-rules.json",
-        "summary": "User-defined rules for Jido governance (TP/SL, ROI thresholds, auto-execute toggles)."
+        "summary": "\"maxSlots\": 2,"
       },
       {
         "path": "config/wolf-strategies.json",
-        "summary": "Strategy registry."
+        "summary": "\"strategies\": {"
       }
     ],
     "memory": [
@@ -313,115 +197,35 @@
         "summary": ""
       },
       {
-        "path": "memory/howl-2026-03-24.md",
-        "summary": "HOWL analysis output."
-      },
-      {
         "path": "memory/howl-analysis-prompt.md",
-        "summary": "HOWL v2 — Hunt, Optimize, Win, Learn"
-      },
-      {
-        "path": "memory/MEMORY.md",
-        "summary": "Persistent context across sessions."
+        "summary": "HOWL v2 \u2014 Hunt, Optimize, Win, Learn"
       },
       {
         "path": "memory/trade-journal.json",
-        "summary": "All trades."
+        "summary": "[]"
       },
       {
         "path": "memory/whale-index-prompt.md",
-        "summary": "Whale Index Manager — Daily Rebalance Procedure"
-      },
-      {
-        "path": "memory/world_stats.json",
-        "summary": "World statistics."
+        "summary": "Whale Index Manager \u2014 Daily Rebalance Procedure"
       }
     ]
   },
   "controlPlane": {
     "mechanicalLayer": [
-      "worker.py schedules all VPS scripts via APScheduler",
-      "scripts/vps/*.py execute scanning, exits, safety, monitoring",
-      "scripts/lib/senpi_common.py is the shared runtime surface",
-      "waifu_cli/safety.py enforces the 10-gate entry pipeline"
+      "worker.py schedules the VPS scripts",
+      "scripts/vps/*.py execute entries, exits, safety, monitoring",
+      "scripts/lib/senpi_common.py is the shared runtime surface"
     ],
     "strategicLayer": [
-      "waifu_cli/commands/jido.py — tiered governance executor (auto-execute vs manual review)",
-      "waifu_cli/commands/evaluate.py — TradeEvaluator class with process_queue()",
-      "config/user-rules.json — hot-loaded user-defined rules",
       "scripts/oz/setup-oz-agents.sh defines scheduled Oz agents",
       "memory/howl-analysis-prompt.md and memory/whale-index-prompt.md hold learning procedures",
-      "outputs/autonomous-brain.json is the local strategic snapshot"
+      "outputs/autonomous-brain.json is the local strategic snapshot for deterministic consumers"
     ],
     "stateBus": [
       "config/*.json stores policy inputs",
       "state/*.json stores runtime execution state",
-      "state/pending-entries.json is the signal queue (scanners write, jido/evaluate consume)",
       "memory/trade-journal.json stores learning history",
       "outputs/*.json stores analysis and observability artifacts"
     ]
-  },
-  "governance": {
-    "tradeEntryPath": {
-      "description": "Phase-3 COMPLETE: All trade entries flow exclusively through waifu_cli via strategy_open_position",
-      "executors": [
-        "waifu_cli/commands/evaluate.py:369 — TradeEvaluator._handle_approval()",
-        "waifu_cli/commands/jido.py:280 — _execute_approved_trade()"
-      ],
-      "gatePipeline": "waifu_cli/safety.py:evaluate_entry() — 10 hard gates",
-      "emergencyClosures": [
-        "scripts/vps/risk-arbiter.py:118,359 — strategy_close_position (mechanical safety)",
-        "scripts/vps/watchdog-cron.py:63 — strategy_close_position (margin/liq watchdog)"
-      ],
-      "legacyNote": "RESOLVED — No strategy_open_position or create_position calls remain in scripts/vps/*.py. All VPS scanners are passive-only (queue via add_pending_entry)."
-    },
-    "passiveScanners": {
-      "fullyPassive": ["orca", "fox", "mantis", "shark", "komodo", "sentinel", "rhino", "condor", "polar", "barracuda", "bison"],
-      "hasLegacyDirectEntry": []
-    },
-    "pathAuthority": {
-      "canonicalSource": "scripts/lib/senpi_common.py:44-48",
-      "STATE_DIR": "Path(os.environ.get('SENPI_WAIFU_DIR', '/app'))",
-      "CONFIG_DIR": "STATE_DIR / 'config'",
-      "POSITION_STATE_DIR": "STATE_DIR / 'state'",
-      "MEMORY_DIR": "STATE_DIR / 'memory'",
-      "OUTPUTS_DIR": "STATE_DIR / 'outputs'",
-      "adopters": {
-        "senpi_common.py": "Lines 44-63 — canonical definitions, all constants derived from STATE_DIR",
-        "worker.py": "Line 36 — mirrors STATE_DIR via SENPI_WAIFU_DIR env var",
-        "dashboard/telegram_bot.py": "Lines 37-42 — mirrors all 5 path constants via SENPI_WAIFU_DIR",
-        "waifu_cli/commands/*.py": "11 files import senpi_common as sc, use sc.CONFIG_DIR/sc.POSITION_STATE_DIR/sc.OUTPUTS_DIR/sc.MEMORY_DIR",
-        "waifu_cli/commands/config.py": "Line 21 — uses Path(__file__) for PROJECT_ROOT (CLI-local .env editing only, no runtime state)",
-        "waifu_cli/commands/dev.py": "Line 20 — uses Path(__file__) for PROJECT_ROOT (skill management only, no runtime state)",
-        "waifu_cli/commands/debug.py": "Line 20 — uses SENPI_WAIFU_DIR env var with Path(__file__) fallback (compliant)"
-      },
-      "hardcodedPathsFound": false,
-      "auditDate": "2026-03-27T12:00:00Z"
-    },
-    "mcporterWrapper": {
-      "location": "scripts/lib/senpi_common.py:676",
-      "function": "mcporter_read(tool, args, timeout=30)",
-      "purpose": "Read-only safety wrapper — whitelists 11 read-only MCP tools, blocks all write operations",
-      "whitelistedTools": [
-        "leaderboard_get_markets", "leaderboard_get_momentum_events", "leaderboard_get_top",
-        "market_get_asset_data", "market_get_candles", "market_get_orderbook",
-        "market_get_instrument_specs", "market_get_prices", "market_list_instruments",
-        "market_get_all_instruments", "account_get_portfolio"
-      ]
-    },
-    "TradeEvaluator": {
-      "location": "waifu_cli/commands/evaluate.py:164",
-      "classAttrs": {
-        "PENDING_ENTRIES_FILE": "sc.POSITION_STATE_DIR / 'pending-entries.json'",
-        "MIN_SCORES": "scanner->threshold mapping (orca:6, mantis:7, fox:7, komodo:10, condor:10, polar:10, sentinel:5, rhino:5)"
-      },
-      "methods": [
-        "__init__(dry_run=False) — line 187",
-        "process_queue() -> List[DecisionObject] — line 194",
-        "_determine_recommendation(entry, gate, strategy) -> Recommendation — line 265",
-        "_handle_approval(entry, strategy, gate, strat_key, strategy_id, strategic) — line 302",
-        "_handle_manual_review(entry, gate) — line 410"
-      ]
-    }
   }
 }
