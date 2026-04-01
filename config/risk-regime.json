@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-01T20:01:15Z",
-  "updatedBy": "waifu-regime (arbiter-override)",
-  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-03-24T13:45:00Z",
+  "updatedBy": "hermes-strategic",
+  "reason": "Applied risk-reducing execution policy from autonomous-brain: block new entries and disable auto entry",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
