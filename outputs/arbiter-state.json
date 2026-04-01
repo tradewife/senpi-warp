@@ -1,6 +1,23 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100.0,
+  "lastEquity": 48.89,
+  "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-24T02:37:26Z"
+  "lastCheckAt": "2026-04-02T05:31:00Z",
+  "alerts": [
+    {
+      "type": "REGIME_OVERRIDE",
+      "severity": "CRITICAL",
+      "message": "JIDO set RISK_OFF — catastrophic DD 51.1% (peak $100.00, current $48.89, limit 20%). Regime was BASELINE. All positions flat.",
+      "timestamp": "2026-04-02T05:31:00Z",
+      "source": "jido"
+    },
+    {
+      "type": "PEAK_EQUITY_INITIALIZED",
+      "severity": "INFO",
+      "message": "peakEquity was 0 (uninitialized). Set to 100.0 from wolf-strategies.json budget.",
+      "timestamp": "2026-04-02T05:31:00Z",
+      "source": "jido"
+    }
+  ]
 }

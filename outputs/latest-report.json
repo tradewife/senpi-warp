@@ -1,46 +1,42 @@
 {
-  "timestamp": "2026-04-01T16:17:41Z",
+  "timestamp": "2026-04-02T05:31:00Z",
+  "source": "jido",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "regimeSetBy": "waifu-regime (arbiter-override)",
-  "regimeSetAt": "2026-04-01T16:00:41Z",
-  "strategy": {
-    "name": "WOLF-Primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
+  "regimeReason": "Catastrophic DD 51.1% ($48.89/$100 budget, limit 20%)",
+  "equity": {
+    "current": 48.89,
+    "peak": 100.0,
+    "dayStart": 48.89,
+    "budget": 100,
+    "drawdownPct": 51.1
   },
-  "accountValue": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.1,
-  "withdrawable": 48.89,
-  "positions": [],
-  "openOrders": [],
+  "positions": {
+    "count": 0,
+    "open": [],
+    "summary": "All flat — no open positions"
+  },
+  "orders": {
+    "count": 0,
+    "open": [],
+    "summary": "No resting orders"
+  },
   "guardrails": {
-    "catastrophicDrawdown": {
-      "limit": 20,
-      "actual": 51.1,
-      "breached": true
-    },
-    "dailyLoss": {
-      "limit": 10,
-      "breached": false,
-      "note": "No positions to have daily loss"
-    },
-    "consecutiveStopOuts": {
-      "limit": 4,
-      "actual": 0,
-      "breached": false
-    }
+    "catastrophicDrawdownPct": 20,
+    "drawdownActual": 51.1,
+    "breached": true,
+    "breachType": "CATASTROPHIC_DRAWDOWN",
+    "dailyLossLimitPct": 10,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
   },
-  "actionsTaken": [],
-  "alerts": [
-    "RISK_OFF active since 2026-04-01T16:00:41Z \u2014 DD 51.1% exceeds 20% limit",
-    "Account at $48.89 of $100.00 peak \u2014 no positions open, bleeding stopped",
-    "No new entries allowed until regime changes"
+  "actions": [
+    "Set riskMode to RISK_OFF in risk-regime.json",
+    "Initialized peakEquity from 0 to 100.0",
+    "Updated arbiter-state.json with current equity"
   ],
-  "regimeOverrideCheck": {
-    "currentRegime": "RISK_OFF",
-    "shouldBe": "RISK_OFF",
-    "overrideNeeded": false
-  }
+  "warnings": [
+    "arbiter-state.json had peakEquity=0 (uninitialized) — fixed",
+    "Previous regime was BASELINE despite 51.1% DD — regime-classifier override issue (known recurring pitfall)",
+    "Account has lost over half its value — manual review recommended before any new entries"
+  ]
 }
