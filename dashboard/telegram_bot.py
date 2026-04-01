@@ -63,6 +63,7 @@ COMMANDS = [
     ("howl", "Nightly analysis", "10-pillar self-improvement analysis."),
     ("whale", "Copy-trade rebalance", "Mirror-trade portfolio management."),
     ("arena", "Predator leaderboard", "Top predator strategies and recommendations."),
+    ("suguru", "Elite scanner", "Scan markets + AI deliberation → trade recommendation."),
     ("settings", "View all settings", "Unified view of rules, gates, and scanner scores."),
     ("set", "Change a setting", "Usage: /set <key> <value>"),
     ("flatten", "Close all trades", "Close all open positions across all strategies."),
@@ -343,7 +344,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton("⚡ Jido", callback_data="act:jido_prompt"),
-            InlineKeyboardButton("⚡ Evaluate", callback_data="act:evaluate_prompt"),
+            InlineKeyboardButton("⚡ Suguru", callback_data="act:suguru_scan_menu"),
             InlineKeyboardButton("🐋 Whale", callback_data="act:whale_run"),
         ],
         [
@@ -1784,6 +1785,26 @@ async def _handle_action_callback(query, action: str) -> None:
         await _answer_and_edit(query, "✅ Emergency stop cancelled.")
 
     # --- SUGURU ---
+    elif action == "suguru_scan_menu":
+        regime = load_json(CONFIG_DIR / "risk-regime.json")
+        mode = regime.get("riskMode", "UNKNOWN")
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔍 Scan Only", callback_data="act:suguru_scan_only"),
+                InlineKeyboardButton("🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"),
+            ],
+            [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
+        ])
+        await _answer_and_edit(
+            query,
+            f"⚡ *Suguru — Elite Scanner*\n\n"
+            f"Regime: *{mode}*\n\n"
+            f"🔍 *Scan Only* — show scored candidates\n"
+            f"🧠 *Hermes Scan* — scan + AI deliberation → trade recommendation",
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
     elif action == "suguru_scan_only":
         await _safe_edit(query, "🔍 Scanning markets...")
         await run_script_async(
