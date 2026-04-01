@@ -1,16 +1,20 @@
 {
-  "timestamp": "2026-04-01T16:03:04Z",
+  "timestamp": "2026-04-01T16:17:41Z",
   "regime": "RISK_OFF",
   "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "regimeSetBy": "waifu-regime (arbiter-override)",
+  "regimeSetAt": "2026-04-01T16:00:41Z",
   "strategy": {
     "name": "WOLF-Primary",
     "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "budget": 100,
-    "accountValue": 48.89,
-    "withdrawable": 48.89,
-    "drawdownPct": 51.1
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
   },
+  "accountValue": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.1,
+  "withdrawable": 48.89,
   "positions": [],
+  "openOrders": [],
   "guardrails": {
     "catastrophicDrawdown": {
       "limit": 20,
@@ -19,7 +23,8 @@
     },
     "dailyLoss": {
       "limit": 10,
-      "breached": false
+      "breached": false,
+      "note": "No positions to have daily loss"
     },
     "consecutiveStopOuts": {
       "limit": 4,
@@ -27,10 +32,15 @@
       "breached": false
     }
   },
-  "actions": [],
+  "actionsTaken": [],
   "alerts": [
-    "RISK_OFF active \u2014 DD 51.1% vs 20% limit",
-    "No open positions \u2014 portfolio is flat",
-    "Account value $48.89 of $100 budget"
-  ]
+    "RISK_OFF active since 2026-04-01T16:00:41Z \u2014 DD 51.1% exceeds 20% limit",
+    "Account at $48.89 of $100.00 peak \u2014 no positions open, bleeding stopped",
+    "No new entries allowed until regime changes"
+  ],
+  "regimeOverrideCheck": {
+    "currentRegime": "RISK_OFF",
+    "shouldBe": "RISK_OFF",
+    "overrideNeeded": false
+  }
 }
