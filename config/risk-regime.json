@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-04-01T21:01:59.398565+00:00",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC slope 0.48%, ATR 0.63%; ETH slope 2.69%, ATR 0.82% \u2014 no strong directional signal",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-04-01T22:12:13Z",
+  "updatedBy": "waifu-regime (arbiter-override)",
+  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
