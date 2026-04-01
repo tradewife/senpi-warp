@@ -1,32 +1,28 @@
 {
-  "timestamp": "2026-04-01T07:01:54Z",
-  "source": "jido",
+  "generatedAt": "2026-04-01T01:01:40Z",
   "regime": "RISK_OFF",
-  "regimeChanged": true,
-  "previousRegime": "BASELINE",
-  "overrideCount": 7,
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "drawdownPct": -51.11,
-    "dayStart": 63.45,
-    "dayChangePct": -22.95
-  },
-  "positions": [],
-  "openOrders": [],
-  "guardrails": {
-    "catastrophicDrawdownPct": 20,
-    "drawdownBreached": true,
-    "dailyLossLimitPct": 10,
-    "dailyLossBreached": true,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4,
-    "consecutiveStopOutsBreached": false
-  },
-  "actionsTaken": [
-    "REGIME_OVERRIDE: BASELINE->RISK_OFF (#7) — regime-classifier race condition"
+  "equity": 48.89,
+  "peakEquity": 48.89,
+  "drawdownPct": 0.0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "DAILY LOSS LIMIT: 23.0%"
   ],
-  "warnings": [
-    "Regime-classifier cron continues overriding RISK_OFF->BASELINE despite 51% drawdown. 7 overrides in ~20h. FIX NEEDED: patch waifu-regime to read arbiter-state drawdown before setting regime."
-  ]
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ]
+  }
 }
