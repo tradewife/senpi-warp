@@ -1696,32 +1696,40 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         output = _strip_tui_artifacts(stdout_text)
 
-        # Deduplicate: waifu often echoes entire response
-        # Strategy 1: exact half-split
-        half = len(output) // 2
-        if half > 50 and output[:half].strip() == output[half:].strip():
-            output = output[:half].strip()
-        else:
-            # Strategy 2: normalized word-level dedup
-            words = output.split()
-            n = len(words)
-            if n >= 10:
-                # Check if first half words match second half words
-                half_w = n // 2
-                first = " ".join(words[:half_w]).lower()
-                second = " ".join(words[half_w:half_w*2]).lower()
-                if first == second:
-                    output = " ".join(words[:half_w])
-                else:
-                    # Strategy 3: find longest common prefix that covers >40% of text
-                    for split_w in range(n//4, n*3//4):
-                        chunk = " ".join(words[:split_w]).lower()
-                        rest = " ".join(words[split_w:split_w*2]).lower()
-                        if chunk == rest and len(chunk) > 60:
-                            output = " ".join(words[:split_w])
-                            break
+        # Deduplicate: hermes binary echoes entire response via stdout+stderr
+        # Find if output contains the same text repeated twice
+        import re as _re
+        text = output.strip()
+        n = len(text)
+        if n > 100:
+            # Try finding the repeat boundary by scanning from 30% to 70%
+            best_split = None
+            for pct in range(30, 71, 2):
+                split = n * pct // 100
+                # Compare 40-char chunks around the split point
+                chunk_size = min(80, split // 2)
+                if chunk_size < 20:
+                    continue
+                # Get first chunk and find it again after the split point
+                probe = text[:chunk_size].lower()
+                search_area = text[split:]
+                idx = search_area.lower().find(probe)
+                if idx >= 0:
+                    # Found repeat start — check if everything from here matches from start
+                    repeat_start = split + idx
+                    first_part = text[:repeat_start].strip()
+                    second_part = text[repeat_start:repeat_start+len(first_part)].strip()
+                    # Compare with normalized whitespace
+                    if (first_part.lower().replace("  ", " ") == 
+                        second_part.lower().replace("  ", " ") and
+                        len(first_part) > 50 and
+                        len(first_part) > n * 0.3):
+                        best_split = repeat_start
+                        break
+            if best_split:
+                output = text[:best_split].strip()
 
-        # Strategy 4: first-line dedup
+        # First-line dedup
         lines = output.split("\n")
         non_empty = [(i, l.strip()) for i, l in enumerate(lines) if l.strip()]
         if len(non_empty) >= 2 and non_empty[0][1] == non_empty[1][1]:

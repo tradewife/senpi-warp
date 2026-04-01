@@ -67,7 +67,9 @@ def call_glm(prompt):
 
     resp = urllib.request.urlopen(req, timeout=40)
     data = json.loads(resp.read())
-    return data["choices"][0]["message"]["content"]
+    msg = data["choices"][0]["message"]
+    # GLM-5-turbo puts output in reasoning_content, leaves content empty
+    return msg.get("content") or msg.get("reasoning_content") or ""
 
 
 def build_prompt(cands, regime_mode, equity, slots):
