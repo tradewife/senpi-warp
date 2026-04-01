@@ -1617,7 +1617,7 @@ def _strip_tui_artifacts(text: str) -> str:
     for line in lines:
         stripped = line.strip()
         # Box-drawing borders (╭╮╰╯│┃║ etc.)
-        if re.match(r"^[╭╮╰╯┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬│┃║\u2500─━═]", stripped):
+        if re.match(r"^[╭╮╰╯┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬│┃║┊┆¦\u2500─━═]", stripped):
             continue
         # Horizontal rules
         if re.match(r"^[\u2500─━═]{3,}$", stripped):
@@ -1627,7 +1627,7 @@ def _strip_tui_artifacts(text: str) -> str:
             in_tool_block = True
             continue
         if re.match(r"^\[done\]", stripped):
-            in_tool_block = True
+            in_tool_block = False
             continue
         if in_tool_block and re.match(r"^[┊┆¦]", stripped):
             continue
@@ -1661,6 +1661,72 @@ def _strip_tui_artifacts(text: str) -> str:
     # Collapse excessive blank lines
     result = re.sub(r"\n{3,}", "\n\n", result)
     return result
+
+
+async def _call_hermes(message: str, timeout: int = 120) -> str:
+    """Call hermes binary and return the response text."""
+    hermes_bin = os.environ.get("HERMES_BIN_PATH", "/usr/local/bin/hermes")
+    if not os.path.isfile(hermes_bin):
+        hermes_bin = shutil.which("hermes") or ""
+    if not hermes_bin:
+        return "⚠️ Hermes binary not found."
+
+    hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
+    hermes_model = os.environ.get("HERMES_MODEL", "").strip()
+    hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
+
+    glm_key = (
+        os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+    ).strip()
+    glm_base = (
+        os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")
+    ).strip()
+
+    env = {
+        **CHILD_ENV,
+        "HERMES_HOME": hermes_home,
+        "HERMES_INFERENCE_PROVIDER": hermes_provider,
+        "HERMES_MODEL": hermes_model,
+        "NO_COLOR": "1",
+        "TERM": "dumb",
+    }
+    if glm_key:
+        env["GLM_API_KEY"] = glm_key
+    if glm_base:
+        env["GLM_BASE_URL"] = glm_base
+
+    soul_path = CONFIG_DIR / "hermes-soul.md"
+    if soul_path.exists():
+        env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
+
+    cmd_args = [hermes_bin, "chat", "-Q", "-q", message]
+    if hermes_model:
+        cmd_args += ["-m", hermes_model]
+    if hermes_provider:
+        cmd_args += ["--provider", hermes_provider]
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd_args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+            cwd=str(STATE_DIR),
+        )
+        stdout_raw, stderr_raw = await asyncio.wait_for(
+            proc.communicate(), timeout=timeout
+        )
+        stdout_text = stdout_raw.decode().strip()
+        stderr_text = stderr_raw.decode().strip()
+
+        if proc.returncode != 0:
+            return f"❌ Hermes error (rc={proc.returncode}): {stderr_text[:200]}"
+
+        return stdout_text or stderr_text
+    except asyncio.TimeoutError:
+        return "⏱ Hermes timed out."
+    except Exception as e:
+        return f"❌ Hermes exception: {e}"
 
 
 @authorized
@@ -1931,7 +1997,7 @@ async def _run_waifu_and_edit(query, cmd: str, timeout: int = 120) -> None:
         return
     await query.answer()
     await _safe_edit(query, f"⏳ Running `{cmd}`...", parse_mode="Markdown")
-    output = await run_script_async([waifu_bin, cmd], timeout=timeout)
+    output = await run_script_async([waifu_bin] + cmd.split(), timeout=timeout)
     if len(output) > 4000:
         output = output[:3900] + "\n\n_(truncated)_"
     await _safe_edit(query, f"```\n{output}\n```", parse_mode="Markdown")
@@ -2007,34 +2073,93 @@ async def _handle_action_callback(query, action: str) -> None:
         cands = scan.get("candidates", [])
         if not cands:
             await _safe_edit(
-                query, "🧠 *Hermes Scan*\n\nNo candidates found.", parse_mode="Markdown"
+                query, "🧠 *Suguru Scan*\n\nNo candidates found.", parse_mode="Markdown"
             )
             return
-        await _safe_edit(query, "🧠 Hermes deliberating...")
-        output = await run_script_async(
-            ["python3", str(STATE_DIR / "scripts/vps/suguru_decide.py")],
-            timeout=180,
+
+        # Build prompt for waifu to choose best candidate
+        cand_lines = []
+        for i, c in enumerate(cands, 1):
+            cand_lines.append(
+                f"{i}. {c.get('direction', '?')} {c.get('asset', '?')} "
+                f"@ ${c.get('price', 0):.2f} lev={c.get('leverage', 0)}x "
+                f"GSS={c.get('gss', 0):.2f} netRR={c.get('netRr', 0):.2f}"
+            )
+        candidates_text = "\n".join(cand_lines)
+
+        prompt = (
+            f"You are a trading strategy advisor. Analyze these {len(cands)} candidate trades "
+            f"and recommend the BEST one to execute. Consider GSS score, netRR, regime alignment, "
+            f"and risk/reward.\n\n"
+            f"Candidates:\n{candidates_text}\n\n"
+            f"Respond with exactly this format (no other text):\n"
+            f"RECOMMEND: [BUY/SELL] [ASSET] @ [PRICE] [LEVERAGE]x\n"
+            f"REASON: [2-3 sentence explanation]\n"
+            f"CONFIDENCE: [0-100%]"
         )
-        rec = load_json(OUTPUTS_DIR / "suguru-recommendation.json", default={})
-        if not rec or not rec.get("recommendation"):
-            # Show raw output if no valid recommendation
-            err_msg = output[:500] if output else "No output from hermes"
-            await _safe_edit(
-                query, "🧠 *Hermes Error*\n\n" + err_msg, parse_mode="Markdown"
-            )
-            return
-        if rec.get("recommendation") == "TRADE":
-            tp = rec.get("trade_params", {})
+
+        await _safe_edit(query, "🧠 Waifu deciding...")
+        output = await run_script_async(
+            ["python3", "-m", "waifu_cli", "regime"],
+            timeout=30,
+        )
+        regime = load_json(CONFIG_DIR / "risk-regime.json", default={})
+        mode = regime.get("riskMode", "BASELINE")
+
+        # Use hermes to decide - build a message for handle_free_text style flow
+        import json as _json
+
+        suggestion = f"{prompt}\n\nCurrent regime: {mode}"
+        output = await _call_hermes(suggestion)
+        output_clean = _strip_tui_artifacts(output) if output else ""
+
+        # Parse hermes response for RECOMMEND line
+        recommended = None
+        reasoning = "No clear signal"
+        confidence = 30
+
+        if output_clean:
+            for line in output_clean.split("\n"):
+                line = line.strip()
+                if line.upper().startswith("RECOMMEND:"):
+                    try:
+                        parts = line[10:].strip().split()
+                        if len(parts) >= 3:
+                            direction = parts[0].upper()
+                            asset = parts[1].upper()
+                            # Find matching candidate
+                            for c in cands:
+                                if c.get("asset", "").upper() == asset:
+                                    recommended = c
+                                    break
+                            if not recommended:
+                                recommended = cands[0]
+                    except:
+                        recommended = cands[0] if cands else None
+                elif line.upper().startswith("REASON:"):
+                    reasoning = line[7:].strip()
+                elif line.upper().startswith("CONFIDENCE:"):
+                    try:
+                        conf_str = line[11:].strip().replace("%", "")
+                        confidence = int(conf_str)
+                    except:
+                        pass
+
+        if not recommended and cands:
+            recommended = cands[0]
+            reasoning = "No clear signal from waifu - defaulting to top candidate"
+            confidence = 30
+
+        if recommended:
+            rec = recommended
             text = (
-                f"🧠 *Hermes Recommends*\n\n"
-                f"*{rec['direction']} {rec['asset']}*\n"
-                f"Confidence: {rec.get('confidence', 0):.0%}\n\n"
-                f"Entry: {tp.get('entry_price', '?')} | "
-                f"SL: {tp.get('stop_price', '?')} | "
-                f"TP1: {tp.get('tp1_price', '?')}\n"
-                f"Leverage: {rec.get('leverage', '?')}x | "
-                f"NetRR: {tp.get('netRr', '?')}\n\n"
-                f"_{rec.get('reasoning', 'No reasoning')}_"
+                f"🧠 *Waifu Recommends*\n\n"
+                f"*{rec.get('direction', 'LONG')} {rec.get('asset', '?')}*\n"
+                f"Confidence: {confidence}%\n\n"
+                f"Entry: ${rec.get('price', 0):.2f} | "
+                f"Leverage: {rec.get('leverage', 0)}x | "
+                f"NetRR: {rec.get('netRr', 0):.2f}\n\n"
+                f"_{reasoning}_"
             )
             keyboard = InlineKeyboardMarkup(
                 [
@@ -2057,7 +2182,7 @@ async def _handle_action_callback(query, action: str) -> None:
         else:
             await _safe_edit(
                 query,
-                f"🧠 *Hermes: No Trade*\n\n_{rec.get('reasoning', 'No strong signals.')}_",
+                f"🧠 *No Trade*\n\n_Waifu found no strong signals._",
                 parse_mode="Markdown",
             )
 

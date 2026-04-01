@@ -26,7 +26,11 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 try:
-    from dashboard.telegram_bot import create_bot_application, start_polling, stop_polling
+    from dashboard.telegram_bot import (
+        create_bot_application,
+        start_polling,
+        stop_polling,
+    )
 except ImportError:
     from telegram_bot import create_bot_application, start_polling, stop_polling
 
@@ -49,18 +53,8 @@ _tg_app = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start Telegram bot on startup, stop on shutdown."""
-    global _tg_app
-    _tg_app = create_bot_application()
-    if _tg_app:
-        await start_polling(_tg_app)
-        print("[dashboard] Telegram bot started (polling)")
-    else:
-        print("[dashboard] Telegram bot disabled (TELEGRAM_BOT_TOKEN not set)")
+    """Lifespan context — Telegram bot is handled by worker.py, not here."""
     yield
-    if _tg_app:
-        await stop_polling(_tg_app)
-        print("[dashboard] Telegram bot stopped")
 
 
 app = FastAPI(title="Senpi Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
@@ -73,6 +67,7 @@ ws_clients: list[WebSocket] = []
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def load_json(path: Path, default=None):
     try:
@@ -109,6 +104,7 @@ def relative_time(iso_str: str) -> str:
 # Dashboard state aggregator
 # ---------------------------------------------------------------------------
 
+
 def get_dashboard_state() -> dict:
     """Aggregate all state into a single snapshot for the dashboard."""
     regime = load_json(CONFIG_DIR / "risk-regime.json")
@@ -143,9 +139,19 @@ def get_dashboard_state() -> dict:
     # Daily PnL from journal
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today_trades = [t for t in journal if t.get("recordedAt", "").startswith(today)]
-    daily_pnl = sum(float(t.get("realizedPnl", 0)) for t in today_trades if t.get("action") == "CLOSE")
+    daily_pnl = sum(
+        float(t.get("realizedPnl", 0))
+        for t in today_trades
+        if t.get("action") == "CLOSE"
+    )
     daily_count = len([t for t in today_trades if t.get("action") == "CLOSE"])
-    daily_wins = len([t for t in today_trades if t.get("action") == "CLOSE" and float(t.get("realizedPnl", 0)) > 0])
+    daily_wins = len(
+        [
+            t
+            for t in today_trades
+            if t.get("action") == "CLOSE" and float(t.get("realizedPnl", 0)) > 0
+        ]
+    )
 
     return {
         "regime": {
@@ -168,13 +174,19 @@ def get_dashboard_state() -> dict:
             "pnl": round(daily_pnl, 2),
             "trades": daily_count,
             "wins": daily_wins,
-            "winRate": round(daily_wins / daily_count * 100, 1) if daily_count > 0 else 0,
+            "winRate": round(daily_wins / daily_count * 100, 1)
+            if daily_count > 0
+            else 0,
         },
         "brain": {
             "mode": brain.get("executionPolicy", {}).get("mode", "UNSET"),
             "generatedAt": relative_time(brain.get("generatedAt", "")),
-            "blockNewEntries": brain.get("executionPolicy", {}).get("blockNewEntries", False),
-            "preferredScanners": brain.get("signalPolicy", {}).get("preferredScanners", []),
+            "blockNewEntries": brain.get("executionPolicy", {}).get(
+                "blockNewEntries", False
+            ),
+            "preferredScanners": brain.get("signalPolicy", {}).get(
+                "preferredScanners", []
+            ),
             "blockedScanners": brain.get("signalPolicy", {}).get("blockedScanners", []),
             "reasons": brain.get("summary", {}).get("reasons", []),
         },
@@ -185,6 +197,7 @@ def get_dashboard_state() -> dict:
 # ---------------------------------------------------------------------------
 # Auth middleware (simple token check)
 # ---------------------------------------------------------------------------
+
 
 def check_auth(request: Request) -> bool:
     if not DASH_TOKEN:
@@ -200,12 +213,18 @@ def check_auth(request: Request) -> bool:
 # Routes
 # ---------------------------------------------------------------------------
 
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     if not check_auth(request):
-        return HTMLResponse("<h1>Unauthorized</h1><p>Add ?token=YOUR_TOKEN to the URL</p>", status_code=401)
+        return HTMLResponse(
+            "<h1>Unauthorized</h1><p>Add ?token=YOUR_TOKEN to the URL</p>",
+            status_code=401,
+        )
     state = get_dashboard_state()
-    return templates.TemplateResponse("index.html", {"request": request, "state": state, "token": DASH_TOKEN})
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "state": state, "token": DASH_TOKEN}
+    )
 
 
 @app.get("/api/state")
@@ -296,7 +315,8 @@ async def _run_local_script(script: str, *, timeout: int = 60) -> str:
     """Run a local scanner/maintenance script and return its output."""
     env = {**os.environ, "SENPI_WAIFU_DIR": str(STATE_DIR)}
     proc = await asyncio.create_subprocess_exec(
-        "python3", str(STATE_DIR / script),
+        "python3",
+        str(STATE_DIR / script),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         env=env,
@@ -331,10 +351,12 @@ async def handle_chat_message(message: str) -> str:
 
     if cmd == "/regime":
         regime = load_json(CONFIG_DIR / "risk-regime.json")
-        return (f"**Regime:** {regime.get('riskMode', '?')}\n"
-                f"**Updated:** {relative_time(regime.get('updatedAt', ''))}\n"
-                f"**By:** {regime.get('updatedBy', '?')}\n"
-                f"**Reason:** {regime.get('reason', '?')}")
+        return (
+            f"**Regime:** {regime.get('riskMode', '?')}\n"
+            f"**Updated:** {relative_time(regime.get('updatedAt', ''))}\n"
+            f"**By:** {regime.get('updatedBy', '?')}\n"
+            f"**Reason:** {regime.get('reason', '?')}"
+        )
 
     if cmd == "/risk-off":
         await _set_regime("RISK_OFF", "Manual /risk-off from dashboard chat")
@@ -361,25 +383,35 @@ async def handle_chat_message(message: str) -> str:
         return await _cmd_run_script("CONDOR", "scripts/vps/condor-scanner-cron.py")
 
     if cmd == "/barracuda":
-        return await _cmd_run_script("BARRACUDA", "scripts/vps/barracuda-scanner-cron.py")
+        return await _cmd_run_script(
+            "BARRACUDA", "scripts/vps/barracuda-scanner-cron.py"
+        )
 
     if cmd == "/bison":
         return await _cmd_run_script("BISON", "scripts/vps/bison-scanner-cron.py")
 
     if cmd == "/shark":
-        return await _cmd_run_script("SHARK", "scripts/vps/shark-scanner-cron.py", timeout=90)
+        return await _cmd_run_script(
+            "SHARK", "scripts/vps/shark-scanner-cron.py", timeout=90
+        )
 
     if cmd == "/sentinel":
-        return await _cmd_run_script("SENTINEL", "scripts/vps/sentinel-scanner-cron.py", timeout=90)
+        return await _cmd_run_script(
+            "SENTINEL", "scripts/vps/sentinel-scanner-cron.py", timeout=90
+        )
 
     if cmd == "/rhino":
-        return await _cmd_run_script("RHINO", "scripts/vps/rhino-scanner-cron.py", timeout=90)
+        return await _cmd_run_script(
+            "RHINO", "scripts/vps/rhino-scanner-cron.py", timeout=90
+        )
 
     if cmd == "/arbiter":
         return await _cmd_run_script("Risk Arbiter", "scripts/vps/risk-arbiter.py")
 
     if cmd == "/health":
-        return await _cmd_run_script("Health Check", "scripts/vps/health-check-cron.py", timeout=90)
+        return await _cmd_run_script(
+            "Health Check", "scripts/vps/health-check-cron.py", timeout=90
+        )
 
     if cmd == "/arena":
         return await _cmd_run_script("Arena Monitor", "scripts/vps/arena-monitor.py")
@@ -425,8 +457,10 @@ def _cmd_status() -> str:
     ]
     if state["positions"]:
         for p in state["positions"]:
-            lines.append(f"  • {p.get('direction', '?')} **{p.get('asset', '?')}** "
-                        f"T{p.get('currentTierIndex', -1) + 1} | {p['_age']}")
+            lines.append(
+                f"  • {p.get('direction', '?')} **{p.get('asset', '?')}** "
+                f"T{p.get('currentTierIndex', -1) + 1} | {p['_age']}"
+            )
     return "\n".join(lines)
 
 
@@ -457,7 +491,9 @@ def _cmd_trades() -> str:
         action = t.get("action", "?")
         pnl = f" ${float(t.get('realizedPnl', 0)):+.2f}" if action == "CLOSE" else ""
         age = relative_time(t.get("recordedAt", ""))
-        lines.append(f"• {action} {t.get('direction', '?')} **{t.get('asset', '?')}**{pnl} ({age})")
+        lines.append(
+            f"• {action} {t.get('direction', '?')} **{t.get('asset', '?')}**{pnl} ({age})"
+        )
     return "\n".join(lines)
 
 
@@ -515,8 +551,10 @@ async def _set_regime(mode: str, reason: str):
 async def _cmd_flatten() -> str:
     """Emergency flatten via Oz cloud agent."""
     if not WARP_API_KEY or not OZ_ENV_ID:
-        return ("⚠️ Oz API not configured. Set `WARP_API_KEY` and `OZ_ENVIRONMENT_ID`.\n\n"
-                "Manual alternative: set `/risk-off` then wait for DSL + Risk Arbiter to close positions.")
+        return (
+            "⚠️ Oz API not configured. Set `WARP_API_KEY` and `OZ_ENVIRONMENT_ID`.\n\n"
+            "Manual alternative: set `/risk-off` then wait for DSL + Risk Arbiter to close positions."
+        )
 
     result = await _dispatch_to_oz(
         "EMERGENCY: Close ALL open positions immediately via mcporter. "
@@ -573,5 +611,6 @@ async def _dispatch_to_oz(prompt: str) -> str:
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", os.environ.get("DASH_PORT", "8420")))
     uvicorn.run(app, host="0.0.0.0", port=port)

@@ -15,7 +15,12 @@ import click
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "lib"))
 
 import senpi_common as sc
-from waifu_cli.runtime import sync_before, sync_after, acquire_command_lock, release_command_lock
+from waifu_cli.runtime import (
+    sync_before,
+    sync_after,
+    acquire_command_lock,
+    release_command_lock,
+)
 
 
 @click.command()
@@ -35,7 +40,9 @@ def howl(dry_run):
 def _run(dry_run: bool):
     now = datetime.now(timezone.utc)
     today_str = now.strftime("%Y-%m-%d")
-    click.echo(f"[howl] {sc.now_iso()} starting nightly analysis{' (dry-run)' if dry_run else ''}")
+    click.echo(
+        f"[howl] {sc.now_iso()} starting nightly analysis{' (dry-run)' if dry_run else ''}"
+    )
     sync_before()
 
     # Load data
@@ -61,10 +68,21 @@ def _run(dry_run: bool):
     avg_loss = gross_losses / len(losses) if losses else 0
 
     # Scanner breakdown
-    scanner_stats = defaultdict(lambda: {"opens": 0, "closes": 0, "wins": 0, "pnl": 0.0})
+    scanner_stats = defaultdict(
+        lambda: {"opens": 0, "closes": 0, "wins": 0, "pnl": 0.0}
+    )
     for t in recent:
         source = str(t.get("entrySource", t.get("entryMode", "unknown"))).lower()
-        for s in ["orca", "komodo", "condor", "sentinel", "rhino", "mantis", "fox", "polar"]:
+        for s in [
+            "orca",
+            "komodo",
+            "condor",
+            "sentinel",
+            "rhino",
+            "mantis",
+            "fox",
+            "polar",
+        ]:
             if s in source:
                 source = s
                 break
@@ -79,11 +97,17 @@ def _run(dry_run: bool):
                 bucket["wins"] += 1
 
     # Monster trade dependency
-    sorted_closes = sorted(closes, key=lambda t: abs(float(t.get("realizedPnl", 0))), reverse=True)
+    sorted_closes = sorted(
+        closes, key=lambda t: abs(float(t.get("realizedPnl", 0))), reverse=True
+    )
     top3_pnl = sum(abs(float(t.get("realizedPnl", 0))) for t in sorted_closes[:3])
-    total_abs = sum(abs(float(t.get("realizedPnl", 0))) for t in closes) if closes else 1
-    monster_pct = top3_pnl / total_abs * 100 if closes else 0
-    without_top3 = total_pnl - sum(float(t.get("realizedPnl", 0)) for t in sorted_closes[:3])
+    total_abs = (
+        sum(abs(float(t.get("realizedPnl", 0))) for t in closes) if closes else 1
+    )
+    monster_pct = top3_pnl / total_abs * 100 if total_abs else 0
+    without_top3 = total_pnl - sum(
+        float(t.get("realizedPnl", 0)) for t in sorted_closes[:3]
+    )
 
     # Fee drag
     cumulative_fees = sum(float(t.get("fees", 0)) for t in closes)
@@ -115,8 +139,20 @@ def _run(dry_run: bool):
     # Direction breakdown
     long_trades = [t for t in closes if str(t.get("direction", "")).upper() == "LONG"]
     short_trades = [t for t in closes if str(t.get("direction", "")).upper() == "SHORT"]
-    long_wr = sum(1 for t in long_trades if float(t.get("realizedPnl", 0)) > 0) / len(long_trades) * 100 if long_trades else 0
-    short_wr = sum(1 for t in short_trades if float(t.get("realizedPnl", 0)) > 0) / len(short_trades) * 100 if short_trades else 0
+    long_wr = (
+        sum(1 for t in long_trades if float(t.get("realizedPnl", 0)) > 0)
+        / len(long_trades)
+        * 100
+        if long_trades
+        else 0
+    )
+    short_wr = (
+        sum(1 for t in short_trades if float(t.get("realizedPnl", 0)) > 0)
+        / len(short_trades)
+        * 100
+        if short_trades
+        else 0
+    )
 
     # Auto-apply risk-reducing changes
     auto_applied = []
@@ -126,19 +162,31 @@ def _run(dry_run: bool):
         if stats["closes"] >= 10:
             wr = stats["wins"] / stats["closes"] * 100
             if wr < 25 and stats["pnl"] < 0:
-                auto_applied.append(f"{scanner}: disabled (<25% WR, {stats['closes']} trades, ${stats['pnl']:.0f} PnL)")
+                auto_applied.append(
+                    f"{scanner}: disabled (<25% WR, {stats['closes']} trades, ${stats['pnl']:.0f} PnL)"
+                )
 
     if fdr > 10:
-        auto_applied.append(f"Fee drag critical ({fdr:.1f}%) — recommend reducing scan frequency")
+        auto_applied.append(
+            f"Fee drag critical ({fdr:.1f}%) — recommend reducing scan frequency"
+        )
     elif fdr > 5:
-        manual_review.append(f"Fee drag elevated ({fdr:.1f}%) — consider reducing frequency")
+        manual_review.append(
+            f"Fee drag elevated ({fdr:.1f}%) — consider reducing frequency"
+        )
 
     if len(long_trades) >= 5 and long_wr < 30:
-        manual_review.append(f"LONG WR {long_wr:.0f}% across {len(long_trades)} trades — possible regime mismatch")
+        manual_review.append(
+            f"LONG WR {long_wr:.0f}% across {len(long_trades)} trades — possible regime mismatch"
+        )
     if len(short_trades) >= 5 and short_wr < 30:
-        manual_review.append(f"SHORT WR {short_wr:.0f}% across {len(short_trades)} trades — possible regime mismatch")
+        manual_review.append(
+            f"SHORT WR {short_wr:.0f}% across {len(short_trades)} trades — possible regime mismatch"
+        )
     if monster_pct > 80:
-        manual_review.append(f"Monster trade dependency {monster_pct:.0f}% — strategy relies on outliers")
+        manual_review.append(
+            f"Monster trade dependency {monster_pct:.0f}% — strategy relies on outliers"
+        )
 
     # Build markdown report
     report = f"""# HOWL Report — {today_str}
@@ -156,14 +204,16 @@ def _run(dry_run: bool):
 | Net PnL | ${total_pnl:,.2f} |
 | Avg Win | ${avg_win:,.2f} |
 | Avg Loss | ${avg_loss:,.2f} |
-| Largest Win | ${max((float(t.get('realizedPnl', 0)) for t in wins), default=0):,.2f} |
-| Largest Loss | ${min((float(t.get('realizedPnl', 0)) for t in losses), default=0):,.2f} |
+| Largest Win | ${max((float(t.get("realizedPnl", 0)) for t in wins), default=0):,.2f} |
+| Largest Loss | ${min((float(t.get("realizedPnl", 0)) for t in losses), default=0):,.2f} |
 
 ## Scanner Breakdown
 | Scanner | Opens | Closes | Wins | WR | PnL |
 |---------|-------|--------|------|-----|-----|
 """
-    for scanner, stats in sorted(scanner_stats.items(), key=lambda x: x[1]["pnl"], reverse=True):
+    for scanner, stats in sorted(
+        scanner_stats.items(), key=lambda x: x[1]["pnl"], reverse=True
+    ):
         wr = stats["wins"] / stats["closes"] * 100 if stats["closes"] else 0
         report += f"| {scanner} | {stats['opens']} | {stats['closes']} | {stats['wins']} | {wr:.0f}% | ${stats['pnl']:,.2f} |\n"
 
@@ -210,7 +260,9 @@ LONG: {long_wr:.0f}% WR ({len(long_trades)} trades) | SHORT: {short_wr:.0f}% WR 
     if not manual_review:
         report += "- None\n"
 
-    click.echo(f"  {len(opens)} opens, {len(closes)} closes, {win_rate:.0f}% WR, ${total_pnl:,.2f} PnL")
+    click.echo(
+        f"  {len(opens)} opens, {len(closes)} closes, {win_rate:.0f}% WR, ${total_pnl:,.2f} PnL"
+    )
 
     if dry_run:
         click.echo("  DRY-RUN: report not saved")
@@ -233,7 +285,11 @@ LONG: {long_wr:.0f}% WR ({len(long_trades)} trades) | SHORT: {short_wr:.0f}% WR 
     if win_rate < 40 and closes:
         key_insights.append(f"WR {win_rate:.0f}% — tighten scores")
 
-    insight_line = ". ".join(key_insights) if key_insights else f"{win_rate:.0f}% WR, ${total_pnl:,.2f} PnL"
+    insight_line = (
+        ". ".join(key_insights)
+        if key_insights
+        else f"{win_rate:.0f}% WR, ${total_pnl:,.2f} PnL"
+    )
     summary = f"\n### HOWL {today_str}\n{insight_line}. {len(auto_applied)} auto-applied, {len(manual_review)} pending review.\n"
 
     if f"HOWL {today_str}" not in memory:
