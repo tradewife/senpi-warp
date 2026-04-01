@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-04-01T00:57:14.273673+00:00",
+  "source": "fallback-hermes-down",
+  "approved": [
+    {
+      "asset": "BTC",
+      "direction": "LONG",
+      "entry_price": 68131.34,
+      "stop_price": 66569.48,
+      "tp1_price": 71424.38,
+      "tp2_price": 74717.43,
+      "leverage": 9,
+      "margin_usd": 98.53,
+      "entryScore": 0.5,
+      "netRr": 2.0,
+      "atr": 282.201466,
+      "qty": 0.013000000000000001,
+      "hermes_reason": "fallback: hermes unavailable, top GSS",
+      "hermes_confidence": 0.3
+    }
+  ],
+  "summary": "hermes unavailable, approved top GSS (BTC LONG)"
+}
