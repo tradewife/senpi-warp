@@ -8,28 +8,28 @@
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 84581.570774,
+      "price": 84822.0,
       "direction": "LONG",
-      "buildup_usd": 3746062.156339853,
-      "avg_entry": 70484.642312,
+      "buildup_usd": 355849.4954999539,
+      "avg_entry": 70685.0,
       "avg_leverage": 5.0
     }
   },
   "ETH": {
     "short_liq": {
-      "price": 2566.944971,
+      "price": 2567.134604,
       "direction": "LONG",
-      "buildup_usd": 29705329.57831809,
-      "avg_entry": 2139.120809,
+      "buildup_usd": 28038317.288118854,
+      "avg_entry": 2139.278837,
       "avg_leverage": 5.0
     }
   },
   "HYPE": {
     "long_liq": {
-      "price": 29.962172,
+      "price": 29.951493,
       "direction": "SHORT",
-      "buildup_usd": 1344523.0488982205,
-      "avg_entry": 37.452714,
+      "buildup_usd": 1049426.8924595052,
+      "avg_entry": 37.439366,
       "avg_leverage": 5.0
     }
   },
@@ -42,10 +42,10 @@
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 108.414907,
+      "price": 108.86473,
       "direction": "LONG",
-      "buildup_usd": 1200540.4804990136,
-      "avg_entry": 90.345755,
+      "buildup_usd": 121470.8206393615,
+      "avg_entry": 90.720609,
       "avg_leverage": 5.0
     }
   },
@@ -58,19 +58,19 @@
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 1.69602,
+      "price": 1.696042,
       "direction": "LONG",
-      "buildup_usd": 842251.7622,
-      "avg_entry": 1.41335,
+      "buildup_usd": 817732.4906,
+      "avg_entry": 1.413368,
       "avg_leverage": 5.0
     }
   },
   "PAXG": {
     "long_liq": {
-      "price": 3484.936291,
+      "price": 3484.989227,
       "direction": "SHORT",
-      "buildup_usd": 1181259.8867999923,
-      "avg_entry": 4356.170364,
+      "buildup_usd": 1177714.5511999954,
+      "avg_entry": 4356.236533,
       "avg_leverage": 5.0
     },
     "short_liq": {
@@ -83,11 +83,11 @@
   },
   "ASTER": {
     "short_liq": {
-      "price": 0.774922,
+      "price": 0.780762,
       "direction": "LONG",
       "buildup_usd": 89609.83496,
       "avg_entry": 0.65908,
-      "avg_leverage": 5.7
+      "avg_leverage": 5.4
     }
   },
   "ZEC": {
@@ -99,71 +99,71 @@
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 276.820128,
+      "price": 276.835571,
       "direction": "LONG",
-      "buildup_usd": 590474.0735999984,
-      "avg_entry": 230.68344,
+      "buildup_usd": 588288.2171999995,
+      "avg_entry": 230.696309,
       "avg_leverage": 5.0
     }
   },
   "ZRO": {
     "long_liq": {
-      "price": 1.753874,
+      "price": 1.753916,
       "direction": "SHORT",
-      "buildup_usd": 96884.67495995772,
-      "avg_entry": 2.192342,
+      "buildup_usd": 91541.40971997556,
+      "avg_entry": 2.192395,
       "avg_leverage": 5.0
     }
   },
   "TAO": {
     "long_liq": {
-      "price": 239.30922,
+      "price": 239.123665,
       "direction": "SHORT",
-      "buildup_usd": 5842497.085440006,
-      "avg_entry": 299.136525,
+      "buildup_usd": 5304932.585299975,
+      "avg_entry": 298.904581,
       "avg_leverage": 5.0
     }
   },
   "AVAX": {
     "long_liq": {
-      "price": 7.620162,
+      "price": 7.607902,
       "direction": "SHORT",
-      "buildup_usd": 83344.47281603477,
-      "avg_entry": 9.525203,
+      "buildup_usd": 42794.58734202234,
+      "avg_entry": 9.509877,
       "avg_leverage": 5.0
     }
   },
   "FARTCOIN": {
     "long_liq": {
-      "price": 0.141632,
+      "price": 0.141254,
       "direction": "SHORT",
-      "buildup_usd": 141380.76899200332,
-      "avg_entry": 0.17704,
+      "buildup_usd": 73857.0629039864,
+      "avg_entry": 0.176567,
       "avg_leverage": 5.0
     }
   },
   "PUMP": {
     "long_liq": {
-      "price": 0.001476,
+      "price": 0.001434,
       "direction": "SHORT",
       "buildup_usd": 7451.2863,
       "avg_entry": 0.001792,
-      "avg_leverage": 5.7
+      "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 0.002101,
+      "price": 0.002151,
       "direction": "LONG",
-      "buildup_usd": 116605.316152,
-      "avg_entry": 0.001786,
-      "avg_leverage": 5.7
+      "buildup_usd": 48872.251939999995,
+      "avg_entry": 0.001792,
+      "avg_leverage": 5.0
     }
   },
   "LIT": {
     "long_liq": {
-      "price": 0.762363,
+      "price": 0.761949,
       "direction": "SHORT",
-      "buildup_usd": 47136.614480000004,
-      "avg_entry": 0.952953,
+      "buildup_usd": 39360.174680000004,
+      "avg_entry": 0.952436,
       "avg_leverage": 5.0
     }
   },
@@ -178,20 +178,20 @@
   },
   "LINK": {
     "long_liq": {
-      "price": 7.250635,
+      "price": 7.251019,
       "direction": "SHORT",
-      "buildup_usd": 52338.66051999832,
-      "avg_entry": 9.063293,
+      "buildup_usd": 48918.95380000592,
+      "avg_entry": 9.063774,
       "avg_leverage": 5.0
     }
   },
   "XMR": {
     "long_liq": {
-      "price": 296.860974,
+      "price": 313.103579,
       "direction": "SHORT",
-      "buildup_usd": 369759.1260200001,
-      "avg_entry": 353.789822,
-      "avg_leverage": 6.2
+      "buildup_usd": 356399.3525800059,
+      "avg_entry": 353.881838,
+      "avg_leverage": 8.7
     }
   },
   "MON": {
@@ -203,10 +203,10 @@
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 0.025636,
+      "price": 0.025637,
       "direction": "LONG",
-      "buildup_usd": 23922.273532000003,
-      "avg_entry": 0.021363,
+      "buildup_usd": 23455.792014000002,
+      "avg_entry": 0.021364,
       "avg_leverage": 5.0
     }
   },
@@ -214,26 +214,26 @@
     "long_liq": {
       "price": 0.002722,
       "direction": "SHORT",
-      "buildup_usd": 494830.68645599997,
+      "buildup_usd": 488818.28868999996,
       "avg_entry": 0.003402,
       "avg_leverage": 5.0
     }
   },
   "BNB": {
     "long_liq": {
-      "price": 507.792147,
+      "price": 508.397841,
       "direction": "SHORT",
-      "buildup_usd": 55492.52253999504,
-      "avg_entry": 634.740183,
+      "buildup_usd": 41097.56393999426,
+      "avg_entry": 635.497301,
       "avg_leverage": 5.0
     }
   },
   "WLFI": {
     "long_liq": {
-      "price": 0.082647,
+      "price": 0.082615,
       "direction": "SHORT",
-      "buildup_usd": 28374.053160000003,
-      "avg_entry": 0.103309,
+      "buildup_usd": 24491.439320000005,
+      "avg_entry": 0.103269,
       "avg_leverage": 5.0
     },
     "short_liq": {
@@ -246,132 +246,132 @@
   },
   "WLD": {
     "long_liq": {
-      "price": 0.257167,
+      "price": 0.257283,
       "direction": "SHORT",
-      "buildup_usd": 29758.72577398322,
-      "avg_entry": 0.321458,
+      "buildup_usd": 28572.107575982245,
+      "avg_entry": 0.321604,
       "avg_leverage": 5.0
     }
   },
   "AAVE": {
     "long_liq": {
-      "price": 87.721563,
+      "price": 87.789166,
       "direction": "SHORT",
-      "buildup_usd": 35037.932800000905,
-      "avg_entry": 109.651954,
+      "buildup_usd": 31000.095999996807,
+      "avg_entry": 109.736457,
       "avg_leverage": 5.0
     }
   },
   "DOGE": {
     "long_liq": {
-      "price": 0.074836,
+      "price": 0.074852,
       "direction": "SHORT",
-      "buildup_usd": 554595.477614,
-      "avg_entry": 0.093545,
+      "buildup_usd": 620429.130044,
+      "avg_entry": 0.093565,
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 0.11188,
+      "price": 0.11181,
       "direction": "LONG",
-      "buildup_usd": 478712.539684,
-      "avg_entry": 0.093233,
+      "buildup_usd": 411983.144332,
+      "avg_entry": 0.093175,
       "avg_leverage": 5.0
     }
   },
   "BCH": {
     "long_liq": {
-      "price": 379.275836,
+      "price": 380.170897,
       "direction": "SHORT",
-      "buildup_usd": 44096.42916000117,
-      "avg_entry": 474.094795,
+      "buildup_usd": 8235.433080004283,
+      "avg_entry": 475.213622,
       "avg_leverage": 5.0
     }
   },
   "SUI": {
     "long_liq": {
-      "price": 0.75315,
+      "price": 0.753772,
       "direction": "SHORT",
-      "buildup_usd": 592482.3040920028,
-      "avg_entry": 0.941438,
+      "buildup_usd": 234066.03419199862,
+      "avg_entry": 0.942215,
       "avg_leverage": 5.0
     }
   },
   "TRUMP": {
     "short_liq": {
-      "price": 3.727305,
+      "price": 3.741111,
       "direction": "LONG",
-      "buildup_usd": 62834.62309999941,
-      "avg_entry": 3.272164,
-      "avg_leverage": 7.2
+      "buildup_usd": 44751.104219999404,
+      "avg_entry": 3.27229,
+      "avg_leverage": 7.0
     }
   },
   "NEAR": {
     "long_liq": {
-      "price": 1.045933,
+      "price": 1.046602,
       "direction": "SHORT",
-      "buildup_usd": 15974.735220001952,
-      "avg_entry": 1.307416,
+      "buildup_usd": 12793.371520002434,
+      "avg_entry": 1.308253,
       "avg_leverage": 5.0
     }
   },
   "VIRTUAL": {
     "short_liq": {
-      "price": 0.791297,
+      "price": 0.779866,
       "direction": "LONG",
-      "buildup_usd": 11742.87801199898,
-      "avg_entry": 0.681483,
-      "avg_leverage": 6.2
+      "buildup_usd": 8460.846347998475,
+      "avg_entry": 0.681306,
+      "avg_leverage": 6.9
     }
   },
   "LTC": {
     "long_liq": {
-      "price": 44.22407,
+      "price": 44.228037,
       "direction": "SHORT",
-      "buildup_usd": 47482.072700000135,
-      "avg_entry": 55.280087,
+      "buildup_usd": 45717.19483999853,
+      "avg_entry": 55.285046,
       "avg_leverage": 5.0
     }
   },
   "ENA": {
     "long_liq": {
-      "price": 0.073707,
+      "price": 0.073365,
       "direction": "SHORT",
       "buildup_usd": 50615.652832,
       "avg_entry": 0.091706,
-      "avg_leverage": 5.1
+      "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 0.11052,
+      "price": 0.111053,
       "direction": "LONG",
-      "buildup_usd": 25103.979524,
-      "avg_entry": 0.092388,
-      "avg_leverage": 5.1
+      "buildup_usd": 13258.058904000001,
+      "avg_entry": 0.092544,
+      "avg_leverage": 5.0
     }
   },
   "TRX": {
     "long_liq": {
-      "price": 0.247029,
+      "price": 0.247031,
       "direction": "SHORT",
-      "buildup_usd": 6096.050140000001,
-      "avg_entry": 0.308786,
+      "buildup_usd": 6061.525020000001,
+      "avg_entry": 0.308789,
       "avg_leverage": 5.0
     }
   },
   "ADA": {
     "long_liq": {
-      "price": 0.207651,
+      "price": 0.207687,
       "direction": "SHORT",
-      "buildup_usd": 43795.08312,
-      "avg_entry": 0.259564,
+      "buildup_usd": 39350.733400000005,
+      "avg_entry": 0.259608,
       "avg_leverage": 5.0
     }
   },
   "VVV": {
     "long_liq": {
-      "price": 4.572155,
+      "price": 4.581238,
       "direction": "SHORT",
-      "buildup_usd": 95553.27664800244,
-      "avg_entry": 5.715193,
+      "buildup_usd": 87367.8008740024,
+      "avg_entry": 5.726548,
       "avg_leverage": 5.0
     },
     "short_liq": {
@@ -384,112 +384,112 @@
   },
   "UNI": {
     "long_liq": {
-      "price": 2.84797,
+      "price": 2.847626,
       "direction": "SHORT",
-      "buildup_usd": 25425.879640005645,
-      "avg_entry": 3.559963,
+      "buildup_usd": 23628.085220001656,
+      "avg_entry": 3.559533,
       "avg_leverage": 5.0
     }
   },
   "TON": {
     "long_liq": {
-      "price": 1.058181,
+      "price": 1.058163,
       "direction": "SHORT",
-      "buildup_usd": 5290.637119998513,
-      "avg_entry": 1.322726,
+      "buildup_usd": 5208.277240000733,
+      "avg_entry": 1.322704,
       "avg_leverage": 5.0
     }
   },
   "APT": {
     "long_liq": {
-      "price": 0.848869,
+      "price": 0.840136,
       "direction": "SHORT",
       "buildup_usd": 11251.683845999922,
       "avg_entry": 1.0413,
-      "avg_leverage": 5.4
+      "avg_leverage": 5.2
     },
     "short_liq": {
-      "price": 1.248747,
+      "price": 1.258292,
       "direction": "LONG",
-      "buildup_usd": 107208.78416800061,
-      "avg_entry": 1.053973,
-      "avg_leverage": 5.4
+      "buildup_usd": 94517.83617600171,
+      "avg_entry": 1.054565,
+      "avg_leverage": 5.2
     }
   },
   "DOT": {
     "short_liq": {
-      "price": 1.605665,
+      "price": 1.617613,
       "direction": "LONG",
-      "buildup_usd": 56677.80583999709,
-      "avg_entry": 1.418376,
-      "avg_leverage": 7.6
+      "buildup_usd": 42233.906640000256,
+      "avg_entry": 1.418861,
+      "avg_leverage": 7.1
     }
   },
   "CRV": {
     "short_liq": {
-      "price": 0.257472,
+      "price": 0.26226,
       "direction": "LONG",
-      "buildup_usd": 120500.46391600293,
-      "avg_entry": 0.218344,
-      "avg_leverage": 5.6
+      "buildup_usd": 118644.57593199967,
+      "avg_entry": 0.21855,
+      "avg_leverage": 5.0
     }
   },
   "kBONK": {
     "short_liq": {
-      "price": 0.006801,
+      "price": 0.006999,
       "direction": "LONG",
-      "buildup_usd": 112828.88518599998,
-      "avg_entry": 0.005918,
-      "avg_leverage": 6.7
+      "buildup_usd": 112200.826112,
+      "avg_entry": 0.00592,
+      "avg_leverage": 5.5
     }
   },
   "MORPHO": {
     "long_liq": {
-      "price": 1.343047,
+      "price": 1.328,
       "direction": "SHORT",
       "buildup_usd": 2035.8239999990724,
       "avg_entry": 1.66,
-      "avg_leverage": 5.2
+      "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 1.990465,
+      "price": 2.005918,
       "direction": "LONG",
-      "buildup_usd": 17194.439639999688,
-      "avg_entry": 1.671346,
-      "avg_leverage": 5.2
+      "buildup_usd": 16841.340599999225,
+      "avg_entry": 1.671599,
+      "avg_leverage": 5.0
     }
   },
   "CC": {
     "long_liq": {
-      "price": 0.117349,
+      "price": 0.117352,
       "direction": "SHORT",
-      "buildup_usd": 1597.4158400000001,
-      "avg_entry": 0.146687,
+      "buildup_usd": 1561.95558,
+      "avg_entry": 0.14669,
       "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 0.175102,
+      "price": 0.175056,
       "direction": "LONG",
-      "buildup_usd": 3089.3752,
-      "avg_entry": 0.145918,
+      "buildup_usd": 2996.95872,
+      "avg_entry": 0.14588,
       "avg_leverage": 5.0
     }
   },
   "WIF": {
     "long_liq": {
-      "price": 0.148847,
+      "price": 0.148925,
       "direction": "SHORT",
-      "buildup_usd": 13248.335979999998,
-      "avg_entry": 0.186059,
+      "buildup_usd": 11699.373599999997,
+      "avg_entry": 0.186156,
       "avg_leverage": 5.0
     }
   },
   "MNT": {
     "long_liq": {
-      "price": 0.563323,
+      "price": 0.563333,
       "direction": "SHORT",
-      "buildup_usd": 6104.591480000261,
-      "avg_entry": 0.704154,
+      "buildup_usd": 6032.305603999737,
+      "avg_entry": 0.704166,
       "avg_leverage": 5.0
     }
   },
@@ -504,54 +504,47 @@
   },
   "JUP": {
     "long_liq": {
-      "price": 0.123463,
+      "price": 0.123488,
       "direction": "SHORT",
-      "buildup_usd": 26746.24524,
-      "avg_entry": 0.154329,
+      "buildup_usd": 26393.762019999995,
+      "avg_entry": 0.15436,
       "avg_leverage": 5.0
     }
   },
   "HBAR": {
     "long_liq": {
-      "price": 0.073998,
+      "price": 0.073903,
       "direction": "SHORT",
-      "buildup_usd": 8085.519383999999,
-      "avg_entry": 0.092497,
+      "buildup_usd": 2329.947064,
+      "avg_entry": 0.092379,
       "avg_leverage": 5.0
     }
   },
   "PENDLE": {
     "long_liq": {
-      "price": 0.984455,
+      "price": 0.984425,
       "direction": "SHORT",
-      "buildup_usd": 5726.981199999999,
-      "avg_entry": 1.230569,
-      "avg_leverage": 5.0
-    },
-    "short_liq": {
-      "price": 1.469205,
-      "direction": "LONG",
-      "buildup_usd": 661.1411999999999,
-      "avg_entry": 1.224337,
+      "buildup_usd": 5852.318799999999,
+      "avg_entry": 1.230531,
       "avg_leverage": 5.0
     }
   },
   "FET": {
     "long_liq": {
-      "price": 0.187298,
+      "price": 0.18611,
       "direction": "SHORT",
-      "buildup_usd": 50621.49690000001,
-      "avg_entry": 0.234123,
+      "buildup_usd": 30918.736560000005,
+      "avg_entry": 0.232637,
       "avg_leverage": 5.0
     }
   },
   "IP": {
     "short_liq": {
-      "price": 0.74842,
+      "price": 0.748259,
       "direction": "LONG",
-      "buildup_usd": 7745.691268000495,
-      "avg_entry": 0.650787,
-      "avg_leverage": 6.7
+      "buildup_usd": 3987.781716000856,
+      "avg_entry": 0.655632,
+      "avg_leverage": 7.1
     }
   },
   "MEGA": {
@@ -565,19 +558,19 @@
   },
   "LDO": {
     "long_liq": {
-      "price": 0.23348,
+      "price": 0.233558,
       "direction": "SHORT",
-      "buildup_usd": 7874.55447000152,
-      "avg_entry": 0.29185,
+      "buildup_usd": 7809.686524000654,
+      "avg_entry": 0.291948,
       "avg_leverage": 5.0
     }
   },
   "ATOM": {
     "long_liq": {
-      "price": 1.428963,
+      "price": 1.428834,
       "direction": "SHORT",
-      "buildup_usd": 10308.03764399993,
-      "avg_entry": 1.786204,
+      "buildup_usd": 10027.346363999697,
+      "avg_entry": 1.786043,
       "avg_leverage": 5.0
     },
     "short_liq": {
@@ -590,10 +583,10 @@
   },
   "STRK": {
     "long_liq": {
-      "price": 0.029065,
+      "price": 0.029121,
       "direction": "SHORT",
-      "buildup_usd": 31044.47926199946,
-      "avg_entry": 0.036332,
+      "buildup_usd": 16426.640193999025,
+      "avg_entry": 0.036401,
       "avg_leverage": 5.0
     }
   },
@@ -608,10 +601,10 @@
   },
   "PURR": {
     "long_liq": {
-      "price": 0.061947,
+      "price": 0.06216,
       "direction": "SHORT",
-      "buildup_usd": 2347.311492,
-      "avg_entry": 0.077433,
+      "buildup_usd": 19.425,
+      "avg_entry": 0.0777,
       "avg_leverage": 5.0
     },
     "short_liq": {
@@ -624,43 +617,43 @@
   },
   "OP": {
     "long_liq": {
-      "price": 0.09602,
+      "price": 0.094853,
       "direction": "SHORT",
       "buildup_usd": 1623.7904220004193,
       "avg_entry": 0.113047,
-      "avg_leverage": 6.6
+      "avg_leverage": 6.2
     },
     "short_liq": {
-      "price": 0.12935,
+      "price": 0.13081,
       "direction": "LONG",
-      "buildup_usd": 47910.95774199975,
-      "avg_entry": 0.112418,
-      "avg_leverage": 6.6
+      "buildup_usd": 31797.615540000254,
+      "avg_entry": 0.112676,
+      "avg_leverage": 6.2
     }
   },
   "ICP": {
     "long_liq": {
-      "price": 1.92651,
+      "price": 1.914544,
       "direction": "SHORT",
       "buildup_usd": 6492.690399999441,
       "avg_entry": 2.39318,
-      "avg_leverage": 5.1
+      "avg_leverage": 5.0
     },
     "short_liq": {
-      "price": 2.840718,
+      "price": 2.852728,
       "direction": "LONG",
-      "buildup_usd": 9532.92216000044,
-      "avg_entry": 2.37717,
-      "avg_leverage": 5.1
+      "buildup_usd": 9567.087839999773,
+      "avg_entry": 2.377273,
+      "avg_leverage": 5.0
     }
   },
   "AERO": {
     "short_liq": {
-      "price": 0.394632,
+      "price": 0.395401,
       "direction": "LONG",
-      "buildup_usd": 23475.88062,
-      "avg_entry": 0.349134,
-      "avg_leverage": 7.7
+      "buildup_usd": 23467.73148,
+      "avg_entry": 0.348506,
+      "avg_leverage": 7.4
     }
   },
   "ARB": {
@@ -674,10 +667,10 @@
   },
   "JTO": {
     "short_liq": {
-      "price": 0.357168,
+      "price": 0.354889,
       "direction": "LONG",
-      "buildup_usd": 192881.50075999997,
-      "avg_entry": 0.34343,
+      "buildup_usd": 177660.34079999998,
+      "avg_entry": 0.341239,
       "avg_leverage": 25.0
     }
   }
