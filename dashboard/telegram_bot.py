@@ -546,6 +546,31 @@ async def cmd_arena(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @authorized
+async def cmd_suguru(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Suguru — Scan + Hermes decision layer."""
+    if not update.message:
+        return
+    regime = load_json(CONFIG_DIR / "risk-regime.json")
+    mode = regime.get("riskMode", "UNKNOWN")
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔍 Scan Only", callback_data="act:suguru_scan_only"),
+            InlineKeyboardButton("🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"),
+        ],
+        [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
+    ])
+    await update.message.reply_text(
+        f"⚡ *Suguru — Elite Scanner*\n\n"
+        f"Regime: *{mode}*\n\n"
+        f"🔍 *Scan Only* — show scored candidates\n"
+        f"🧠 *Hermes Scan* — scan + AI deliberation → trade recommendation",
+        parse_mode="Markdown",
+        reply_markup=keyboard,
+    )
+
+
+@authorized
 async def cmd_emergency_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
@@ -747,6 +772,14 @@ RULES_KEY_MAP = {
         "autoExecuteEnabled",
         lambda v: v.lower() in ("true", "1", "on"),
     ),
+    "suguru_enabled": (
+        "jido",
+        "suguru_enabled",
+        lambda v: v.lower() in ("true", "1", "on"),
+    ),
+    "suguru_maxlev": ("jido", "suguru_max_leverage", int),
+    "suguru_maxmargin": ("jido", "suguru_max_margin_pct", float),
+    "suguru_minconf": ("jido", "suguru_min_confidence", float),
     "eval_minscore": ("evaluate", "minScore", int),
     "eval_maxlev": ("evaluate", "maxLeverage", int),
     "eval_maxpos": ("evaluate", "maxPositions", int),
@@ -767,6 +800,10 @@ RULES_CONFIRMATIONS = {
     "jido_roi": lambda v: f"Jido will now require {float(v):.0%} ROI before auto-executing.",
     "jido_minscore": lambda v: f"Jido minimum score set to {v}.",
     "jido_auto": lambda v: f"Jido auto-execute {'enabled' if v.lower() in ('true', '1', 'on') else 'disabled'}.",
+    "suguru_enabled": lambda v: f"Suguru in Jido {'enabled' if v.lower() in ('true', '1', 'on') else 'disabled'}.",
+    "suguru_maxlev": lambda v: f"Suguru max leverage set to {v}x.",
+    "suguru_maxmargin": lambda v: f"Suguru max margin set to {float(v):.0f}%.",
+    "suguru_minconf": lambda v: f"Suguru min confidence set to {float(v):.0%}.",
     "eval_minscore": lambda v: f"Manual evaluate minimum score set to {v}.",
     "eval_maxlev": lambda v: f"Manual evaluate max leverage set to {v}x (hardcoded 7-10x band still applies).",
     "eval_maxpos": lambda v: f"Manual evaluate max positions set to {v} (hardcoded 3-position cap still applies).",
@@ -1414,6 +1451,11 @@ def _build_set_help_text() -> str:
         "  `jido_roi` (float) — Auto-execute ROI threshold\n"
         "  `jido_minscore` (int) — Jido min score\n"
         "  `jido_auto` (true/false) — Enable auto-execute\n\n"
+        "*Suguru (in Jido)*\n"
+        "  `suguru_enabled` (true/false) — Enable suguru in Jido\n"
+        "  `suguru_maxlev` (int) — Max leverage\n"
+        "  `suguru_maxmargin` (float) — Max margin %\n"
+        "  `suguru_minconf` (float) — Min hermes confidence\n\n"
         "*Position Management*\n"
         "  `fixed_tp` (float) — Fixed TP ROE%\n"
         "  `fixed_sl` (float) — Fixed SL ROE%\n"
@@ -1741,6 +1783,99 @@ async def _handle_action_callback(query, action: str) -> None:
     elif action == "emergency_stop_cancel":
         await _answer_and_edit(query, "✅ Emergency stop cancelled.")
 
+    # --- SUGURU ---
+    elif action == "suguru_scan_only":
+        await _safe_edit(query, "🔍 Scanning markets...")
+        await run_script_async(
+            ["python3", str(STATE_DIR / "scripts/vps/suguru.py"), "--scan-only"],
+            timeout=120,
+        )
+        scan = load_json(OUTPUTS_DIR / "suguru-candidates.json", default={})
+        cands = scan.get("candidates", [])
+        if not cands:
+            await _safe_edit(query, "🔍 *Suguru Scan*\n\nNo candidates found.", parse_mode="Markdown")
+            return
+        lines = [f"🔍 *Suguru Scan — {len(cands)} candidates*\n"]
+        for i, c in enumerate(cands[:5]):
+            scores = c.get("sub_scores", {})
+            lines.append(
+                f"{i+1}. *{c['direction']} {c['asset']}* GSS={c['gss']:.2f}\n"
+                f"   px={c['entry_price']} lev={c['leverage']}x "
+                f"netRR={c['net_rr']:.2f} risk={c['risk_pct']:.1f}%\n"
+                f"   confluence={scores.get('scanner_confluence', 0):.2f} "
+                f"whale={scores.get('SM_whale_bias', 0):.2f}"
+            )
+        await _safe_edit(query, "\n".join(lines), parse_mode="Markdown")
+
+    elif action == "suguru_hermes_scan":
+        await _safe_edit(query, "🔍 Scanning...")
+        await run_script_async(
+            ["python3", str(STATE_DIR / "scripts/vps/suguru.py"), "--scan-only"],
+            timeout=120,
+        )
+        scan = load_json(OUTPUTS_DIR / "suguru-candidates.json", default={})
+        cands = scan.get("candidates", [])
+        if not cands:
+            await _safe_edit(query, "🧠 *Hermes Scan*\n\nNo candidates found.", parse_mode="Markdown")
+            return
+        await _safe_edit(query, "🧠 Hermes deliberating...")
+        await run_script_async(
+            ["python3", str(STATE_DIR / "scripts/vps/suguru_decide.py")],
+            timeout=120,
+        )
+        rec = load_json(OUTPUTS_DIR / "suguru-recommendation.json", default={})
+        if rec.get("recommendation") == "TRADE":
+            tp = rec.get("trade_params", {})
+            text = (
+                f"🧠 *Hermes Recommends*\n\n"
+                f"*{rec['direction']} {rec['asset']}*\n"
+                f"Confidence: {rec.get('confidence', 0):.0%}\n\n"
+                f"Entry: {tp.get('entry_price', '?')} | "
+                f"SL: {tp.get('stop_price', '?')} | "
+                f"TP1: {tp.get('tp1_price', '?')}\n"
+                f"Leverage: {rec.get('leverage', '?')}x | "
+                f"NetRR: {tp.get('netRr', '?')}\n\n"
+                f"_{rec.get('reasoning', 'No reasoning')}_"
+            )
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("✅ Approve", callback_data="act:suguru_approve"),
+                    InlineKeyboardButton("❌ Reject", callback_data="act:suguru_reject"),
+                ],
+                [InlineKeyboardButton("💬 Chat to customize", callback_data="act:suguru_chat")],
+            ])
+            await _safe_edit(query, text, parse_mode="Markdown", reply_markup=keyboard)
+        else:
+            await _safe_edit(
+                query,
+                f"🧠 *Hermes: No Trade*\n\n_{rec.get('reasoning', 'No strong signals.')}_",
+                parse_mode="Markdown",
+            )
+
+    elif action == "suguru_approve":
+        await _safe_edit(query, "⚡ Executing approved trade...")
+        output = await run_script_async(
+            ["python3", str(STATE_DIR / "scripts/vps/suguru.py"), "--execute-approved"],
+            timeout=120,
+        )
+        await _safe_edit(query, f"✅ *Suguru trade executed*\n\n```\n{output[:3000]}\n```", parse_mode="Markdown")
+
+    elif action == "suguru_reject":
+        await _safe_edit(query, "❌ Trade rejected.")
+
+    elif action == "suguru_chat":
+        await _safe_edit(
+            query,
+            "💬 *Chat with Suguru*\n\n"
+            "Type your next message to customize the trade.\n"
+            "_Your next message goes to the Strategic Brain._",
+            parse_mode="Markdown",
+        )
+
+    elif action == "suguru_cancel":
+        await _safe_edit(query, "✅ Suguru cancelled.")
+
+    # --- JIDO (unchanged) ---
     elif action == "jido_confirm":
         await _run_waifu_and_edit(query, "jido", timeout=120)
 
@@ -2177,6 +2312,7 @@ def create_bot_application() -> Optional[Application]:
     app.add_handler(CommandHandler("howl", cmd_howl))
     app.add_handler(CommandHandler("whale", cmd_whale))
     app.add_handler(CommandHandler("arena", cmd_arena))
+    app.add_handler(CommandHandler("suguru", cmd_suguru))
     app.add_handler(CommandHandler("flatten", cmd_flatten))
     app.add_handler(CommandHandler("close", cmd_close))
     app.add_handler(CommandHandler("emergency_stop", cmd_emergency_stop))

@@ -186,6 +186,13 @@ def _run(dry_run: bool):
     remaining = evaluator.remaining
     sc.save_json(sc.PENDING_ENTRIES_FILE, remaining)
 
+    # --- SUGURU: optional LLM scan ---
+    suguru_enabled = bool(user_rules.get("jido", {}).get("suguru_enabled", False))
+    if suguru_enabled:
+        suguru_result = _run_suguru_pipeline(dry_run, user_rules)
+        if suguru_result:
+            approved_count += 1
+
     click.echo(
         f"[jido] Summary: {approved_count} auto-executed, {manual_review_count} manual review, "
         f"{rejected_count} rejected, {len(remaining)} remaining"
@@ -195,6 +202,162 @@ def _run(dry_run: bool):
         sync_after("waifu jido: process pending entries")
 
     click.echo(f"[jido] {sc.now_iso()} done")
+
+
+def _run_suguru_pipeline(dry_run: bool, user_rules: dict) -> bool:
+    """Run suguru scan → hermes decide → auto-execute. Returns True if a trade was executed."""
+    import json as _json
+    import subprocess as _sp
+
+    suguru_script = sc.STATE_DIR / "scripts" / "vps" / "suguru.py"
+    decide_script = sc.STATE_DIR / "scripts" / "vps" / "suguru_decide.py"
+
+    click.echo("[jido-suguru] Running scan...")
+
+    # Step 1: Scan
+    env = {**sc.os.environ}
+    if "SENPI_WAIFU_DIR" not in env:
+        env["SENPI_WAIFU_DIR"] = str(sc.STATE_DIR)
+
+    scan_result = _sp.run(
+        ["python3", str(suguru_script), "--scan-only"],
+        capture_output=True, text=True, timeout=120, env=env,
+    )
+    if scan_result.returncode != 0:
+        click.echo(f"[jido-suguru] Scan failed: {scan_result.stderr[:200]}")
+        return False
+
+    candidates_file = sc.OUTPUTS_DIR / "suguru-candidates.json"
+    try:
+        candidates = _json.loads(candidates_file.read_text())
+    except (FileNotFoundError, _json.JSONDecodeError):
+        click.echo("[jido-suguru] No candidates file")
+        return False
+
+    cands = candidates.get("candidates", [])
+    if not cands:
+        click.echo("[jido-suguru] 0 candidates — no tradeable signals")
+        return False
+
+    click.echo(f"[jido-suguru] {len(cands)} candidates found")
+
+    # Step 2: Hermes decides
+    click.echo("[jido-suguru] Hermes deliberating...")
+    decide_result = _sp.run(
+        ["python3", str(decide_script)],
+        capture_output=True, text=True, timeout=120, env=env,
+    )
+
+    rec_file = sc.OUTPUTS_DIR / "suguru-recommendation.json"
+    try:
+        rec = _json.loads(rec_file.read_text())
+    except (FileNotFoundError, _json.JSONDecodeError):
+        click.echo("[jido-suguru] No recommendation file")
+        return False
+
+    if rec.get("recommendation") != "TRADE":
+        reason = rec.get("reasoning", "no reason")[:100]
+        click.echo(f"[jido-suguru] Hermes: {rec.get('recommendation', 'UNKNOWN')} — {reason}")
+        return False
+
+    # Step 3: Auto-execute using user's risk settings
+    tp = rec.get("trade_params", {})
+    asset = rec.get("asset", "")
+    direction = rec.get("direction", "")
+    confidence = float(rec.get("confidence", 0))
+
+    click.echo(
+        f"[jido-suguru] Hermes recommends: {direction} {asset} "
+        f"(confidence={confidence:.0%})"
+    )
+
+    if dry_run:
+        click.echo(f"[jido-suguru] DRY-RUN: would execute {direction} {asset}")
+        return False
+
+    # Apply user's risk settings from user-rules.json (flat under jido section)
+    max_leverage = int(user_rules.get("jido", {}).get("suguru_max_leverage", 8))
+    max_margin_pct = float(user_rules.get("jido", {}).get("suguru_max_margin_pct", 25))
+    min_confidence = float(user_rules.get("jido", {}).get("suguru_min_confidence", 0.5))
+
+    if confidence < min_confidence:
+        click.echo(
+            f"[jido-suguru] Confidence {confidence:.0%} < min {min_confidence:.0%} — skipping"
+        )
+        return False
+
+    strategies = sc.get_enabled_strategies()
+    if not strategies:
+        click.echo("[jido-suguru] No enabled strategies")
+        return False
+
+    strategy = strategies[0]
+    strategy_id = strategy.get("strategyId", "")
+    strat_key = strategy.get("_key", "")
+
+    leverage = min(int(rec.get("leverage", 8)), max_leverage)
+    # Clamp leverage to 7-10x per guardrails
+    leverage = max(7, min(leverage, 10))
+
+    # Calculate margin from user's max_margin_pct
+    account_equity = candidates.get("account_equity", 100)
+    margin = account_equity * max_margin_pct / 100
+
+    position_params = {
+        "strategyId": strategy_id,
+        "asset": asset,
+        "direction": direction,
+        "leverage": leverage,
+        "marginUsd": margin,
+        "lockMode": "pct_of_high_water",
+    }
+
+    # Inject strategic overrides if set
+    strategic = build_strategic_overrides(user_rules)
+    if strategic:
+        if "strategicSlRoe" in strategic:
+            position_params["stopLossRoe"] = strategic["strategicSlRoe"]
+        if "strategicTpRoe" in strategic:
+            position_params["takeProfitRoe"] = strategic["strategicTpRoe"]
+
+    with sc.acquire_trade_lock():
+        resp = sc.mcporter_call("strategy_open_position", position_params)
+
+    if resp.get("success", False):
+        entry_price = float(resp.get("entryPrice", 0))
+        click.echo(f"[jido-suguru] OPENED: {asset} {direction} @ {leverage}x")
+
+        sc.record_trade({
+            "action": "OPEN",
+            "asset": asset,
+            "direction": direction,
+            "leverage": leverage,
+            "marginUsd": margin,
+            "entrySource": "jido-suguru",
+            "strategyKey": strat_key,
+            "score": rec.get("trade_params", {}).get("gss", 0),
+            "realizedPnl": 0,
+        })
+
+        dsl = build_dsl_state(
+            asset, direction, entry_price, leverage, margin,
+            strategy_id, strat_key, "suguru",
+            rec.get("trade_params", {}).get("gss", 0),
+            strategic,
+        )
+        state_dir = sc.get_strategy_state_dir(strat_key)
+        sc.save_json(state_dir / f"dsl-{asset}.json", dsl)
+
+        sc.send_telegram(
+            f"🧠 SUGURU AUTO-EXECUTE: {direction} {asset}\n"
+            f"Hermes confidence: {confidence:.0%}\n"
+            f"Leverage: {leverage}x | Margin: ${margin:.0f}\n"
+            f"Reasoning: {rec.get('reasoning', '')[:100]}"
+        )
+        return True
+    else:
+        click.echo(f"[jido-suguru] FAILED: {resp.get('error', 'unknown')}")
+        return False
 
 
 def _get_scanner_roi(scanner: str, arena_learnings: dict) -> Optional[float]:

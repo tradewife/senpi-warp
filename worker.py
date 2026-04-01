@@ -230,20 +230,11 @@ def job_reconcile():
 
 
 def job_suguru():
-    """Suguru pipeline: scan → hermes decide → execute approved."""
-    import subprocess as _sp
-
-    # Step 1: Scan — write candidates to suguru-candidates.json
-    print("[suguru] Step 1/3: scanning...")
+    """Suguru scan + hermes deliberation — writes recommendation for user approval."""
+    print("[suguru] Step 1/2: scanning...")
     run_py("scripts/vps/suguru.py", ["--scan-only"])
-
-    # Step 2: Decide — hermes evaluates candidates → suguru-approved.json
-    print("[suguru] Step 2/3: hermes deciding...")
+    print("[suguru] Step 2/2: hermes deliberating...")
     run_py("scripts/vps/suguru_decide.py")
-
-    # Step 3: Execute — run hermes-approved trades
-    print("[suguru] Step 3/3: executing approved...")
-    run_py("scripts/vps/suguru.py", ["--execute-approved"])
 
 
 def job_suguru_stale():
