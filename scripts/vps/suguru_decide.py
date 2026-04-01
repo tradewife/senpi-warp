@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 """
-suguru_decide.py — Hermes decision layer for suguru candidates.
+suguru_decide.py — GLM decision layer for suguru candidates.
 
-Reads suguru-candidates.json, sends to Hermes for deliberation,
-writes suguru-recommendation.json for user approval.
+Calls GLM API directly (no hermes subprocess).
+Reads suguru-candidates.json, writes suguru-recommendation.json.
 
-Does NOT execute trades — only produces a recommendation.
-
-Usage:
-    python3 scripts/vps/suguru_decide.py
-    python3 scripts/vps/suguru_decide.py --dry-run
+Usage: python3 scripts/vps/suguru_decide.py
+       python3 scripts/vps/suguru_decide.py --dry-run
 """
 
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,182 +24,126 @@ CONFIG_DIR = STATE_DIR / "config"
 CANDIDATES_FILE = OUTPUTS_DIR / "suguru-candidates.json"
 RECOMMENDATION_FILE = OUTPUTS_DIR / "suguru-recommendation.json"
 REGIME_FILE = CONFIG_DIR / "risk-regime.json"
-BRAIN_FILE = OUTPUTS_DIR / "autonomous-brain.json"
 
 DRY_RUN = "--dry-run" in sys.argv
 
 
-def load_json(path: Path, default=None):
+def load_json(path, default=None):
     try:
         return json.loads(path.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         return default
 
 
-def save_json(path: Path, data):
+def save_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=str))
 
 
-def find_hermes() -> str:
-    hermes = os.environ.get("HERMES_BIN_PATH", "/usr/local/bin/hermes")
-    if os.path.isfile(hermes):
-        return hermes
-    found = shutil.which("hermes")
-    if found:
-        return found
-    raise RuntimeError("hermes binary not found")
+def call_glm(prompt):
+    api_key = os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
+    base_url = os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")
+    model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
+
+    if not api_key or not base_url:
+        raise RuntimeError("GLM_API_KEY or GLM_BASE_URL not set")
+
+    url = base_url.rstrip("/") + "/chat/completions"
+
+    payload = json.dumps({
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a trading advisor. Reply ONLY with valid JSON, no markdown, no code blocks."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3,
+        "max_tokens": 500,
+    }).encode()
+
+    req = urllib.request.Request(url, data=payload, headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    })
+
+    resp = urllib.request.urlopen(req, timeout=40)
+    data = json.loads(resp.read())
+    return data["choices"][0]["message"]["content"]
 
 
-def build_prompt(candidates: dict, regime: dict, brain: dict) -> str:
-    risk_mode = regime.get("riskMode", "UNKNOWN")
-    equity = candidates.get("account_equity", 0)
-    slots = candidates.get("available_slots", 0)
-    cands = candidates.get("candidates", [])
+def build_prompt(cands, regime_mode, equity, slots):
+    lines = []
+    for i, c in enumerate(cands[:5]):
+        s = c.get("sub_scores", {})
+        asset = c["asset"]
+        direction = c["direction"]
+        gss = c["gss"]
+        px = c["entry_price"]
+        lev = c["leverage"]
+        rr = c["net_rr"]
+        risk = c["risk_pct"]
+        conf = s.get("scanner_confluence", 0)
+        whale = s.get("SM_whale_bias", 0)
+        lines.append(f"{i+1}. {direction} {asset} GSS={gss:.2f} px={px} lev={lev}x rr={rr:.1f} risk={risk:.1f}% conf={conf:.2f} whale={whale:.2f}")
 
-    if not cands:
-        return "No candidates to evaluate. Return: REJECT — no tradeable signals."
-
-    cand_lines = []
-    for i, c in enumerate(cands):
-        scores = c.get("sub_scores", {})
-        cand_lines.append(
-            f"{i+1}. {c['direction']} {c['asset']} | GSS={c['gss']:.2f} | "
-            f"px={c['entry_price']} | lev={c['leverage']}x | "
-            f"margin=${c['margin_usd']:.0f} | risk={c['risk_pct']:.1f}% | "
-            f"netRR={c['net_rr']:.2f} | funding={c.get('funding', 0):.4f}\n"
-            f"   scores: confluence={scores.get('scanner_confluence', 0):.2f} "
-            f"whale={scores.get('SM_whale_bias', 0):.2f} "
-            f"momentum={scores.get('momentum', 0):.2f} "
-            f"regime={scores.get('regime_align', 0):.2f}\n"
-            f"   scanners: {json.dumps(c.get('scanner_bias', {}), separators=(',', ':'))}"
-        )
-
-    brain_mode = brain.get("mode", "UNKNOWN")
-
-    prompt = f"""You are SUGURU, a concise trading advisor.
-
-CURRENT STATE:
-- Risk regime: {risk_mode}
-- Brain mode: {brain_mode}
-- Account equity: ${equity}
-- Available slots: {slots}
-- Candidates: {len(cands)}
-
-CANDIDATES:
-{chr(10).join(cand_lines)}
-
-Analyze each candidate and recommend a trade (or no trade).
-
-CONSIDER:
-1. Signal quality — multiple scanners agreeing vs 1 weak signal
-2. Risk/Reward — net_rr >= 1.5? risk_pct reasonable (<5%)?
-3. Timing — funding about to flip? OI spiking?
-4. Regime fit — direction matching regime bias?
-5. Correlation — would this overlap existing exposure?
-
-Pick the BEST candidate (or REJECT all if none are strong enough).
-
-Return ONLY the JSON below. Do not repeat yourself. Do not add any text before or after the JSON:
-{{"recommendation": "TRADE|REJECT", "asset": "BTC", "direction": "LONG", "leverage": 8, "margin_pct": 25, "reasoning": "2-3 sentence explanation for the user", "confidence": 0.0-1.0, "alternatives": ["list of other viable candidates if any"]}}
-"""
-    return prompt
-
-
-def call_hermes(prompt: str, timeout: int = 45) -> str:
-    hermes_bin = find_hermes()
-    hermes_home = os.environ.get("HERMES_HOME", "/root/.hermes")
-
-    env = {
-        **os.environ,
-        "HERMES_HOME": hermes_home,
-        "NO_COLOR": "1",
-        "TERM": "dumb",
-    }
-
-    glm_key = os.environ.get("GLM_API_KEY") or os.environ.get("OPENAI_API_KEY", "")
-    glm_base = os.environ.get("GLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "")
-    if glm_key:
-        env["GLM_API_KEY"] = glm_key
-    if glm_base:
-        env["GLM_BASE_URL"] = glm_base
-
-    # Get model/provider from env (same as telegram bot brain)
-    hermes_model = os.environ.get("HERMES_MODEL", "glm-5-turbo").strip()
-    hermes_provider = os.environ.get("HERMES_INFERENCE_PROVIDER", "zai").strip()
-
-    cmd = [hermes_bin, "chat", "-Q", "-q", prompt]
-    if hermes_model:
-        cmd += ["-m", hermes_model]
-    if hermes_provider:
-        cmd += ["--provider", hermes_provider]
-
-    proc = subprocess.run(
-        cmd, capture_output=True, text=True, timeout=timeout,
-        env=env, cwd=str(STATE_DIR),
+    return (
+        f"Pick the best trade or reject all.\n"
+        f"Regime={regime_mode} equity=${equity} slots={slots}\n\n"
+        + "\n".join(lines)
+        + '\n\nReply ONLY this JSON:\n'
+        + '{"recommendation":"TRADE|REJECT","asset":"BTC","direction":"LONG","leverage":8,"margin_pct":25,"reasoning":"why","confidence":0.7}'
     )
 
-    if proc.returncode != 0:
-        raise RuntimeError(f"hermes exit {proc.returncode}: {proc.stderr[:500]}")
 
-    return proc.stdout.strip()
-
-
-def parse_recommendation(output: str) -> dict:
+def parse_rec(output):
     output = output.strip()
+    output = re.sub(r"^```(?:json)?\s*", "", output)
+    output = re.sub(r"\s*```$", "", output)
     try:
         return json.loads(output)
     except json.JSONDecodeError:
-        pass
-
-    match = re.search(r'\{[\s\S]*"recommendation"[\s\S]*\}', output)
-    if match:
-        try:
+        match = re.search(r"\{[^}]+\}", output)
+        if match:
             return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    raise ValueError(f"Could not parse hermes output: {output[:300]}")
+    raise ValueError(f"Could not parse: {output[:200]}")
 
 
 def main():
     candidates = load_json(CANDIDATES_FILE)
     if not candidates:
-        print("[suguru-decide] No candidates file found")
+        print("[suguru-decide] No candidates file")
         save_json(RECOMMENDATION_FILE, {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "recommendation": "REJECT",
-            "reasoning": "No scan data available. Run suguru scan first.",
+            "recommendation": "REJECT", "reasoning": "No scan data.",
         })
-        sys.exit(0)
+        return
 
     cands = candidates.get("candidates", [])
     if not cands:
-        print("[suguru-decide] 0 candidates — nothing to evaluate")
+        print("[suguru-decide] 0 candidates")
         save_json(RECOMMENDATION_FILE, {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "recommendation": "REJECT",
-            "reasoning": "No tradeable candidates found in scan.",
-            "candidates_count": 0,
+            "recommendation": "REJECT", "reasoning": "No tradeable candidates.",
         })
-        sys.exit(0)
-
-    regime = load_json(REGIME_FILE, default={})
-    brain = load_json(BRAIN_FILE, default={})
-
-    prompt = build_prompt(candidates, regime, brain)
-
-    if DRY_RUN:
-        print(f"[suguru-decide] DRY-RUN: {len(cands)} candidates, prompt={len(prompt)} chars")
-        print(prompt[:500])
         return
 
-    print(f"[suguru-decide] Deliberating on {len(cands)} candidates...")
+    regime = load_json(REGIME_FILE, default={})
+    regime_mode = regime.get("riskMode", "UNKNOWN")
+    equity = candidates.get("account_equity", 100)
+    slots = candidates.get("available_slots", 2)
+
+    prompt = build_prompt(cands, regime_mode, equity, slots)
+
+    if DRY_RUN:
+        print(f"[suguru-decide] DRY-RUN: {len(cands)} candidates")
+        print(prompt)
+        return
+
+    print(f"[suguru-decide] Evaluating {len(cands)} candidates via GLM...")
     try:
-        output = call_hermes(prompt)
+        output = call_glm(prompt)
+        print(f"[suguru-decide] GLM: {output[:200]}")
     except Exception as e:
-        print(f"[suguru-decide] hermes failed: {e}")
-        # Fallback: recommend top candidate with low confidence
+        print(f"[suguru-decide] GLM failed: {e}")
         top = cands[0]
         save_json(RECOMMENDATION_FILE, {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -212,39 +152,43 @@ def main():
             "direction": top["direction"],
             "leverage": top["leverage"],
             "margin_pct": 25,
-            "reasoning": f"Hermes unavailable — top GSS candidate ({top['asset']} {top['direction']} GSS={top['gss']:.2f}). Review manually before approving.",
+            "reasoning": f"GLM unavailable. Top: {top['asset']} {top['direction']} GSS={top['gss']:.2f}",
             "confidence": 0.3,
             "source": "fallback",
             "candidates_count": len(cands),
             "candidates": cands[:3],
+            "trade_params": {
+                "entry_price": top["entry_price"],
+                "stop_price": top["stop_price"],
+                "tp1_price": top["tp1_price"],
+                "tp2_price": top["tp2_price"],
+                "leverage": top["leverage"],
+                "margin_usd": top["margin_usd"],
+                "netRr": top["net_rr"],
+                "gss": top["gss"],
+            },
         })
-        print(f"[suguru-decide] Fallback: recommended {top['asset']} {top['direction']}")
+        print(f"[suguru-decide] Fallback: {top['asset']} {top['direction']}")
         return
 
     try:
-        rec = parse_recommendation(output)
+        rec = parse_rec(output)
     except ValueError as e:
         print(f"[suguru-decide] Parse error: {e}")
         save_json(RECOMMENDATION_FILE, {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "recommendation": "REJECT",
-            "reasoning": f"Hermes output parse error. Raw: {output[:200]}",
-            "source": "parse-error",
+            "reasoning": f"Parse error: {str(e)[:100]}",
         })
         return
 
-    # Enrich with candidate data for execution if approved
     rec["timestamp"] = datetime.now(timezone.utc).isoformat()
-    rec["source"] = "hermes"
+    rec["source"] = "glm"
     rec["candidates_count"] = len(cands)
-    rec["candidates"] = cands[:3]  # top 3 for reference
+    rec["candidates"] = cands[:3]
 
-    # If TRADE, attach the full trade params from the matching candidate
     if rec.get("recommendation") == "TRADE":
-        match = next(
-            (c for c in cands if c["asset"] == rec.get("asset") and c["direction"] == rec.get("direction")),
-            None,
-        )
+        match = next((c for c in cands if c["asset"] == rec.get("asset")), None)
         if match:
             rec["trade_params"] = {
                 "entry_price": match["entry_price"],
@@ -258,12 +202,11 @@ def main():
             }
 
     save_json(RECOMMENDATION_FILE, rec)
-
-    if rec.get("recommendation") == "TRADE":
-        print(f"[suguru-decide] RECOMMEND: {rec['direction']} {rec['asset']} "
-              f"(confidence={rec.get('confidence', 0):.0%})")
-    else:
-        print(f"[suguru-decide] RECOMMEND: {rec['recommendation']} — {rec.get('reasoning', '')[:80]}")
+    action = rec.get("recommendation", "?")
+    asset = rec.get("asset", "")
+    d = rec.get("direction", "")
+    conf = rec.get("confidence", 0)
+    print(f"[suguru-decide] {action} {d} {asset} (confidence={conf:.0%})")
 
 
 if __name__ == "__main__":

@@ -1696,54 +1696,32 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         output = _strip_tui_artifacts(stdout_text)
 
-        # Deduplicate: Hermes may echo the response twice (streaming + final)
-        # Strategy 1: exact half-split (original)
+        # Deduplicate: waifu often echoes entire response
+        # Strategy 1: exact half-split
         half = len(output) // 2
         if half > 50 and output[:half].strip() == output[half:].strip():
             output = output[:half].strip()
         else:
-            # Strategy 2: find duplicated block — split on double newline,
-            # check if any large consecutive chunk appears twice
-            chunks = output.split("\n\n")
-            if len(chunks) >= 4:
-                # Look for the largest repeated chunk sequence
-                best_dedup = None
-                for split_at in range(1, len(chunks)):
-                    first_half = "\n\n".join(chunks[:split_at]).strip()
-                    second_half = "\n\n".join(chunks[split_at:]).strip()
-                    if (
-                        len(first_half) > 100
-                        and len(second_half) > 100
-                        and first_half == second_half
-                    ):
-                        best_dedup = first_half
-                        break
-                if best_dedup:
-                    output = best_dedup
+            # Strategy 2: normalized word-level dedup
+            words = output.split()
+            n = len(words)
+            if n >= 10:
+                # Check if first half words match second half words
+                half_w = n // 2
+                first = " ".join(words[:half_w]).lower()
+                second = " ".join(words[half_w:half_w*2]).lower()
+                if first == second:
+                    output = " ".join(words[:half_w])
+                else:
+                    # Strategy 3: find longest common prefix that covers >40% of text
+                    for split_w in range(n//4, n*3//4):
+                        chunk = " ".join(words[:split_w]).lower()
+                        rest = " ".join(words[split_w:split_w*2]).lower()
+                        if chunk == rest and len(chunk) > 60:
+                            output = " ".join(words[:split_w])
+                            break
 
-        # Strategy 3: aggressive full-block dedup
-        # Normalize whitespace for comparison, then find where content repeats
-        normalized = re.sub(r"\s+", " ", output.strip()).lower()
-        if len(normalized) > 60:
-            # Check each possible split point for repetition
-            for split in range(30, len(normalized) // 2 + 1):
-                first_half = normalized[:split].strip()
-                second_half = normalized[split:split*2].strip() if split*2 <= len(normalized) else ""
-                if len(first_half) > 30 and first_half == second_half:
-                    # Found repeat — keep only first half from original output
-                    # Find the approximate boundary in original text
-                    words = output.split()
-                    word_count = len(output[:output.lower().index(first_half[-20:]) + 20].split())
-                    # Take roughly half the words
-                    half_words = len(words) // 2
-                    # Check if second half starts with same text
-                    first_text = " ".join(words[:half_words])
-                    second_text = " ".join(words[half_words:half_words*2])
-                    if first_text.lower().strip() == second_text.lower().strip():
-                        output = " ".join(words[:half_words])
-                    break
-
-        # Strategy 4: first-line dedup (single repeated opening line)
+        # Strategy 4: first-line dedup
         lines = output.split("\n")
         non_empty = [(i, l.strip()) for i, l in enumerate(lines) if l.strip()]
         if len(non_empty) >= 2 and non_empty[0][1] == non_empty[1][1]:
