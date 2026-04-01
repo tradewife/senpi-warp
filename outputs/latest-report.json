@@ -1,25 +1,25 @@
 {
-  "timestamp": "2026-04-01T14:47:22Z",
+  "timestamp": "2026-04-01T15:18:16Z",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
   "regime": "RISK_OFF",
   "regimeReason": "Daily loss 23.0% (limit 10.0%)",
-  "regimeSetBy": "waifu-regime (arbiter-override)",
-  "accountValue": 48.887581,
-  "withdrawable": 48.887581,
-  "initialBudget": 100.0,
-  "drawdownFromInitial": -51.11,
-  "drawdownFromPeak": 0.0,
+  "equity": 48.89,
+  "withdrawable": 48.89,
+  "budget": 100.0,
+  "drawdownPct": 51.11,
   "positions": [],
   "openOrders": 0,
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
-    "drawdownActual": 51.11,
+    "catastrophicDrawdownPct": 20.0,
+    "dailyLossLimitPct": 10.0,
     "breached": true,
-    "dailyLossLimitPct": 10,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
+    "alerts": [
+      "CATASTROPHIC_DRAWDOWN: 51.1% > 20.0%"
+    ]
   },
   "actionsTaken": [
-    "JIDO check \u2014 no action needed. Account flat, RISK_OFF active."
+    "JIDO check — flat, RISK_OFF already active"
   ],
-  "warnings": []
+  "peakEquity": 100.0
 }
