@@ -1,20 +1,26 @@
 {
-  "timestamp": "2026-04-02T12:16:40Z",
+  "timestamp": "2026-04-02T03:04:01Z",
   "regime": "RISK_OFF",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "accountValue": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.1,
-  "positions": [],
-  "openOrders": 0,
-  "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "dailyLossLimitPct": 10.0,
-    "maxConsecutiveStopOuts": 4,
-    "consecutiveStopOuts": 0
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "strategy": {
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "budget": 100,
+    "accountValue": 48.89,
+    "withdrawable": 48.89
   },
-  "breaches": ["catastrophicDrawdown (51.1% > 20.0%)"],
-  "actionsTaken": ["None — capital at rest, no open positions"],
-  "nextReview": "2026-04-02T18:16:40Z"
+  "positions": [],
+  "openOrders": [],
+  "guardrails": {
+    "drawdownPct": 51.1,
+    "catastrophicLimitPct": 20.0,
+    "breached": true,
+    "breachType": "catastrophic_drawdown"
+  },
+  "actions": [
+    "No positions \u2014 nothing to protect. RISK_OFF already active."
+  ],
+  "warnings": [
+    "peakEquity re-initialized to 100.0 (was 0 from conflict resolution)"
+  ]
 }
