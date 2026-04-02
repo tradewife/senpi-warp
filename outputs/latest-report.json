@@ -1,44 +1,34 @@
 {
-  "timestamp": "2026-04-01T23:49:38Z",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "generatedAt": "2026-04-02T01:01:18Z",
   "regime": "RISK_OFF",
-  "regimeSource": "jido-confirmed",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "equity": {
-    "current": 48.89,
-    "peak": 100.0,
-    "drawdownPct": 51.11,
-    "initialBudget": 100.0,
-    "withdrawable": 48.89
-  },
-  "positions": {
-    "open": [],
-    "count": 0
-  },
-  "orders": {
-    "open": [],
-    "count": 0
-  },
-  "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "currentDrawdownPct": 51.11,
-    "breached": true,
-    "breachType": "catastrophic_drawdown",
-    "dailyLossLimitPct": 10.0,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
-  },
-  "actionsTaken": [
-    "Confirmed RISK_OFF regime is correct (DD 51.1% >> 20% threshold)",
-    "No open positions \u2014 no SL/TP actions needed",
-    "Resolved git merge conflict in arbiter-state.json",
-    "Restored peakEquity to 100.0 (was wiped to 0 by conflict resolution)",
-    "Updated arbiter-state with current equity snapshot"
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "warnings": [
-    "Strategy has lost >50% of initial $100 budget. Capital at rest under RISK_OFF.",
-    "Peak equity conflict resolution required manual restoration \u2014 pitfall #4 in skill doc"
-  ]
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
