@@ -384,6 +384,8 @@ def effective_daily_entry_limit(config: dict, strategy_key: str) -> int:
 def scan() -> bool:
     config = load_config()
     if not config or not is_entries_allowed():
+        if config:
+            log("RHINO: entries not allowed — skipping scan")
         return False
 
     state = load_state()

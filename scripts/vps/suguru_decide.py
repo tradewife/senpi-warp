@@ -82,17 +82,56 @@ def build_prompt(cands, regime_mode, equity, slots):
         px = c["entry_price"]
         lev = c["leverage"]
         rr = c["net_rr"]
-        risk = c["risk_pct"]
+        risk = c.get("risk_pct", 0)
+        sl = c.get("stop_price", 0)
+        tp1 = c.get("tp1_price", 0)
+        tp2 = c.get("tp2_price", 0)
+        atr = c.get("atr", 0)
+        margin = c.get("margin_usd", 0)
         conf = s.get("scanner_confluence", 0)
         whale = s.get("SM_whale_bias", 0)
-        lines.append(f"{i+1}. {direction} {asset} GSS={gss:.2f} px={px} lev={lev}x rr={rr:.1f} risk={risk:.1f}% conf={conf:.2f} whale={whale:.2f}")
+        regime_align = s.get("regime_alignment", 0)
+        basis = s.get("basis", 0)
+        oi_delta = s.get("OI_delta", 0)
+        funding = c.get("funding", 0)
+        vol24 = c.get("vol24", 0)
+        oi = c.get("oi", 0)
+        sm = c.get("sm", {})
+        sm_dir = sm.get("direction", "none")
+        sm_conv = sm.get("conviction", 0)
+        sm_traders = sm.get("traders", 0)
+        sb = c.get("scanner_bias", {})
+        sb_long = sb.get("long", 0)
+        sb_short = sb.get("short", 0)
+        sb_scanners = sb.get("scanners", [])
+
+        lines.append(
+            f"{i+1}. {direction} {asset} @ ${px} lev={lev}x\n"
+            f"   GSS={gss:.2f} netRR={rr:.2f} risk={risk:.1f}% margin=${margin:.2f}\n"
+            f"   SL=${sl} TP1=${tp1} TP2=${tp2} ATR={atr:.6f}\n"
+            f"   Sub-scores: conf={conf:.2f} whale={whale:.2f} regime={regime_align:.2f} "
+            f"basis={basis:.2f} OI={oi_delta:.2f}\n"
+            f"   Funding={funding:.6f} Vol24=${vol24:,.0f} OI=${oi:,.0f}\n"
+            f"   SM: {sm_dir} conv={sm_conv} traders={sm_traders}\n"
+            f"   Scanner bias: {sb_long}L/{sb_short}S from {', '.join(sb_scanners) if sb_scanners else 'none'}"
+        )
 
     return (
-        f"Pick the best trade or reject all.\n"
-        f"Regime={regime_mode} equity=${equity} slots={slots}\n\n"
+        f"You are evaluating {len(cands)} trade candidates for a ${equity} account.\n"
+        f"Regime={regime_mode} | Open slots={slots} | Max risk=20% per trade\n\n"
+        f"CANDIDATES:\n"
         + "\n".join(lines)
-        + '\n\nReply ONLY this JSON:\n'
-        + '{"recommendation":"TRADE|REJECT","asset":"BTC","direction":"LONG","leverage":8,"margin_pct":25,"reasoning":"why","confidence":0.7}'
+        + '\n\nEvaluate each candidate considering:\n'
+        + '- Risk/reward ratio (netRR > 1.5 preferred)\n'
+        + '- Sub-score strength (confluence + whale bias most important)\n'
+        + '- Smart money alignment\n'
+        + '- Scanner agreement\n'
+        + '- Regime alignment\n'
+        + '- Funding rate extremes\n\n'
+        + 'Reply ONLY this JSON:\n'
+        + '{"recommendation":"TRADE|REJECT","asset":"SYMBOL","direction":"LONG|SHORT",'
+        + '"leverage":8,"margin_pct":25,"reasoning":"2-3 sentence justification",'
+        + '"confidence":0.7,"rejected_reason":"if REJECT, why all are bad"}'
     )
 
 

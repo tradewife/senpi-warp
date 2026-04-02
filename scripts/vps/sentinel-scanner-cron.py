@@ -417,6 +417,7 @@ def scan() -> bool:
         log("SENTINEL: missing config")
         return False
     if not is_entries_allowed():
+        log("SENTINEL: entries not allowed — skipping scan")
         return False
 
     strategies = get_enabled_strategies()

@@ -396,7 +396,17 @@ def compute_gss(
         }
     )
 
-    return {"asset": asset, "gss": gss, "direction": direction, "sub_scores": score}
+    return {
+        "asset": asset,
+        "gss": gss,
+        "direction": direction,
+        "sub_scores": score,
+        "sm": sm,
+        "scanner_bias": sb,
+        "funding": fr,
+        "vol24": float(ctx.get("dayNtlVlm", ctx.get("volume24h", 0)) or 0),
+        "oi": float(ctx.get("openInterest", 0) or 0),
+    }
 
 
 def build_trade(candidate: dict, account_equity: float, kg_triples: list) -> dict:
@@ -832,12 +842,14 @@ def main():
                     "leverage": trade["leverage"],
                     "margin_usd": trade["marginUsd"],
                     "notional": trade.get("notional", trade["price"] * trade["qty"]),
-                    "risk_pct": trade.get("riskPct", 0),
+                    "risk_pct": round(MAX_RISK_PCT * 100, 1),
                     "net_rr": trade.get("netRr", 0),
                     "atr": trade.get("atr", 0),
                     "scanner_bias": candidate.get("scanner_bias", {}),
                     "sm": candidate.get("sm", {}),
                     "funding": candidate.get("funding", 0),
+                    "vol24": candidate.get("vol24", 0),
+                    "oi": candidate.get("oi", 0),
                 })
 
         # Write candidates for hermes decision layer

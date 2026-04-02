@@ -1010,21 +1010,21 @@ def check_stale_heartbeats(
     Defaults to 2x the expected interval for safety margin.
     """
     defaults = {
-        "orca": 10,  # v1.3: runs every 3min, stale after 10 min
-        "mantis": 4,  # runs every 90s, stale after 4 min
-        "fox": 4,  # runs every 90s, stale after 4 min
-        "roach": 4,  # runs every 90s, stale after 4 min
-        "komodo": 12,  # runs every 5min, stale after 12 min
-        "condor": 8,  # runs every 3min, stale after 8 min
-        "polar": 8,  # runs every 3min, stale after 8 min
-        "rhino": 8,  # runs every 3min, stale after 8 min
-        "sentinel": 8,  # runs every 3min, stale after 8 min
-        "dsl-runner": 8,  # runs every 3min, stale after 8 min
-        "sm-flip": 12,  # runs every 5min, stale after 12 min
-        "watchdog": 12,  # runs every 5min, stale after 12 min
+        "orca": 12,  # runs every 3min, stale after 12 min
+        "mantis": 8,  # runs every 90s, stale after 8 min
+        "fox": 8,  # runs every 90s, stale after 8 min
+        "roach": 8,  # runs every 90s, stale after 8 min
+        "komodo": 15,  # runs every 5min, stale after 15 min
+        "condor": 12,  # runs every 3min, stale after 12 min
+        "polar": 12,  # runs every 3min, stale after 12 min
+        "rhino": 12,  # runs every 3min, stale after 12 min
+        "sentinel": 12,  # runs every 3min, stale after 12 min
+        "dsl-runner": 12,  # runs every 3min, stale after 12 min
+        "sm-flip": 15,  # runs every 5min, stale after 15 min
+        "watchdog": 15,  # runs every 5min, stale after 15 min
         "risk-arbiter": 3,  # runs every 30s, stale after 3 min
         "arena": 35,  # runs every 15min, stale after 35 min
-        "brain": 12,  # runs every 5min, stale after 12 min
+        "brain": 15,  # runs every 5min, stale after 15 min
     }
     if max_stale_minutes:
         defaults.update(max_stale_minutes)

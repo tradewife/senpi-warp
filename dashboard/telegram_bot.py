@@ -314,18 +314,18 @@ def _regime_header() -> str:
 def _check_stale_crons(heartbeats: dict) -> list[str]:
     """Check for stale cron heartbeats. Returns list of stale cron names."""
     stale_limits = {
-        "orca": 10,
-        "mantis": 4,
-        "fox": 4,
-        "roach": 4,
-        "komodo": 12,
-        "condor": 8,
-        "polar": 8,
-        "rhino": 8,
-        "sentinel": 8,
-        "dsl-runner": 8,
+        "orca": 12,
+        "mantis": 8,
+        "fox": 8,
+        "roach": 8,
+        "komodo": 15,
+        "condor": 12,
+        "polar": 12,
+        "rhino": 12,
+        "sentinel": 12,
+        "dsl-runner": 12,
         "risk-arbiter": 3,
-        "brain": 12,
+        "brain": 15,
     }
     now = datetime.now(timezone.utc)
     stale = []
@@ -1554,7 +1554,7 @@ def _build_settings_text() -> str:
     updated = rules.get("updatedAt", "?")
     by = rules.get("updatedBy", "?")
     lines.append(f"_Updated: {updated} by {by}_")
-    lines.append("\n_Use /set <key> <value> to change_")
+    lines.append("\n_Tap buttons below or use /set <key> <value>_")
 
     return "\n".join(lines)
 
@@ -2030,8 +2030,11 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lines.pop(non_empty[1][0])
             output = "\n".join(lines)
 
-        if len(output) > 4000:
-            output = output[:3900] + "\n\n_(truncated)_"
+        if len(output) > 3500:
+            output = output[:3400] + "\n\n_…continued — ask \"go on\" for more_"
+            last_nl = output[:3400].rfind("\n")
+            if last_nl > 2000:
+                output = output[:last_nl] + "\n\n_…continued — ask \"go on\" for more_"
 
         if stderr_text and returncode == 0:
             logger.warning("brain stderr (rc=0): %s", stderr_text[:500])
@@ -2163,21 +2166,43 @@ async def _handle_action_callback(query, action: str) -> None:
             )
             return
 
-        # Build prompt for waifu to choose best candidate
+        # Build rich prompt for waifu to choose best candidate
+        equity = scan.get("account_equity", 100)
+        regime_mode = scan.get("risk_mode", "BASELINE")
+        slots = scan.get("available_slots", 2)
         cand_lines = []
         for i, c in enumerate(cands, 1):
+            s = c.get("sub_scores", {})
+            sm = c.get("sm", {})
+            sb = c.get("scanner_bias", {})
             cand_lines.append(
                 f"{i}. {c.get('direction', '?')} {c.get('asset', '?')} "
-                f"@ ${c.get('price', 0):.2f} lev={c.get('leverage', 0)}x "
-                f"GSS={c.get('gss', 0):.2f} netRR={c.get('netRr', 0):.2f}"
+                f"@ ${c.get('entry_price', 0):.2f} lev={c.get('leverage', 0)}x "
+                f"GSS={c.get('gss', 0):.2f} netRR={c.get('net_rr', 0):.2f}\n"
+                f"   SL=${c.get('stop_price', 0)} TP1=${c.get('tp1_price', 0)} "
+                f"TP2=${c.get('tp2_price', 0)} margin=${c.get('margin_usd', 0):.2f}\n"
+                f"   Scores: conf={s.get('scanner_confluence', 0):.2f} "
+                f"whale={s.get('SM_whale_bias', 0):.2f} "
+                f"regime={s.get('regime_alignment', 0):.2f} "
+                f"basis={s.get('basis', 0):.2f}\n"
+                f"   SM: {sm.get('direction', 'none')} conv={sm.get('conviction', 0)} "
+                f"traders={sm.get('traders', 0)}\n"
+                f"   Scanner bias: {sb.get('long', 0)}L/{sb.get('short', 0)}S "
+                f"from {', '.join(sb.get('scanners', []))}\n"
+                f"   Vol24=${c.get('vol24', 0):,.0f} OI=${c.get('oi', 0):,.0f} "
+                f"funding={c.get('funding', 0):.6f}"
             )
         candidates_text = "\n".join(cand_lines)
 
         prompt = (
-            f"You are a trading strategy advisor. Analyze these {len(cands)} candidate trades "
-            f"and recommend the BEST one to execute. Consider GSS score, netRR, regime alignment, "
-            f"and risk/reward.\n\n"
-            f"Candidates:\n{candidates_text}\n\n"
+            f"You are evaluating {len(cands)} trade candidates for a ${equity} account.\n"
+            f"Regime={regime_mode} | Open slots={slots}\n\n"
+            f"CANDIDATES:\n{candidates_text}\n\n"
+            f"Pick the BEST candidate or REJECT all. Consider:\n"
+            f"- netRR > 1.5 preferred\n"
+            f"- Scanner confluence + whale bias most important sub-scores\n"
+            f"- Smart money alignment\n"
+            f"- Regime alignment\n\n"
             f"Respond with exactly this format (no other text):\n"
             f"RECOMMEND: [BUY/SELL] [ASSET] @ [PRICE] [LEVERAGE]x\n"
             f"REASON: [2-3 sentence explanation]\n"
@@ -2460,58 +2485,97 @@ async def _handle_action_callback(query, action: str) -> None:
         )
 
     elif action == "settings_help_execution":
+        rules = load_json(USER_RULES_FILE, default={})
+        ev = rules.get("evaluate", {})
+        jido = rules.get("jido", {})
+        auto = "ON" if jido.get("autoExecuteEnabled", True) else "OFF"
+        roi = jido.get("roi_threshold_auto", "?")
+        roi_str = f"{float(roi):.0%}" if isinstance(roi, (int, float)) else str(roi)
         text = (
-            "✏️ *Execution Keys*\n\n"
-            "`/set eval_minscore <int>` — Evaluate min score\n"
-            "`/set eval_maxlev <int>` — Max leverage\n"
-            "`/set eval_maxpos <int>` — Max positions\n"
-            "`/set eval_cooldown <int>` — Cooldown minutes\n"
-            "`/set jido_roi <float>` — ROI threshold\n"
-            "`/set jido_minscore <int>` — Jido min score\n"
-            "`/set jido_auto <true/false>` — Auto-execute"
+            f"✏️ *Execution*\n\n"
+            f"Eval minScore: *{ev.get('minScore', '?')}*\n"
+            f"Eval maxLev: *{ev.get('maxLeverage', '?')}x*\n"
+            f"Eval maxPos: *{ev.get('maxPositions', '?')}*\n"
+            f"Eval cooldown: *{ev.get('cooldownMinutes', '?')}min*\n"
+            f"Jido ROI: *{roi_str}*\n"
+            f"Jido minScore: *{jido.get('minScore', '?')}*\n"
+            f"Jido auto: *{auto}*"
         )
-        await _answer_and_edit(query, text, parse_mode="Markdown")
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("minScore −", callback_data="act:s_adj:eval_minscore:-1"),
+             InlineKeyboardButton("minScore +", callback_data="act:s_adj:eval_minscore:+1")],
+            [InlineKeyboardButton("maxPos −", callback_data="act:s_adj:eval_maxpos:-1"),
+             InlineKeyboardButton("maxPos +", callback_data="act:s_adj:eval_maxpos:+1")],
+            [InlineKeyboardButton("cooldown −10", callback_data="act:s_adj:eval_cooldown:-10"),
+             InlineKeyboardButton("cooldown +10", callback_data="act:s_adj:eval_cooldown:+10")],
+            [InlineKeyboardButton(f"Jido auto: {'OFF → ON' if auto == 'OFF' else 'ON → OFF'}", callback_data="act:s_toggle:jido_auto")],
+            [InlineKeyboardButton("← Back", callback_data="act:settings_view")],
+        ])
+        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
 
     elif action == "settings_help_position":
+        rules = load_json(USER_RULES_FILE, default={})
+        tp = rules.get("fixed_tp_roe", {})
+        sl = rules.get("fixed_sl_roe", {})
+        ptp = rules.get("partial_tp", {})
+        psl = rules.get("partial_sl", {})
+        tp_str = f"{tp.get('tpRoePct')}%" if tp.get("enabled") else "OFF"
+        sl_str = f"{sl.get('slRoePct')}%" if sl.get("enabled") else "OFF"
         text = (
-            "✏️ *Position Management Keys*\n\n"
-            "`/set fixed_tp <float>` — Fixed TP ROE%\n"
-            "`/set fixed_sl <float>` — Fixed SL ROE%\n"
-            "`/set partial_tp1 <float>` — Partial TP1 ROE%\n"
-            "`/set partial_tp1_pct <float>` — TP1 close %\n"
-            "`/set partial_tp2 <float>` — Partial TP2 ROE%\n"
-            "`/set partial_tp2_pct <float>` — TP2 close %\n"
-            "`/set partial_sl1 <float>` — Partial SL1 ROE%\n"
-            "`/set partial_sl1_pct <float>` — SL1 close %\n"
-            "`/set partial_sl2 <float>` — Partial SL2 ROE%\n"
-            "`/set partial_sl2_pct <float>` — SL2 close %"
+            f"✏️ *Position Management*\n\n"
+            f"Fixed TP: *{tp_str}*\n"
+            f"Fixed SL: *{sl_str}*\n"
+            f"Partial TP: *{'ON' if ptp.get('enabled') else 'OFF'}*\n"
+            f"Partial SL: *{'ON' if psl.get('enabled') else 'OFF'}*"
         )
-        await _answer_and_edit(query, text, parse_mode="Markdown")
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"TP {'OFF → ON 20%' if not tp.get('enabled') else 'ON → OFF'}", callback_data="act:toggle_tp")],
+            [InlineKeyboardButton(f"SL {'OFF → ON -15%' if not sl.get('enabled') else 'ON → OFF'}", callback_data="act:toggle_sl")],
+            [InlineKeyboardButton("← Back", callback_data="act:settings_view")],
+        ])
+        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
 
     elif action == "settings_help_gates":
+        current = _get_current_gates()
         text = (
-            "✏️ *Safety Gate Keys*\n\n"
-            "`/set max_positions <int>` — Max concurrent positions\n"
-            "`/set dir_cap <int>` — Directional cap %\n"
-            "`/set min_lev <int>` — Min leverage\n"
-            "`/set max_lev <int>` — Max leverage\n"
-            "`/set cooldown <int>` — Per-asset cooldown min\n"
-            "`/set banned_prefix <csv>` — Banned asset prefixes"
+            f"✏️ *Safety Gates*\n\n"
+            f"Max positions: *{current.get('maxPositionsTotal', 3)}*\n"
+            f"Cooldown: *{current.get('perAssetCooldownMinutes', 120)}min*\n"
+            f"Directional cap: *{current.get('directionalCapPct', 70)}%*\n"
+            f"Leverage: *{current.get('minLeverage', 7)}–{current.get('maxLeverage', 10)}x*\n"
+            f"Banned: *{', '.join(current.get('bannedAssetPrefixes', ['xyz:']))}*"
         )
-        await _answer_and_edit(query, text, parse_mode="Markdown")
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("maxPos −", callback_data="act:s_adj:max_positions:-1"),
+             InlineKeyboardButton("maxPos +", callback_data="act:s_adj:max_positions:+1")],
+            [InlineKeyboardButton("cooldown −15", callback_data="act:s_adj:cooldown:-15"),
+             InlineKeyboardButton("cooldown +15", callback_data="act:s_adj:cooldown:+15")],
+            [InlineKeyboardButton("dirCap −5", callback_data="act:s_adj:dir_cap:-5"),
+             InlineKeyboardButton("dirCap +5", callback_data="act:s_adj:dir_cap:+5")],
+            [InlineKeyboardButton("← Back", callback_data="act:settings_view")],
+        ])
+        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
 
     elif action == "settings_help_scores":
+        current = _get_current_gates()
+        scores = current.get("minScores", DEFAULT_MIN_SCORES)
+        score_parts = [f"{s}: *{scores.get(s, v)}*" for s, v in DEFAULT_MIN_SCORES.items()]
+        mid = len(score_parts) // 2
         text = (
-            "✏️ *Scanner Score Keys*\n\n"
-            "`/set score_orca <int>` — ORCA min score\n"
-            "`/set score_mantis <int>` — MANTIS min score\n"
-            "`/set score_fox <int>` — FOX min score\n"
-            "`/set score_komodo <int>` — KOMODO min score\n"
-            "`/set score_condor <int>` — CONDOR min score\n"
-            "`/set score_polar <int>` — POLAR min score\n"
-            "`/set score_sentinel <int>` — SENTINEL min score\n"
-            "`/set score_rhino <int>` — RHINO min score"
+            f"✏️ *Scanner Scores*\n\n"
+            f"  {'  •  '.join(score_parts[:mid])}\n"
+            f"  {'  •  '.join(score_parts[mid:])}\n\n"
+            f"_Tap to adjust individual scores_"
         )
+        btns = []
+        for s, v in DEFAULT_MIN_SCORES.items():
+            btns.append([InlineKeyboardButton(
+                f"{s.upper()} {scores.get(s, v)} (−/+)",
+                callback_data=f"act:s_adj:score_{s}:toggle"
+            )])
+        btns.append([InlineKeyboardButton("← Back", callback_data="act:settings_view")])
+        keyboard = InlineKeyboardMarkup(btns)
+        await _answer_and_edit(query, text, reply_markup=keyboard, parse_mode="Markdown")
         await _answer_and_edit(query, text, parse_mode="Markdown")
 
     elif action == "settings_refresh":
@@ -2746,6 +2810,73 @@ async def _handle_action_callback(query, action: str) -> None:
         await _answer_and_edit(
             query, "✅ Max leverage → 10x (aggressive)", parse_mode="Markdown"
         )
+
+    # --- Settings adjust (s_adj) and toggle (s_toggle) ---
+    elif action and action.startswith("s_adj:"):
+        parts = action.split(":")
+        if len(parts) != 3:
+            await query.answer()
+            return
+        key = parts[1]
+        try:
+            delta = int(parts[2])
+        except ValueError:
+            await query.answer()
+            return
+
+        # Resolve current value and apply delta
+        rules = load_json(USER_RULES_FILE, default={})
+
+        # Rules keys (user-rules.json)
+        if key in RULES_KEY_MAP:
+            section, field, converter = RULES_KEY_MAP[key]
+            current = rules.get(section, {}).get(field, 0)
+            if isinstance(current, (int, float)):
+                new_val = converter(str(int(current) + delta))
+                rules.setdefault(section, {})[field] = new_val
+                _save_user_rules(rules)
+                label = f"{key} → {new_val}"
+            else:
+                label = f"{key} is not numeric"
+        # Gates keys (safety_gates)
+        elif key in GATES_KEY_MAP:
+            section, field, converter = GATES_KEY_MAP[key]
+            gates = rules.get("safety_gates", {})
+            current = gates.get(field, 0)
+            if isinstance(current, (int, float)):
+                new_val = converter(str(int(current) + delta))
+                rules.setdefault("safety_gates", {})[field] = new_val
+                _save_user_rules(rules)
+                label = f"{key} → {new_val}"
+            else:
+                label = f"{key} is not numeric"
+        # Scanner scores
+        elif key.startswith("score_"):
+            scanner = key[6:]
+            scores = rules.get("scanner_scores", {})
+            current = scores.get(scanner, DEFAULT_MIN_SCORES.get(scanner, 6))
+            new_val = max(1, min(15, int(current) + delta))
+            rules.setdefault("scanner_scores", {})[scanner] = new_val
+            _save_user_rules(rules)
+            label = f"{scanner.upper()} score → {new_val}"
+        else:
+            label = f"Unknown key: {key}"
+
+        await _answer_and_edit(query, f"✅ {label}", parse_mode="Markdown")
+
+    elif action and action.startswith("s_toggle:"):
+        key = action.split(":")[1]
+        rules = load_json(USER_RULES_FILE, default={})
+
+        if key == "jido_auto":
+            current = rules.get("jido", {}).get("autoExecuteEnabled", True)
+            rules.setdefault("jido", {})["autoExecuteEnabled"] = not current
+            _save_user_rules(rules)
+            label = f"Jido auto → {'ON' if not current else 'OFF'}"
+        else:
+            label = f"Unknown toggle: {key}"
+
+        await _answer_and_edit(query, f"✅ {label}", parse_mode="Markdown")
 
     elif action == "status_run":
         waifu_bin = shutil.which("waifu")
