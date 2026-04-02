@@ -1,40 +1,10 @@
 {
-  "peakEquity": 100.0,
+  "peakEquity": 48.89,
   "lastEquity": 48.89,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
   "lastCheckAt": "2026-04-02T19:01:18Z",
-  "alerts": [
-    {
-      "timestamp": "2026-04-02T03:04:01Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (DD 51.1% from $100 peak). RISK_OFF active \u2014 correct."
-    },
-    {
-      "timestamp": "2026-04-02T04:46:37Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (unchanged). DD 51.1%. RISK_OFF active \u2014 correct. No action needed."
-    },
-    {
-      "timestamp": "2026-04-02T10:48:39Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (unchanged). DD 51.1%. RISK_OFF active \u2014 correct. JIDO ran at 2026-04-02T10:48:39Z."
-    },
-    {
-      "timestamp": "2026-04-02T13:18:42Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (DD 51.1% from $100 peak). RISK_OFF active \u2014 correct. No action needed."
-    },
-    {
-      "timestamp": "2026-04-02T15:31:39Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (unchanged). DD 51.1%. RISK_OFF active \u2014 correct. JIDO ran at 2026-04-02T15:31:39Z."
-    },
-    {
-      "timestamp": "2026-04-02T16:32:36Z",
-      "type": "JIDO_CHECK",
-      "message": "No open positions. Account $48.89 (DD 51.1% from $100 peak). RISK_OFF active \u2014 correct. JIDO ran at 2026-04-02T16:32:36Z."
-    }
-  ],
-  "dayStartDate": "2026-04-02"
+  "flattenedAt": "2026-04-03T00:00:00Z",
+  "alerts": [],
+  "dayStartDate": "2026-04-03"
 }

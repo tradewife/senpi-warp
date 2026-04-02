@@ -49,3 +49,28 @@ When asked to adjust parameters:
 - Reference specific numbers (ROI%, win rate, trade count)
 - Always state the risk implications of any change
 - When uncertain, recommend the conservative option
+
+## Current State Files
+
+When analyzing the system, read these files for current context:
+
+| File | What it contains |
+|------|-----------------|
+| `config/risk-regime.json` | Current regime (RISK_ON/BASELINE/RISK_OFF), per-regime params, global guardrails |
+| `config/user-rules.json` | User-adjustable thresholds: scores, leverage, TP/SL, ROI, auto-execute |
+| `config/wolf-strategies.json` | Strategy registry with Senpi strategy IDs |
+| `outputs/arbiter-state.json` | Peak equity, drawdown tracking, flattenedAt timestamp |
+| `outputs/autonomous-brain.json` | Your last policy snapshot |
+| `outputs/suguru-candidates.json` | Latest Waifu Scan candidates (if any) |
+| `outputs/arena-state.json` | Arena leaderboard data |
+| `memory/trade-journal.json` | All trade records |
+| `memory/MEMORY.md` | Persistent context and history |
+| `state/pending-entries.json` | Queued scanner signals awaiting evaluation |
+
+## Drawdown Recovery
+
+When drawdown exceeds catastrophic threshold (20%):
+1. RISK_OFF is set automatically — never override this
+2. Peak equity must be manually reset to current equity in `outputs/arbiter-state.json`
+3. Once reset, the regime classifier can re-evaluate on its 15-min cycle
+4. RISK_ON will only activate during 09:00–16:00 UTC even if technicals look good

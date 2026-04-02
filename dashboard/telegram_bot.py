@@ -78,10 +78,9 @@ COMMANDS = [
     ),
     (
         "settings",
-        "View all settings",
-        "Unified view of rules, gates, and scanner scores.",
+        "View & edit settings",
+        "Unified view of rules, gates, and scanner scores. Tap to customize.",
     ),
-    ("set", "Change a setting", "Usage: /set <key> <value>"),
     ("flatten", "Close all trades", "Close all open positions across all strategies."),
     ("close", "Close a trade", "Select and close a specific open position."),
     ("emergency_stop", "Immediate RISK_OFF", "Block all entries and send alert."),
@@ -99,6 +98,17 @@ def load_json(path: Path, default=None):
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return default if default is not None else {}
+
+
+def _save_user_rules(rules: dict) -> None:
+    """Atomically save user-rules.json with timestamp."""
+    rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    rules["updatedBy"] = "telegram-settings"
+    tmp = USER_RULES_FILE.with_suffix(".tmp")
+    with open(tmp, "w") as f:
+        json.dump(rules, f, indent=2)
+        f.write("\n")
+    tmp.rename(USER_RULES_FILE)
 
 
 def relative_time(iso_str: str) -> str:
@@ -1865,10 +1875,34 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"Candidates:\n{cand_text}\n\n"
                     f"--- USER QUESTION ---\n"
                 )
-                # Clear context file after use (one-shot context)
-                context_file.unlink()
+                # Keep context file until a new scan overwrites it
+                # (was one-shot delete — brain lost memory after first message)
         except Exception as e:
             logger.warning(f"Failed to load suguru chat context: {e}")
+
+    # Check for settings chat context
+    settings_context_file = POSITION_STATE_DIR / "settings-chat-context.json"
+    if settings_context_file.exists():
+        try:
+            sctx = json.loads(settings_context_file.read_text())
+            sctx_time = datetime.fromisoformat(sctx.get("timestamp", "1970"))
+            if (datetime.now(timezone.utc) - sctx_time).total_seconds() < 1800:
+                import json as _json
+                current_rules_str = _json.dumps(sctx.get("current_rules", {}), indent=2)
+                settings_prefix = (
+                    f"⚙️ SETTINGS CUSTOMIZATION CONTEXT:\n"
+                    f"Current regime: {sctx.get('regime', 'UNKNOWN')}\n"
+                    f"Current user-rules.json:\n{current_rules_str}\n\n"
+                    f"The user wants to customize settings. Help them adjust values. "
+                    f"Explain what you're changing and why. When done, list the exact "
+                    f"/set commands they should run, or just explain the changes clearly.\n\n"
+                    f"--- USER QUESTION ---\n"
+                )
+                # Prepend settings context if no suguru context
+                if not context_prefix:
+                    context_prefix = settings_prefix
+        except Exception as e:
+            logger.warning(f"Failed to load settings chat context: {e}")
 
     full_message = context_prefix + message
     cmd_args = [hermes_bin, "chat", "-Q", "-q", full_message]
@@ -2204,6 +2238,10 @@ async def _handle_action_callback(query, action: str) -> None:
 
         if recommended:
             rec = recommended
+            # Show raw brain output when parse confidence is low
+            raw_note = ""
+            if confidence <= 30 and output_clean:
+                raw_note = f"\n\n_🧠 Raw response:_{output_clean[:500]}"
             text = (
                 f"🧠 *Waifu Recommends*\n\n"
                 f"*{rec.get('direction', 'LONG')} {rec.get('asset', '?')}*\n"
@@ -2211,7 +2249,7 @@ async def _handle_action_callback(query, action: str) -> None:
                 f"Entry: ${rec.get('price', 0):.2f} | "
                 f"Leverage: {rec.get('leverage', 0)}x | "
                 f"NetRR: {rec.get('netRr', 0):.2f}\n\n"
-                f"_{reasoning}_"
+                f"_{reasoning}_{raw_note}"
             )
             keyboard = InlineKeyboardMarkup(
                 [
@@ -2404,6 +2442,14 @@ async def _handle_action_callback(query, action: str) -> None:
                 ],
                 [
                     InlineKeyboardButton(
+                        "⚡ Quick Set", callback_data="act:settings_quick_set"
+                    ),
+                    InlineKeyboardButton(
+                        "💬 Chat to Customize", callback_data="act:settings_chat"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
                         "🔄 Reset Gates", callback_data="act:gates_reset_prompt"
                     )
                 ],
@@ -2537,6 +2583,22 @@ async def _handle_action_callback(query, action: str) -> None:
                         "⏱ Set Cooldown 60", callback_data="act:quick_cooldown_60"
                     )
                 ],
+                [
+                    InlineKeyboardButton(
+                        "🔄 Toggle TP ON/OFF", callback_data="act:toggle_tp"
+                    ),
+                    InlineKeyboardButton(
+                        "🔄 Toggle SL ON/OFF", callback_data="act:toggle_sl"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "🐢 Lev 7x", callback_data="act:toggle_lev_conservative"
+                    ),
+                    InlineKeyboardButton(
+                        "🚀 Lev 10x", callback_data="act:toggle_lev_aggressive"
+                    ),
+                ],
                 [InlineKeyboardButton("❌ Cancel", callback_data="act:settings_view")],
             ]
         )
@@ -2612,6 +2674,78 @@ async def _handle_action_callback(query, action: str) -> None:
         await _run_waifu_and_edit(query, "set max_positions 2", timeout=30)
     elif action == "quick_cooldown_60":
         await _run_waifu_and_edit(query, "set cooldown 60", timeout=30)
+
+    # Settings chat — let brain help customize settings
+    elif action == "settings_chat":
+        rules = load_json(USER_RULES_FILE, default={})
+        context_file = POSITION_STATE_DIR / "settings-chat-context.json"
+        context = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "current_rules": rules,
+            "regime": load_json(CONFIG_DIR / "risk-regime.json", default={}).get(
+                "riskMode", "UNKNOWN"
+            ),
+        }
+        with open(context_file, "w") as f:
+            json.dump(context, f, indent=2)
+        await _safe_edit(
+            query,
+            "💬 *Chat to Customize Settings*\n\n"
+            "Type your message — I'll have full context of your current settings.\n"
+            "_Example: \"tighten my stops\" or \"lower ORCA score threshold\"_",
+            parse_mode="Markdown",
+        )
+
+    # Toggle buttons for common settings
+    elif action == "toggle_tp":
+        rules = load_json(USER_RULES_FILE, default={})
+        tp = rules.get("fixed_tp_roe", {})
+        if tp.get("enabled"):
+            tp["enabled"] = False
+            tp["tpRoePct"] = None
+            label = "Fixed TP → OFF"
+        else:
+            tp["enabled"] = True
+            tp["tpRoePct"] = 20
+            label = "Fixed TP → ON (20%)"
+        rules["fixed_tp_roe"] = tp
+        _save_user_rules(rules)
+        await _answer_and_edit(
+            query, f"✅ {label}", parse_mode="Markdown"
+        )
+
+    elif action == "toggle_sl":
+        rules = load_json(USER_RULES_FILE, default={})
+        sl = rules.get("fixed_sl_roe", {})
+        if sl.get("enabled"):
+            sl["enabled"] = False
+            sl["slRoePct"] = None
+            label = "Fixed SL → OFF"
+        else:
+            sl["enabled"] = True
+            sl["slRoePct"] = -15
+            label = "Fixed SL → ON (-15%)"
+        rules["fixed_sl_roe"] = sl
+        _save_user_rules(rules)
+        await _answer_and_edit(
+            query, f"✅ {label}", parse_mode="Markdown"
+        )
+
+    elif action == "toggle_lev_conservative":
+        rules = load_json(USER_RULES_FILE, default={})
+        rules.setdefault("evaluate", {})["maxLeverage"] = 7
+        _save_user_rules(rules)
+        await _answer_and_edit(
+            query, "✅ Max leverage → 7x (conservative)", parse_mode="Markdown"
+        )
+
+    elif action == "toggle_lev_aggressive":
+        rules = load_json(USER_RULES_FILE, default={})
+        rules.setdefault("evaluate", {})["maxLeverage"] = 10
+        _save_user_rules(rules)
+        await _answer_and_edit(
+            query, "✅ Max leverage → 10x (aggressive)", parse_mode="Markdown"
+        )
 
     elif action == "status_run":
         waifu_bin = shutil.which("waifu")

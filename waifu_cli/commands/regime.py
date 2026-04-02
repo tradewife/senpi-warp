@@ -7,6 +7,7 @@ Ported from scripts/waifu-regime-classifier.sh.
 """
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
@@ -15,6 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "lib"))
 
 import senpi_common as sc
 from waifu_cli.runtime import sync_before, sync_after, acquire_command_lock, release_command_lock
+
+# Only allow RISK_ON during active trading hours (UTC)
+RISK_ON_HOUR_START = 9
+RISK_ON_HOUR_END = 16
 
 
 def _classify_regime() -> tuple[str, str]:
@@ -64,6 +69,14 @@ def _classify_regime() -> tuple[str, str]:
 
     # Classification
     if abs(slope) > 1.5 and atr_pct < 5.0:
+        # Time-of-day gate: only allow RISK_ON during active hours
+        utc_hour = datetime.now(timezone.utc).hour
+        if not (RISK_ON_HOUR_START <= utc_hour < RISK_ON_HOUR_END):
+            reason = (
+                f"Outside RISK_ON window ({RISK_ON_HOUR_START}:00–{RISK_ON_HOUR_END}:00 UTC, now {utc_hour}:00 UTC). "
+                f"Technicals strong (slope={slope:.1f}%, ATR={atr_pct:.1f}%) but capping at BASELINE."
+            )
+            return "BASELINE", reason
         direction = "BULLISH" if slope > 0 else "BEARISH"
         reason = f"Clear {direction} trend (slope={slope:.1f}%, ATR={atr_pct:.1f}%)"
         return "RISK_ON", reason

@@ -349,14 +349,19 @@ def main():
                 # Double-check: are there actually open positions?
                 open_positions = get_all_open_positions()
 
-                # If no open positions and we're already in RISK_OFF, don't re-alert
-                already_flattened = arb_state.get("flattenedAt") is not None
-                if (
-                    already_flattened
-                    and not open_positions
-                    and regime.get("riskMode") == "RISK_OFF"
-                ):
-                    # Already handled — log once and skip alert
+                # Already-flattened check: either flattenedAt is set, OR
+                # there are no open positions and we're already in RISK_OFF.
+                # This prevents the alert loop when flattenedAt was never
+                # persisted (e.g. process crashed between set and save).
+                already_flattened = (
+                    arb_state.get("flattenedAt") is not None
+                    or (not open_positions and regime.get("riskMode") == "RISK_OFF")
+                )
+                if already_flattened:
+                    # Persist flattenedAt if missing so future checks are fast
+                    if arb_state.get("flattenedAt") is None:
+                        arb_state["flattenedAt"] = now_iso()
+                        save_arbiter_state(arb_state)
                     log(
                         f"RISK ARBITER: CATASTROPHIC persists but already flattened — skipping repeat alert"
                     )
@@ -371,6 +376,8 @@ def main():
                         "risk-arbiter",
                     )
                     arb_state["flattenedAt"] = now_iso()
+                    # Persist immediately — don't wait for end-of-loop save
+                    save_arbiter_state(arb_state)
                     send_telegram(
                         f"🚨🚨 CATASTROPHIC FLATTEN 🚨🚨\n"
                         f"Drawdown: {peak_drawdown:.1f}% from peak\n"
