@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-04-02T01:02:56Z",
+  "generatedAt": "2026-04-02T09:02:32Z",
   "ourStats": {
     "closes": 1,
     "winRate": 0.0,
     "totalPnl": -51.11
   },
-  "arenaTop5AvgWinRate": 93.0,
+  "arenaTop5AvgWinRate": 100.0,
   "recommendations": [
     {
       "action": "study_top_strategies",
       "confidence": "medium",
-      "reason": "Arena top 5 avg WR (93%) exceeds ours (0%). Study their patterns.",
+      "reason": "Arena top 5 avg WR (100%) exceeds ours (0%). Study their patterns.",
       "risk": "neutral"
     },
     {
