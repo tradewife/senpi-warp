@@ -606,7 +606,7 @@ async def cmd_suguru(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "🔍 Scan Only", callback_data="act:suguru_scan_only"
                 ),
                 InlineKeyboardButton(
-                    "🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"
+                    "🧠 Waifu Scan", callback_data="act:suguru_waifu_scan"
                 ),
             ],
             [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
@@ -616,7 +616,7 @@ async def cmd_suguru(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚡ *Suguru — Elite Scanner*\n\n"
         f"Regime: *{mode}*\n\n"
         f"🔍 *Scan Only* — show scored candidates\n"
-        f"🧠 *Hermes Scan* — scan + AI deliberation → trade recommendation",
+        f"🧠 *Waifu Scan* — scan + AI deliberation → trade recommendation",
         parse_mode="Markdown",
         reply_markup=keyboard,
     )
@@ -1426,6 +1426,7 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = _build_settings_text()
     keyboard = InlineKeyboardMarkup(
         [
+            # Row 1: Core categories
             [
                 InlineKeyboardButton(
                     "✏️ Execution", callback_data="act:settings_help_execution"
@@ -1434,6 +1435,7 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "✏️ Position Mgmt", callback_data="act:settings_help_position"
                 ),
             ],
+            # Row 2: Gates & Scores
             [
                 InlineKeyboardButton(
                     "✏️ Gates", callback_data="act:settings_help_gates"
@@ -1442,10 +1444,30 @@ async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "✏️ Scores", callback_data="act:settings_help_scores"
                 ),
             ],
+            # Row 3: Quick actions
             [
                 InlineKeyboardButton(
+                    "⚡ Quick Set", callback_data="act:settings_quick_set"
+                ),
+                InlineKeyboardButton(
+                    "🔄 Refresh", callback_data="act:settings_refresh"
+                ),
+            ],
+            # Row 4: Brain access
+            [
+                InlineKeyboardButton(
+                    "💬 Chat to Brain", callback_data="act:brain_chat_prompt"
+                ),
+                InlineKeyboardButton(
+                    "🧠 Waifu Scan", callback_data="act:suguru_scan_menu"
+                ),
+            ],
+            # Row 5: Navigation + Reset
+            [
+                InlineKeyboardButton("🏠 Home", callback_data="act:start_run"),
+                InlineKeyboardButton(
                     "🔄 Reset Gates", callback_data="act:gates_reset_prompt"
-                )
+                ),
             ],
         ]
     )
@@ -1827,7 +1849,29 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if soul_path.exists():
         env["HERMES_EPHEMERAL_SYSTEM_PROMPT"] = soul_path.read_text()
 
-    cmd_args = [hermes_bin, "chat", "-Q", "-q", message]
+    # Check for suguru chat context
+    context_file = POSITION_STATE_DIR / "suguru-chat-context.json"
+    context_prefix = ""
+    if context_file.exists():
+        try:
+            ctx = json.loads(context_file.read_text())
+            # Only use context if less than 30 minutes old
+            ctx_time = datetime.fromisoformat(ctx.get("timestamp", "1970"))
+            if (datetime.now(timezone.utc) - ctx_time).total_seconds() < 1800:
+                cand_text = "\n".join(ctx.get("candidates", []))
+                context_prefix = (
+                    f"📊 RECENT SCAN CONTEXT (from last Waifu Scan):\n"
+                    f"Regime: {ctx.get('regime', 'UNKNOWN')}\n"
+                    f"Candidates:\n{cand_text}\n\n"
+                    f"--- USER QUESTION ---\n"
+                )
+                # Clear context file after use (one-shot context)
+                context_file.unlink()
+        except Exception as e:
+            logger.warning(f"Failed to load suguru chat context: {e}")
+
+    full_message = context_prefix + message
+    cmd_args = [hermes_bin, "chat", "-Q", "-q", full_message]
     if hermes_model:
         cmd_args += ["-m", hermes_model]
     if hermes_provider:
@@ -1865,8 +1909,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if progress_msg:
                 try:
                     await progress_msg.edit_text(reply_text)
-                except Exception:
-                    await _safe_reply(update, reply_text)
+                except Exception as e:
+                    logger.warning(
+                        "Brain error: edit failed, not sending fallback: %s", e
+                    )
             else:
                 await _safe_reply(update, reply_text)
             return
@@ -1883,8 +1929,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if progress_msg:
                 try:
                     await progress_msg.edit_text(reply_text, parse_mode="Markdown")
-                except Exception:
-                    await _safe_reply(update, reply_text, parse_mode="Markdown")
+                except Exception as e:
+                    logger.warning(
+                        "Brain empty: edit failed, not sending fallback: %s", e
+                    )
             else:
                 await _safe_reply(update, reply_text, parse_mode="Markdown")
             return
@@ -1968,8 +2016,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if progress_msg:
             try:
                 await progress_msg.edit_text(reply_text)
-            except Exception:
-                await _safe_reply(update, reply_text)
+            except Exception as e:
+                logger.warning(
+                    "Brain timeout: edit failed, not sending fallback: %s", e
+                )
         else:
             await _safe_reply(update, reply_text)
     except Exception as e:
@@ -1978,8 +2028,10 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if progress_msg:
             try:
                 await progress_msg.edit_text(reply_text)
-            except Exception:
-                await _safe_reply(update, reply_text)
+            except Exception as edit_err:
+                logger.warning(
+                    "Brain error: edit failed, not sending fallback: %s", edit_err
+                )
         else:
             await _safe_reply(update, reply_text)
 
@@ -2022,7 +2074,7 @@ async def _handle_action_callback(query, action: str) -> None:
                         "🔍 Scan Only", callback_data="act:suguru_scan_only"
                     ),
                     InlineKeyboardButton(
-                        "🧠 Hermes Scan", callback_data="act:suguru_hermes_scan"
+                        "🧠 Waifu Scan", callback_data="act:suguru_waifu_scan"
                     ),
                 ],
                 [InlineKeyboardButton("❌ Cancel", callback_data="act:suguru_cancel")],
@@ -2033,7 +2085,7 @@ async def _handle_action_callback(query, action: str) -> None:
             f"⚡ *Suguru — Elite Scanner*\n\n"
             f"Regime: *{mode}*\n\n"
             f"🔍 *Scan Only* — show scored candidates\n"
-            f"🧠 *Hermes Scan* — scan + AI deliberation → trade recommendation",
+            f"🧠 *Waifu Scan* — scan + AI deliberation → trade recommendation",
             parse_mode="Markdown",
             reply_markup=keyboard,
         )
@@ -2063,7 +2115,7 @@ async def _handle_action_callback(query, action: str) -> None:
             )
         await _safe_edit(query, "\n".join(lines), parse_mode="Markdown")
 
-    elif action == "suguru_hermes_scan":
+    elif action == "suguru_waifu_scan":
         await _safe_edit(query, "🔍 Scanning...")
         await run_script_async(
             ["python3", str(STATE_DIR / "scripts/vps/suguru.py"), "--scan-only"],
@@ -2202,11 +2254,32 @@ async def _handle_action_callback(query, action: str) -> None:
         await _safe_edit(query, "❌ Trade rejected.")
 
     elif action == "suguru_chat":
+        # Save current candidates for chat context
+        scan = load_json(OUTPUTS_DIR / "suguru-candidates.json", default={})
+        cands = scan.get("candidates", [])
+        if cands:
+            context_file = POSITION_STATE_DIR / "suguru-chat-context.json"
+            cand_lines = []
+            for c in cands:
+                cand_lines.append(
+                    f"{c.get('direction', '?')} {c.get('asset', '?')} "
+                    f"@ ${c.get('price', 0):.2f} lev={c.get('leverage', 0)}x "
+                    f"GSS={c.get('gss', 0):.2f}"
+                )
+            context = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "candidates": cand_lines,
+                "regime": load_json(CONFIG_DIR / "risk-regime.json", default={}).get(
+                    "riskMode", "UNKNOWN"
+                ),
+            }
+            with open(context_file, "w") as f:
+                json.dump(context, f, indent=2)
         await _safe_edit(
             query,
-            "💬 *Chat with Suguru*\n\n"
-            "Type your next message to customize the trade.\n"
-            "_Your next message goes to the Strategic Brain._",
+            "💬 *Chat with Waifu*\n\n"
+            "Type your message — I'll have context of the scan results.\n"
+            "_Your next message goes to Waifu with the trade context._",
             parse_mode="Markdown",
         )
 
@@ -2395,6 +2468,94 @@ async def _handle_action_callback(query, action: str) -> None:
         )
         await _answer_and_edit(query, text, parse_mode="Markdown")
 
+    elif action == "settings_refresh":
+        text = _build_settings_text()
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "✏️ Execution", callback_data="act:settings_help_execution"
+                    ),
+                    InlineKeyboardButton(
+                        "✏️ Position Mgmt", callback_data="act:settings_help_position"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "✏️ Gates", callback_data="act:settings_help_gates"
+                    ),
+                    InlineKeyboardButton(
+                        "✏️ Scores", callback_data="act:settings_help_scores"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "⚡ Quick Set", callback_data="act:settings_quick_set"
+                    ),
+                    InlineKeyboardButton(
+                        "🔄 Refresh", callback_data="act:settings_refresh"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "💬 Chat to Brain", callback_data="act:brain_chat_prompt"
+                    ),
+                    InlineKeyboardButton(
+                        "🧠 Waifu Scan", callback_data="act:suguru_scan_menu"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("🏠 Home", callback_data="act:start_run"),
+                    InlineKeyboardButton(
+                        "🔄 Reset Gates", callback_data="act:gates_reset_prompt"
+                    ),
+                ],
+            ]
+        )
+        await _safe_edit(query, text, parse_mode="Markdown", reply_markup=keyboard)
+
+    elif action == "settings_quick_set":
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        "📈 Set TP +20%", callback_data="act:quick_tp_20"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "📉 Set SL -15%", callback_data="act:quick_sl_15"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "🔢 Set Max Pos 2", callback_data="act:quick_maxpos_2"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "⏱ Set Cooldown 60", callback_data="act:quick_cooldown_60"
+                    )
+                ],
+                [InlineKeyboardButton("❌ Cancel", callback_data="act:settings_view")],
+            ]
+        )
+        await _answer_and_edit(
+            query,
+            "⚡ *Quick Set*\n\nChoose a preset:",
+            parse_mode="Markdown",
+            reply_markup=keyboard,
+        )
+
+    elif action == "brain_chat_prompt":
+        await _safe_edit(
+            query,
+            "💬 *Chat with Waifu*\n\n"
+            "Type your message to discuss strategy, analyze positions, or get trading advice.\n"
+            "_Your message goes to the Strategic Brain._",
+            parse_mode="Markdown",
+        )
+
     elif action == "gates_reset_prompt":
         keyboard = InlineKeyboardMarkup(
             [
@@ -2424,22 +2585,33 @@ async def _handle_action_callback(query, action: str) -> None:
     elif action == "gates_reset_confirm":
         rules = load_json(USER_RULES_FILE, default={})
         had_overrides = "safety_gates" in rules and rules["safety_gates"]
-        if not had_overrides:
-            await _answer_and_edit(
-                query, "ℹ️ No user gate overrides found — already at defaults."
-            )
-            return
+
+        # Reset to defaults
         rules.pop("safety_gates", None)
-        rules["updatedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        rules["updatedBy"] = "telegram-gates-reset"
+        rules.pop("scanner_scores", None)
+
         tmp = USER_RULES_FILE.with_suffix(".tmp")
         with open(tmp, "w") as f:
             json.dump(rules, f, indent=2)
             f.write("\n")
         tmp.rename(USER_RULES_FILE)
-        await _answer_and_edit(
-            query, "✅ All gate overrides removed — defaults restored."
+
+        msg = (
+            "✅ Gates reset to defaults."
+            if had_overrides
+            else "✅ Already at defaults."
         )
+        await _safe_edit(query, msg)
+
+    # Quick set handlers
+    elif action == "quick_tp_20":
+        await _run_waifu_and_edit(query, "set fixed_tp_roe 20", timeout=30)
+    elif action == "quick_sl_15":
+        await _run_waifu_and_edit(query, "set fixed_sl_roe -15", timeout=30)
+    elif action == "quick_maxpos_2":
+        await _run_waifu_and_edit(query, "set max_positions 2", timeout=30)
+    elif action == "quick_cooldown_60":
+        await _run_waifu_and_edit(query, "set cooldown 60", timeout=30)
 
     elif action == "status_run":
         waifu_bin = shutil.which("waifu")

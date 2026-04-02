@@ -126,7 +126,9 @@ def flatten_all():
                 timeout=15,
             )
             if "error" in result:
-                log(f"FLATTEN FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated")
+                log(
+                    f"FLATTEN FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated"
+                )
                 send_telegram(
                     f"⚠️ Flatten FAILED for {asset}\n"
                     f"Error: {result.get('error')}\n"
@@ -264,7 +266,9 @@ def main():
         # Fetch equity
         equity = get_account_equity()
         if equity is None:
-            log("Risk arbiter: could not fetch equity — skipping (lastCheckAt NOT updated)")
+            log(
+                "Risk arbiter: could not fetch equity — skipping (lastCheckAt NOT updated)"
+            )
             # Do NOT call save_arbiter_state here — it would update lastCheckAt
             # and mask the fact that no real check occurred. Stale detection relies
             # on lastCheckAt staying old when checks fail.
@@ -286,6 +290,36 @@ def main():
 
         peak = arb_state["peakEquity"]
         day_start = arb_state["dayStartEquity"]
+
+        # Time-based RISK_OFF auto-clear: check after peak is defined
+        if regime.get("riskMode") == "RISK_OFF":
+            last_update = regime.get("updatedAt", "")
+            if last_update:
+                try:
+                    update_time = datetime.fromisoformat(
+                        last_update.replace("Z", "+00:00")
+                    )
+                    hours_elapsed = (
+                        datetime.now(timezone.utc) - update_time
+                    ).total_seconds() / 3600
+                    if hours_elapsed >= 24:
+                        # Check if we should auto-clear: equity recovered above catastrophic threshold
+                        if equity > 0 and peak > 0:
+                            current_drawdown = (peak - equity) / peak * 100
+                            if current_drawdown < guardrails.get(
+                                "catastrophicDrawdownPct", 20
+                            ):
+                                # Auto-clear to BASELINE (regime classifier will upgrade to RISK_ON if conditions allow)
+                                set_risk_mode(
+                                    "BASELINE",
+                                    f"Auto-clear: 24h elapsed, drawdown {current_drawdown:.1f}% < catastrophic threshold",
+                                    "risk-arbiter-auto-clear",
+                                )
+                                log(
+                                    f"Arbiter: auto-cleared RISK_OFF -> BASELINE (24h elapsed, conditions improved)"
+                                )
+                except Exception as e:
+                    log(f"Arbiter: failed to check RISK_OFF auto-clear: {e}")
 
         # --- CHECK 1: Daily realized loss limit ---
         daily_loss_pct = guardrails.get("dailyLossLimitPct", 5)
@@ -312,17 +346,20 @@ def main():
         if peak > 0:
             peak_drawdown = (peak - equity) / peak * 100
             if peak_drawdown >= catastrophic_pct:
-                # Idempotency: skip if already flattened and no open positions
-                already_flattened = arb_state.get("flattenedAt") is not None
+                # Double-check: are there actually open positions?
                 open_positions = get_all_open_positions()
-                if already_flattened and not open_positions:
-                    # Already handled — just ensure regime stays RISK_OFF
-                    if regime.get("riskMode") != "RISK_OFF":
-                        set_risk_mode(
-                            "RISK_OFF",
-                            f"CATASTROPHIC persists: {peak_drawdown:.1f}% DD. Already flattened.",
-                            "risk-arbiter",
-                        )
+
+                # If no open positions and we're already in RISK_OFF, don't re-alert
+                already_flattened = arb_state.get("flattenedAt") is not None
+                if (
+                    already_flattened
+                    and not open_positions
+                    and regime.get("riskMode") == "RISK_OFF"
+                ):
+                    # Already handled — log once and skip alert
+                    log(
+                        f"RISK ARBITER: CATASTROPHIC persists but already flattened — skipping repeat alert"
+                    )
                 else:
                     log(
                         f"RISK ARBITER: CATASTROPHIC drawdown {peak_drawdown:.1f}% — FLATTENING ALL"
@@ -391,7 +428,9 @@ def main():
                             timeout=15,
                         )
                         if "error" in result:
-                            log(f"RISK ARBITER: Close FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated")
+                            log(
+                                f"RISK ARBITER: Close FAILED for {asset}: {result.get('error')} — DSL state NOT deactivated"
+                            )
                             send_telegram(
                                 f"⚠️ Single trade close FAILED for {asset}\n"
                                 f"Error: {result.get('error')}\n"
