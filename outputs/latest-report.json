@@ -1,34 +1,20 @@
 {
-  "generatedAt": "2026-04-02T19:01:18Z",
-  "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "timestamp": "2026-04-02T22:03:11Z",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "regime": "BASELINE",
+  "regimeSource": "risk-regime.json",
+  "accountValue": 48.89,
+  "withdrawable": 48.89,
+  "peakEquity": 48.89,
+  "drawdownFromPeakPct": 0.0,
+  "positions": [],
+  "openOrders": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "currentDrawdownPct": 0.0,
+    "breached": false
+  },
+  "actions": [],
+  "summary": "Flat \u2014 no open positions. Account $48.89. Drawdown from peak 0%. Regime BASELINE. No actions required."
 }
