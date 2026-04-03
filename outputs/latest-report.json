@@ -1,24 +1,16 @@
 {
-  "type": "jido-portfolio-review",
-  "timestamp": "2026-04-03T21:17:07Z",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "timestamp": "2026-04-03T23:17:06.373535+00:00",
+  "runBy": "jido",
   "regime": "BASELINE",
-  "regimeUpdatedBy": "waifu-regime",
-  "regimeUpdatedAt": "2026-04-03T21:01:09Z",
-  "accountValue": 48.89,
-  "withdrawable": 48.89,
+  "accountValue": 48.887581,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyLossPct": 0.0,
+  "drawdownPct": 0.005,
+  "dailyLossPct": 0.005,
   "positions": [],
-  "openOrders": 0,
-  "guardrails": {
-    "catastrophicDrawdown": {"limit": "20%", "actual": "0.00%", "breached": false},
-    "dailyLoss": {"limit": "10%", "actual": "0.00%", "breached": false},
-    "consecutiveStopOuts": {"limit": 4, "actual": 0, "breached": false}
-  },
-  "alerts": [],
-  "actions": [],
-  "status": "FLAT — no positions, no orders. All guardrails clear."
+  "openOrders": [],
+  "guardrails": "ALL_CLEAR",
+  "actionsTaken": [
+    "health_check_flat"
+  ],
+  "warnings": []
 }
