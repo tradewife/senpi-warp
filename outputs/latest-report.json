@@ -1,20 +1,34 @@
 {
-  "timestamp": "2026-04-02T22:03:11Z",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "timestamp": "2026-04-03T00:17:06Z",
   "regime": "BASELINE",
-  "regimeSource": "risk-regime.json",
-  "accountValue": 48.89,
-  "withdrawable": 48.89,
-  "peakEquity": 48.89,
-  "drawdownFromPeakPct": 0.0,
-  "positions": [],
-  "openOrders": [],
+  "strategy": {
+    "name": "WOLF-Primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
+  },
+  "account": {
+    "equity": 48.89,
+    "withdrawable": 48.89,
+    "peakEquity": 48.89,
+    "drawdownFromPeakPct": 0.0,
+    "drawdownFromBudgetPct": 51.1,
+    "originalBudget": 100.0
+  },
+  "positions": {
+    "count": 0,
+    "main": [],
+    "xyz": []
+  },
+  "orders": {
+    "count": 0
+  },
   "guardrails": {
     "catastrophicDrawdownPct": 20,
-    "currentDrawdownPct": 0.0,
-    "breached": false
+    "drawdownFromPeakPct": 0.0,
+    "status": "CLEAR",
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
   },
   "actions": [],
-  "summary": "Flat \u2014 no open positions. Account $48.89. Drawdown from peak 0%. Regime BASELINE. No actions required."
+  "alerts": []
 }
