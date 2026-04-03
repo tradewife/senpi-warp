@@ -1,32 +1,13 @@
 {
-  "generatedAt": "2026-04-03T01:08:40Z",
+  "timestamp": "2026-04-03T01:16:19Z",
   "regime": "BASELINE",
   "equity": 48.89,
   "peakEquity": 48.89,
   "drawdownPct": 0.0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [],
-  "deadWeight": [],
-  "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+  "dailyLossPct": 0.0,
+  "positions": [],
+  "openOrders": 0,
+  "guardrails": "CLEAR",
+  "actions": [],
+  "notes": "Flat — no positions, no orders. Strategy idle."
 }
