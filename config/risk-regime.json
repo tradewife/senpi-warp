@@ -1,8 +1,8 @@
 {
   "riskMode": "BASELINE",
-  "updatedAt": "2026-04-02T23:01:37Z",
+  "updatedAt": "2026-04-03T00:00:39Z",
   "updatedBy": "waifu-regime",
-  "reason": "Mixed signals (slope=0.3%, ATR=1.3%)",
+  "reason": "Mixed signals (slope=0.2%, ATR=0.6%)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
