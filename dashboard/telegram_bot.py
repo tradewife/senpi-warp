@@ -1919,7 +1919,7 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             env=env,
             cwd=str(STATE_DIR),
         )
-        stdout_raw, stderr_raw = await asyncio.wait_for(proc.communicate(), timeout=120)
+        stdout_raw, stderr_raw = await asyncio.wait_for(proc.communicate(), timeout=180)
         stdout_text = stdout_raw.decode().strip()
         stderr_text = stderr_raw.decode().strip()
         returncode = proc.returncode
@@ -1987,41 +1987,49 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             output = stdout_clean or stderr_clean
 
-        # Dedup step 2: hermes may echo the entire response twice in the same stream.
-        # Check if the second half of the text is a near-exact repeat of the first half.
+        # Dedup step 2: paragraph-level repeat detection.
+        # Hermes frequently outputs the entire response twice. The previous
+        # character-level dedup missed cases where the two copies have minor
+        # formatting differences (extra spaces, different dashes, etc).
+        # Strategy: find the first paragraph (up to \n\n), normalize it, then
+        # search for it in the second half of the text. If found, truncate.
         text = output.strip()
         n = len(text)
-        if n > 100:
-            # Normalize for comparison: collapse all whitespace runs to single spaces
+        if n > 200:
             import re as _re
 
             def _norm(s):
                 return _re.sub(r"\s+", " ", s).strip().lower()
 
-            # Check if the full text appears again starting from the midpoint region
-            best_split = None
-            for start_pct in range(30, 71, 5):
-                check_from = n * start_pct // 100
-                probe = text[: n // 2]
-                probe_norm = _norm(probe)
-                search = text[check_from:]
-                search_norm = _norm(search)
-                idx = search_norm.find(probe_norm)
-                if idx >= 0:
-                    # Found it — confirm the remainder matches
-                    candidate = search[: len(probe) + 50]
-                    if _norm(candidate).startswith(
-                        probe_norm[: max(len(probe_norm) - 20, 50)]
-                    ):
-                        best_split = check_from
+            # Find first paragraph boundary (double newline, or single newline after 100+ chars)
+            first_para_end = -1
+            for sep in ["\n\n", "\n"]:
+                idx = text.find(sep, 100)
+                if 0 < idx < n // 2:
+                    first_para_end = idx + len(sep)
+                    break
+
+            if first_para_end > 50:
+                first_para = _norm(text[:first_para_end])
+                # Search for this paragraph in the second half of the text
+                for check_pct in range(40, 61, 5):
+                    check_from = n * check_pct // 100
+                    rest_norm = _norm(text[check_from:])
+                    rest_idx = rest_norm.find(first_para)
+                    if rest_idx >= 0 and rest_idx < 30:
+                        # Found the repeat — truncate just before it
+                        split_at = check_from + rest_idx
+                        text = text[:split_at].strip()
+                        n = len(text)
                         break
-            if best_split:
-                output = text[:best_split].strip()
-            else:
-                # Fallback: check if first half equals second half (exact repeat)
+
+            # Fallback: character-level half-and-half check
+            if n > 200:
                 mid = n // 2
-                if n >= 200 and _norm(text[:mid]) == _norm(text[mid:]):
-                    output = text[:mid].strip()
+                if _norm(text[:mid]) == _norm(text[mid:]):
+                    text = text[:mid].strip()
+
+            output = text
 
         # Dedup step 3: remove duplicate first non-empty lines
         lines = output.split("\n")
@@ -2049,7 +2057,20 @@ async def handle_free_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await _safe_reply(update, reply_text)
 
     except asyncio.TimeoutError:
-        reply_text = "⏱ Brain timed out (120s limit).\n_Try a shorter query or retry._"
+        # Try to get partial output from the timed-out process
+        partial = ""
+        try:
+            if proc.stdout and not proc.stdout.at_eof():
+                partial = (await proc.stdout.read()).decode(errors="replace").strip()
+            elif proc.stderr and not proc.stderr.at_eof():
+                partial = (await proc.stderr.read()).decode(errors="replace").strip()
+        except Exception:
+            pass
+        partial_clean = _strip_tui_artifacts(partial) if partial else ""
+        if partial_clean and len(partial_clean) > 100:
+            reply_text = f"⏱ Brain timed out (partial response):\n\n{partial_clean[:3000]}"
+        else:
+            reply_text = "⏱ Brain timed out (180s limit).\n_Try a shorter query or retry._"
         if progress_msg:
             try:
                 await progress_msg.edit_text(reply_text)

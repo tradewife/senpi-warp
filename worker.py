@@ -96,17 +96,27 @@ def setup_mcporter():
         print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
 
 
-def run_py(script: str, args: Optional[list] = None):
+def run_py(script: str, args: Optional[list] = None, timeout: int = 120):
     """Run a Python script from the repo, printing output."""
     cmd = ["python3", str(STATE_DIR / script)]
     if args:
         cmd.extend(args)
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        env=CHILD_ENV,
-    )
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=CHILD_ENV,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as e:
+        output = f"[TIMEOUT] {script} killed after {timeout}s"
+        if e.stdout:
+            output += "\n" + e.stdout.decode(errors="replace")[-500:]
+        if e.stderr:
+            output += "\n" + e.stderr.decode(errors="replace")[-500:]
+        print(output)
+        return
     output = (result.stdout + "\n" + result.stderr).strip()
     if output:
         for line in output.split("\n"):
