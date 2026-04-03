@@ -1,13 +1,20 @@
 {
-  "timestamp": "2026-04-03T01:16:19Z",
+  "timestamp": "2026-04-03T03:02:44Z",
   "regime": "BASELINE",
-  "equity": 48.89,
+  "regimeUpdatedBy": "waifu-regime",
+  "regimeReason": "Mixed signals (slope=0.1%, ATR=1.0%)",
+  "accountValue": 48.887581,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyLossPct": 0.0,
+  "drawdownPct": 0.0049,
+  "dailyPnlPct": -0.0049,
   "positions": [],
   "openOrders": 0,
-  "guardrails": "CLEAR",
-  "actions": [],
-  "notes": "Flat — no positions, no orders. Strategy idle."
+  "guardrails": {
+    "catastrophicDrawdown": {"threshold": 20, "current": 0.0049, "breached": false},
+    "dailyLossLimit": {"threshold": 10, "current": 0.0049, "breached": false},
+    "consecutiveStopOuts": {"threshold": 4, "current": 0, "breached": false}
+  },
+  "alerts": [],
+  "actionsTaken": [],
+  "notes": "Flat. No positions, no orders. Account idle. All guardrails clear."
 }
