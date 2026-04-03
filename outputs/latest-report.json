@@ -1,20 +1,27 @@
 {
-  "timestamp": "2026-04-03T03:02:44Z",
+  "timestamp": "2026-04-03T05:03:13Z",
+  "type": "jido-portfolio-review",
   "regime": "BASELINE",
-  "regimeUpdatedBy": "waifu-regime",
-  "regimeReason": "Mixed signals (slope=0.1%, ATR=1.0%)",
-  "accountValue": 48.887581,
+  "regimeSetBy": "waifu-regime",
+  "regimeUpdatedAt": "2026-04-03T05:01:19Z",
+  "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "accountValue": 48.89,
+  "withdrawable": 48.89,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0049,
-  "dailyPnlPct": -0.0049,
+  "lifetimeBudget": 100.0,
+  "lifetimeDrawdownPct": 51.1,
+  "drawdownFromPeakPct": 0.005,
+  "dailyLossPct": 0.005,
   "positions": [],
   "openOrders": 0,
   "guardrails": {
-    "catastrophicDrawdown": {"threshold": 20, "current": 0.0049, "breached": false},
-    "dailyLossLimit": {"threshold": 10, "current": 0.0049, "breached": false},
-    "consecutiveStopOuts": {"threshold": 4, "current": 0, "breached": false}
+    "catastrophicDrawdown": "CLEAR",
+    "dailyLossLimit": "CLEAR",
+    "consecutiveStopOuts": "CLEAR"
   },
-  "alerts": [],
   "actionsTaken": [],
-  "notes": "Flat. No positions, no orders. Account idle. All guardrails clear."
+  "warnings": [
+    "Lifetime drawdown 51.1% from original $100 budget \u2014 peak equity tracking reset to current level"
+  ]
 }
