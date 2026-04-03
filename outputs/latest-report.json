@@ -1,32 +1,22 @@
 {
-  "generatedAt": "2026-04-03T07:09:34Z",
+  "timestamp": "2026-04-03T08:03:57Z",
   "regime": "BASELINE",
-  "equity": 48.89,
+  "regimeReason": "Mixed signals (slope=-0.0%, ATR=0.8%)",
+  "accountValue": 48.887581,
+  "withdrawable": 48.887581,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [],
-  "deadWeight": [],
+  "drawdownFromPeak": 0.0049,
+  "drawdownFromBudget": 51.11,
+  "lifetimePnl": -51.11,
+  "lifetimePnlPct": -51.11,
+  "positions": [],
+  "openOrders": 0,
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
+    "dailyLossLimitPct": 10,
     "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "breaches": []
+  },
+  "actions": [],
+  "notes": "Flat. No positions, no orders. Strategy holding $48.89 of original $100 budget. 51% lifetime loss."
 }
