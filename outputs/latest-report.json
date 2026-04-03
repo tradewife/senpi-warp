@@ -1,27 +1,32 @@
 {
-  "timestamp": "2026-04-03T05:03:13Z",
-  "type": "jido-portfolio-review",
+  "generatedAt": "2026-04-03T07:09:34Z",
   "regime": "BASELINE",
-  "regimeSetBy": "waifu-regime",
-  "regimeUpdatedAt": "2026-04-03T05:01:19Z",
-  "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-  "accountValue": 48.89,
-  "withdrawable": 48.89,
+  "equity": 48.89,
   "peakEquity": 48.89,
-  "lifetimeBudget": 100.0,
-  "lifetimeDrawdownPct": 51.1,
-  "drawdownFromPeakPct": 0.005,
-  "dailyLossPct": 0.005,
-  "positions": [],
-  "openOrders": 0,
+  "drawdownPct": 0.0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdown": "CLEAR",
-    "dailyLossLimit": "CLEAR",
-    "consecutiveStopOuts": "CLEAR"
-  },
-  "actionsTaken": [],
-  "warnings": [
-    "Lifetime drawdown 51.1% from original $100 budget \u2014 peak equity tracking reset to current level"
-  ]
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
