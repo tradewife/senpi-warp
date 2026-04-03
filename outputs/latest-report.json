@@ -1,34 +1,32 @@
 {
-  "timestamp": "2026-04-03T00:17:06Z",
+  "generatedAt": "2026-04-03T01:08:40Z",
   "regime": "BASELINE",
-  "strategy": {
-    "name": "WOLF-Primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
-  },
-  "account": {
-    "equity": 48.89,
-    "withdrawable": 48.89,
-    "peakEquity": 48.89,
-    "drawdownFromPeakPct": 0.0,
-    "drawdownFromBudgetPct": 51.1,
-    "originalBudget": 100.0
-  },
-  "positions": {
-    "count": 0,
-    "main": [],
-    "xyz": []
-  },
-  "orders": {
-    "count": 0
-  },
+  "equity": 48.89,
+  "peakEquity": 48.89,
+  "drawdownPct": 0.0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [],
+  "deadWeight": [],
   "guardrails": {
+    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "drawdownFromPeakPct": 0.0,
-    "status": "CLEAR",
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
-  },
-  "actions": [],
-  "alerts": []
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
