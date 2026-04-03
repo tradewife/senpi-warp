@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-03T23:17:06.373535+00:00",
+  "timestamp": "2026-04-03T23:46:39.774376+00:00",
   "runBy": "jido",
   "regime": "BASELINE",
   "accountValue": 48.887581,
@@ -9,8 +9,8 @@
   "positions": [],
   "openOrders": [],
   "guardrails": "ALL_CLEAR",
-  "actionsTaken": [
-    "health_check_flat"
-  ],
-  "warnings": []
+  "actionsTaken": ["health_check_flat"],
+  "warnings": [
+    "cumulative_loss_51pct_from_original_budget_100_to_48.89"
+  ]
 }
