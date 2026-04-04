@@ -1,25 +1,19 @@
 {
-  "timestamp": "2026-04-04T03:02:36Z",
+  "timestamp": "2026-04-04T06:31:51Z",
   "regime": "BASELINE",
-  "regimeSource": "waifu-regime",
   "equity": 48.887581,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0049,
-  "dayStartEquity": 48.89,
-  "dailyPnlPct": 0.0,
+  "drawdownPct": 0.0,
   "positions": [],
-  "openOrders": [],
+  "openOrders": 0,
   "guardrails": {
     "drawdownPct": 0.0,
     "catastrophicLimit": 20,
     "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4,
-    "dailyLossPct": 0.0,
-    "dailyLossLimit": 10,
-    "breached": false
+    "maxStopOuts": 4,
+    "breaches": []
   },
-  "actionsTaken": [
-    "No positions open. No guardrail breaches. Flat and idle."
-  ],
-  "alerts": []
+  "actions": [],
+  "status": "FLAT",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1"
 }
