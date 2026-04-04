@@ -1,16 +1,19 @@
 {
-  "timestamp": "2026-04-03T23:46:39.774376+00:00",
-  "runBy": "jido",
+  "timestamp": "2026-04-04T11:02:00Z",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
   "regime": "BASELINE",
+  "regimeReason": "Mixed signals (slope=-0.0%, ATR=0.3%)",
   "accountValue": 48.887581,
   "peakEquity": 48.89,
   "drawdownPct": 0.005,
-  "dailyLossPct": 0.005,
   "positions": [],
-  "openOrders": [],
-  "guardrails": "ALL_CLEAR",
-  "actionsTaken": ["health_check_flat"],
-  "warnings": [
-    "cumulative_loss_51pct_from_original_budget_100_to_48.89"
-  ]
+  "openOrders": 0,
+  "guardrails": {
+    "catastrophicDrawdown": "CLEAR (0.0% < 20%)",
+    "dailyLossLimit": "CLEAR (0.0% < 10%)",
+    "consecutiveStopOuts": "CLEAR (0 < 4)"
+  },
+  "actionsTaken": [],
+  "warnings": []
 }
