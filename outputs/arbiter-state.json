@@ -1,6 +1,10 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 48.89,
+  "lastEquity": 48.887581,
+  "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-24T02:04:37Z"
+  "lastCheckAt": "2026-04-04T07:46:34Z",
+  "flattenedAt": "2026-04-03T00:00:00Z",
+  "alerts": [],
+  "dayStartDate": "2026-04-04"
 }

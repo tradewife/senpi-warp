@@ -1,25 +1,18 @@
 {
-  "timestamp": "2026-04-04T07:31:22Z",
+  "timestamp": "2026-04-04T07:46:34Z",
   "regime": "BASELINE",
-  "regimeUpdatedAt": "2026-04-04T07:00:55Z",
   "accountValue": 48.887581,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyLossPct": 0.0,
-  "positions": [],
-  "openOrders": 0,
+  "drawdownPct": 0.0049,
+  "dailyLossPct": 0.0049,
+  "consecutiveStopOuts": 0,
+  "openPositions": 0,
   "guardrails": {
-    "catastrophicDrawdown": "0.00% / 20%",
-    "dailyLoss": "0.00% / 10%",
-    "consecutiveStopOuts": "0 / 4"
+    "drawdown": "CLEAR",
+    "dailyLoss": "CLEAR",
+    "stopouts": "CLEAR"
   },
-  "breaches": [],
-  "actionsTaken": [
-    "Flat — no positions to manage"
-  ],
-  "strategy": {
-    "name": "WOLF-Primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
-  }
+  "actionsTaken": [],
+  "alerts": [],
+  "notes": "Flat. No open positions. Account value stable near peak. Regime BASELINE with newEntriesAllowed=false."
 }
