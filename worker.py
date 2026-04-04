@@ -24,10 +24,14 @@ import sys
 from pathlib import Path
 
 from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_MISSED
 from typing import Optional
 
-from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
+# Force line-buffered output for Railway log capture (belt-and-suspenders with PYTHONUNBUFFERED)
+for _s in (sys.stdout, sys.stderr):
+    if hasattr(_s, "reconfigure"):
+        _s.reconfigure(line_buffering=True)
 
 # ---------------------------------------------------------------------------
 # Config from environment
@@ -67,7 +71,7 @@ if SENPI_TOKEN:
 def setup_git():
     """Configure git for HTTPS push/pull using a GitHub token."""
     if not GITHUB_TOKEN:
-        print("[startup] WARNING: GITHUB_TOKEN not set — git push/pull will fail")
+        print("[startup] WARNING: GITHUB_TOKEN not set — git push/pull will fail", flush=True)
         return
     remote_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
     subprocess.run(
@@ -85,15 +89,15 @@ def setup_git():
         cwd=STATE_DIR,
         capture_output=True,
     )
-    print(f"[startup] git configured for {GITHUB_REPO}")
+    print(f"[startup] git configured for {GITHUB_REPO}", flush=True)
 
 
 def setup_mcporter():
     """mcporter no longer used — direct HTTP calls to Senpi MCP instead."""
     if SENPI_TOKEN:
-        print("[startup] Senpi auth token found — using direct MCP HTTP calls")
+        print("[startup] Senpi auth token found — using direct MCP HTTP calls", flush=True)
     else:
-        print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail")
+        print("[startup] WARNING: No Senpi auth token set — Senpi MCP calls will fail", flush=True)
 
 
 def run_py(script: str, args: Optional[list] = None, timeout: int = 120):
@@ -115,24 +119,34 @@ def run_py(script: str, args: Optional[list] = None, timeout: int = 120):
             output += "\n" + e.stdout.decode(errors="replace")[-500:]
         if e.stderr:
             output += "\n" + e.stderr.decode(errors="replace")[-500:]
-        print(output)
+        print(output, flush=True)
+        return
+    except Exception as e:
+        print(f"[ERROR] {script} raised {type(e).__name__}: {e}", flush=True)
         return
     output = (result.stdout + "\n" + result.stderr).strip()
     if output:
         for line in output.split("\n"):
-            print(line)
+            print(line, flush=True)
+    elif result.returncode != 0:
+        print(f"[EXIT {result.returncode}] {script} (no output)", flush=True)
 
 
 def run_sh(script: str):
     """Run a bash script from the repo."""
-    result = subprocess.run(
-        ["bash", str(STATE_DIR / script)],
-        capture_output=True,
-        text=True,
-        env=CHILD_ENV,
-    )
-    if result.stderr.strip():
-        print(result.stderr.rstrip())
+    try:
+        result = subprocess.run(
+            ["bash", str(STATE_DIR / script)],
+            capture_output=True,
+            text=True,
+            env=CHILD_ENV,
+        )
+    except Exception as e:
+        print(f"[ERROR] {script} raised {type(e).__name__}: {e}", flush=True)
+        return
+    output = (result.stdout + "\n" + result.stderr).strip()
+    if output:
+        print(output, flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -219,16 +233,23 @@ def job_brain():
 
 def job_regime():
     """Regime classifier — runs via waifu CLI."""
-    result = subprocess.run(
-        ["python3", "-m", "waifu_cli", "regime"],
-        capture_output=True,
-        text=True,
-        env=CHILD_ENV,
-    )
+    try:
+        result = subprocess.run(
+            ["python3", "-m", "waifu_cli", "regime"],
+            capture_output=True,
+            text=True,
+            env=CHILD_ENV,
+            timeout=120,
+        )
+    except Exception as e:
+        print(f"[ERROR] job_regime: {type(e).__name__}: {e}", flush=True)
+        return
     output = (result.stdout + "\n" + result.stderr).strip()
     if output:
         for line in output.split("\n"):
-            print(line)
+            print(line, flush=True)
+    elif result.returncode != 0:
+        print(f"[EXIT {result.returncode}] job_regime (no output)", flush=True)
 
 
 def job_arbiter():
@@ -241,9 +262,9 @@ def job_reconcile():
 
 def job_suguru():
     """Suguru scan + hermes deliberation — writes recommendation for user approval."""
-    print("[suguru] Step 1/2: scanning...")
+    print("[suguru] Step 1/2: scanning...", flush=True)
     run_py("scripts/vps/suguru.py", ["--scan-only"])
-    print("[suguru] Step 2/2: hermes deliberating...")
+    print("[suguru] Step 2/2: hermes deliberating...", flush=True)
     run_py("scripts/vps/suguru_decide.py")
 
 
@@ -253,16 +274,23 @@ def job_suguru_stale():
 
 def job_jido():
     """Autonomous trade executor with tiered governance (replaces evaluate)."""
-    result = subprocess.run(
-        ["python3", "-m", "waifu_cli", "jido"],
-        capture_output=True,
-        text=True,
-        env=CHILD_ENV,
-    )
+    try:
+        result = subprocess.run(
+            ["python3", "-m", "waifu_cli", "jido"],
+            capture_output=True,
+            text=True,
+            env=CHILD_ENV,
+            timeout=120,
+        )
+    except Exception as e:
+        print(f"[ERROR] job_jido: {type(e).__name__}: {e}", flush=True)
+        return
     output = (result.stdout + "\n" + result.stderr).strip()
     if output:
         for line in output.split("\n"):
-            print(line)
+            print(line, flush=True)
+    elif result.returncode != 0:
+        print(f"[EXIT {result.returncode}] job_jido (no output)", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -271,27 +299,27 @@ def job_jido():
 
 
 def main():
-    print("=== Senpi Railway Worker starting ===")
-    print(f"  STATE_DIR:  {STATE_DIR}")
-    print(f"  SKILLS_DIR: {SKILLS_DIR}")
-    print(f"  GITHUB_REPO: {GITHUB_REPO}")
+    print("=== Senpi Railway Worker starting ===", flush=True)
+    print(f"  STATE_DIR:  {STATE_DIR}", flush=True)
+    print(f"  SKILLS_DIR: {SKILLS_DIR}", flush=True)
+    print(f"  GITHUB_REPO: {GITHUB_REPO}", flush=True)
     # Ensure required directories exist
     for subdir in ("outputs", "state", "memory"):
         (STATE_DIR / subdir).mkdir(parents=True, exist_ok=True)
-    print(f"[startup] Ensured directories: outputs, state, memory under {STATE_DIR}")
+    print(f"[startup] Ensured directories: outputs, state, memory under {STATE_DIR}", flush=True)
 
     setup_git()
     setup_mcporter()
 
     # Startup regime bootstrap — run arena monitor once to initialize regime
     # before the scheduler fires any trading jobs
-    print("[startup] Running initial regime classification...")
+    print("[startup] Running initial regime classification...", flush=True)
     try:
         run_py("scripts/vps/arena-monitor.py")
         run_py("scripts/vps/autonomous-brain.py")
-        print("[startup] Regime bootstrap complete")
+        print("[startup] Regime bootstrap complete", flush=True)
     except Exception as e:
-        print(f"[startup] Regime bootstrap failed (non-fatal): {e}")
+        print(f"[startup] Regime bootstrap failed (non-fatal): {e}", flush=True)
 
     scheduler = BlockingScheduler(
         executors={"default": ThreadPoolExecutor(8)},
@@ -367,43 +395,55 @@ def main():
     # JIDO Autonomous Trade Executor — every 5min, offset 90s
     scheduler.add_job(job_jido, "interval", minutes=5, id="jido", seconds=90)
 
-    print("\nSchedule:")
-    print("  🐋 ORCA Scanner:    every 3min (v1.3)")
-    print("  🦗 MANTIS Scanner:  every 90s")
-    print("  🦊 FOX Scanner:     every 90s")
-    print("  🪳 ROACH Scanner:   every 90s (NEW: striker-only)")
-    print("  🦎 KOMODO Scanner:  every 5min")
-    print("  🦅 CONDOR Scanner:  every 3min")
-    print("  🐻‍❄️ POLAR Scanner:   every 3min")
-    print("  🛡 SENTINEL Scan:   every 3min")
-    print("  🦏 RHINO Scan:      every 3min")
-    print("  🔒 DSL HW Runner:   every 3min")
-    print("  🔄 SM Flip:         every 5min")
-    print("  👁  Watchdog:        every 5min")
-    print("  🏥 Health Check:    every 10min")
-    print("  📊 Arena Monitor:   every 15min")
-    print("  🌡  Regime Class:    every 15min")
-    print("  🚨 Risk Arbiter:    every 30s")
-    print("  🔃 Reconcile:       every 15min")
-    print("  ⚡ SUGURU Pipeline: every 30min (scan→hermes→execute)")
-    print("  ⏰ SUGURU Stale:   every 5min")
-    print("  ⚡ JIDO Executor:   every 5min")
-    print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule")
-    print("\nWorker running. Ctrl+C to stop.\n")
+    print("\nSchedule:", flush=True)
+    print("  🐋 ORCA Scanner:    every 3min (v1.3)", flush=True)
+    print("  🦗 MANTIS Scanner:  every 90s", flush=True)
+    print("  🦊 FOX Scanner:     every 90s", flush=True)
+    print("  🪳 ROACH Scanner:   every 90s (NEW: striker-only)", flush=True)
+    print("  🦎 KOMODO Scanner:  every 5min", flush=True)
+    print("  🦅 CONDOR Scanner:  every 3min", flush=True)
+    print("  🐻‍❄️ POLAR Scanner:   every 3min", flush=True)
+    print("  🛡 SENTINEL Scan:   every 3min", flush=True)
+    print("  🦏 RHINO Scan:      every 3min", flush=True)
+    print("  🔒 DSL HW Runner:   every 3min", flush=True)
+    print("  🔄 SM Flip:         every 5min", flush=True)
+    print("  👁  Watchdog:        every 5min", flush=True)
+    print("  🏥 Health Check:    every 10min", flush=True)
+    print("  📊 Arena Monitor:   every 15min", flush=True)
+    print("  🌡  Regime Class:    every 15min", flush=True)
+    print("  🚨 Risk Arbiter:    every 30s", flush=True)
+    print("  🔃 Reconcile:       every 15min", flush=True)
+    print("  ⚡ SUGURU Pipeline: every 30min (scan→hermes→execute)", flush=True)
+    print("  ⏰ SUGURU Stale:   every 5min", flush=True)
+    print("  ⚡ JIDO Executor:   every 5min", flush=True)
+    print("  [PAUSED] 🦈 SHARK / 🎣 BARRACUDA / 🦬 BISON — removed from schedule", flush=True)
+    print(f"\nWorker running — {len(scheduler.get_jobs())} jobs scheduled.\n", flush=True)
+    sys.stdout.flush()
 
-    # Periodic heartbeat to confirm scheduler is alive
+    # --- APScheduler error listener ---
+    def _on_job_error(event):
+        print(f"[ALERT] job {event.job_id} failed: {event.exception}", flush=True)
+
+    def _on_job_missed(event):
+        print(f"[ALERT] job {event.job_id} missed its scheduled time", flush=True)
+
+    scheduler.add_listener(_on_job_error, EVENT_JOB_ERROR)
+    scheduler.add_listener(_on_job_missed, EVENT_JOB_MISSED)
+
+    # --- Heartbeat (1 min for faster observability) ---
     import datetime as _dt
 
+    _hb_count = [0]
+
     def _heartbeat():
-        print(
-            f"[{_dt.datetime.utcnow().strftime('%H:%M:%S')}] scheduler alive",
-            flush=True,
-        )
+        _hb_count[0] += 1
+        ts = _dt.datetime.utcnow().strftime("%H:%M:%S")
+        print(f"[{ts}] heartbeat #{_hb_count[0]} — scheduler alive", flush=True)
 
     scheduler.add_job(
         _heartbeat,
         "interval",
-        minutes=5,
+        minutes=1,
         id="heartbeat",
         next_run_time=_dt.datetime.utcnow(),
     )
@@ -411,7 +451,9 @@ def main():
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
-        print("Worker stopped.")
+        print("Worker stopped.", flush=True)
+    finally:
+        print("[shutdown] Scheduler terminated — container exiting.", flush=True)
 
 
 def start_telegram_bot():
@@ -420,14 +462,14 @@ def start_telegram_bot():
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     if not token:
-        print("[startup] TELEGRAM_BOT_TOKEN not set — Telegram bot disabled")
+        print("[startup] TELEGRAM_BOT_TOKEN not set — Telegram bot disabled", flush=True)
         return
 
     try:
         import asyncio
         from dashboard.telegram_bot import create_bot_application, start_polling
     except ImportError:
-        print("[startup] dashboard.telegram_bot import failed — Telegram bot disabled")
+        print("[startup] dashboard.telegram_bot import failed — Telegram bot disabled", flush=True)
         return
 
     def _run():
@@ -435,15 +477,15 @@ def start_telegram_bot():
         asyncio.set_event_loop(loop)
         app = create_bot_application()
         if not app:
-            print("[startup] Telegram bot creation returned None")
+            print("[startup] Telegram bot creation returned None", flush=True)
             return
-        print("[startup] Telegram bot starting (polling)...")
+        print("[startup] Telegram bot starting (polling)...", flush=True)
         loop.run_until_complete(start_polling(app))
         loop.run_forever()
 
     t = threading.Thread(target=_run, daemon=True)
     t.start()
-    print("[startup] Telegram bot thread launched")
+    print("[startup] Telegram bot thread launched", flush=True)
 
 
 if __name__ == "__main__":
@@ -453,6 +495,6 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
 
-        print(f"[FATAL] Worker crashed: {e}")
+        print(f"[FATAL] Worker crashed: {e}", flush=True)
         traceback.print_exc()
         raise

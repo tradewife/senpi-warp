@@ -27,8 +27,9 @@ RAILWAY_BIN = "/home/kt/.nvm/versions/node/v24.10.0/bin/railway"
 
 VALID_SCANNERS = [
     "orca", "mantis", "fox", "komodo", "condor", "polar",
-    "sentinel", "rhino", "dsl", "arbiter", "brain",
-    "watchdog", "health", "arena", "suguru",
+    "sentinel", "rhino", "roach", "shark", "barracuda", "bison",
+    "dsl", "arbiter", "brain", "watchdog", "health", "arena",
+    "suguru", "jido", "regime", "reconcile", "smflip", "heartbeat",
 ]
 
 
@@ -57,10 +58,13 @@ def debug():
 def logs(lines, follow, grep_filter):
     """Stream Railway deployment logs."""
     railway = _find_railway()
-    cmd = [railway, "logs", "--lines", str(lines)]
 
     if follow:
-        cmd.append("--follow")
+        # Railway CLI v2 streams by default when --lines is omitted.
+        # Do NOT pass --follow (not a valid flag) or --lines (disables streaming).
+        cmd = [railway, "logs"]
+        if grep_filter:
+            cmd.extend(["--filter", grep_filter])
         try:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             for line in proc.stdout:
@@ -72,6 +76,7 @@ def logs(lines, follow, grep_filter):
             if proc.poll() is None:
                 proc.terminate()
     else:
+        cmd = [railway, "logs", "--lines", str(lines)]
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout or result.stderr
         if grep_filter:
@@ -151,7 +156,8 @@ def tail(scanner):
 
     click.echo(f"📡 Tailing {scanner_upper} logs (Ctrl+C to stop)...")
 
-    cmd = [railway, "logs", "--follow"]
+    # Railway CLI v2 streams by default when --lines is omitted.
+    cmd = [railway, "logs"]
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         for line in proc.stdout:
