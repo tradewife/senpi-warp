@@ -1,19 +1,32 @@
 {
-  "timestamp": "2026-04-04T11:02:00Z",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "generatedAt": "2026-04-04T01:00:59Z",
   "regime": "BASELINE",
-  "regimeReason": "Mixed signals (slope=-0.0%, ATR=0.3%)",
-  "accountValue": 48.887581,
+  "equity": 48.89,
   "peakEquity": 48.89,
-  "drawdownPct": 0.005,
-  "positions": [],
-  "openOrders": 0,
+  "drawdownPct": 0.0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdown": "CLEAR (0.0% < 20%)",
-    "dailyLossLimit": "CLEAR (0.0% < 10%)",
-    "consecutiveStopOuts": "CLEAR (0 < 4)"
-  },
-  "actionsTaken": [],
-  "warnings": []
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
