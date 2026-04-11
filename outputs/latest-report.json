@@ -1,32 +1,33 @@
 {
-  "generatedAt": "2026-04-11T08:02:20Z",
-  "regime": "BASELINE",
-  "equity": 48.89,
-  "peakEquity": 48.89,
-  "drawdownPct": 0.0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [],
-  "deadWeight": [],
+  "timestamp": "2026-04-11T11:20:20.948447+00:00",
+  "regime": "RISK_OFF",
+  "regimeSetBy": "jido-emergency",
+  "accountValue": 48.887581,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.1,
+  "initialBudget": 100.0,
+  "totalFunded": 100,
+  "totalWithdrawn": 0,
+  "netFunded": 100,
+  "positions": [],
+  "openOrders": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
+    "dailyLossLimitPct": 10,
     "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "drawdownBreached": true,
+    "dailyLossBreached": true,
+    "consecutiveStopOutsBreached": false
+  },
+  "actions": [
+    "Set RISK_OFF (was BASELINE \u2014 regime-classifier overwrites suspected)",
+    "No positions to close \u2014 account is flat",
+    "Initialized peakEquity to $100 after conflict resolution wiped it",
+    "Consider: withdraw remaining $48.89 or reset strategy"
+  ],
+  "warnings": [
+    "51.1% drawdown from $100 initial budget",
+    "Regime was BASELINE despite catastrophic drawdown \u2014 regime-classifier race condition",
+    "Strategy has no SL/TP configured at strategy level"
+  ]
 }

@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-04-11T11:01:46Z",
-  "updatedBy": "waifu-regime",
-  "reason": "Mixed signals (slope=-0.0%, ATR=0.5%)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-04-11T11:20:20.948447+00:00",
+  "updatedBy": "jido-emergency",
+  "reason": "CATASTROPHIC DRAWDOWN: 51.1% drawdown from $100 peak (>$48.89 current). Threshold: 20%. No open positions. Override count: regime-classifier has been resetting to BASELINE despite drawdown.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
