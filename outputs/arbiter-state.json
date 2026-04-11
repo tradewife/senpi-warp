@@ -3,7 +3,7 @@
   "dayStartEquity": 48.887581,
   "lastEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-11T11:35:13.512924+00:00",
+  "lastCheckAt": "2026-04-11T20:17:58Z",
   "alerts": [
     {
       "type": "REGIME_OVERRIDE",
@@ -22,5 +22,6 @@
       "message": "JIDO check: 0 open positions, 0 open orders. Account $48.89 (51.1% drawdown). RISK_OFF active. Brain synced to RISK_OFF.",
       "timestamp": "2026-04-11T11:35:13.512924+00:00"
     }
-  ]
+  ],
+  "dayStartDate": "2026-04-11"
 }
