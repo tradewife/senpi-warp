@@ -1,8 +1,8 @@
 {
   "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-11T11:20:20.948447+00:00",
-  "updatedBy": "jido-emergency",
-  "reason": "CATASTROPHIC DRAWDOWN: 51.1% drawdown from $100 peak (>$48.89 current). Threshold: 20%. No open positions. Override count: regime-classifier has been resetting to BASELINE despite drawdown.",
+  "updatedAt": "2026-04-11T18:00:24Z",
+  "updatedBy": "waifu-regime (arbiter-override)",
+  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
