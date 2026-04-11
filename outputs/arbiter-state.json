@@ -1,27 +1,6 @@
 {
-  "peakEquity": 100.0,
-  "dayStartEquity": 48.887581,
-  "lastEquity": 48.887581,
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-11T20:17:58Z",
-  "alerts": [
-    {
-      "type": "REGIME_OVERRIDE",
-      "severity": "CRITICAL",
-      "message": "Drawdown 51.1% exceeds catastrophic 20%. Set RISK_OFF. No positions open. Strategy has bled from $100 to $48.89.",
-      "timestamp": "2026-04-11T11:20:20.948447+00:00"
-    },
-    {
-      "type": "PEAK_EQUITY_INITIALIZED",
-      "message": "peakEquity initialized to $100.00 (initial budget) after conflict resolution reset it to 0.",
-      "timestamp": "2026-04-11T11:20:20.948447+00:00"
-    },
-    {
-      "type": "JIDO_CHECK",
-      "severity": "INFO",
-      "message": "JIDO check: 0 open positions, 0 open orders. Account $48.89 (51.1% drawdown). RISK_OFF active. Brain synced to RISK_OFF.",
-      "timestamp": "2026-04-11T11:35:13.512924+00:00"
-    }
-  ],
-  "dayStartDate": "2026-04-11"
+  "lastCheckAt": "2026-03-24T01:57:07Z"
 }
