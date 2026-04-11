@@ -1,16 +1,32 @@
 {
-  "timestamp": "2026-04-04T08:47:01.754352+00:00",
+  "generatedAt": "2026-04-11T08:02:20Z",
   "regime": "BASELINE",
-  "equity": 48.887581,
+  "equity": 48.89,
   "peakEquity": 48.89,
-  "drawdownPct": 0.0049,
-  "positions": [],
-  "openOrders": 0,
+  "drawdownPct": 0.0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [],
+  "deadWeight": [],
   "guardrails": {
-    "drawdown": "CLEAR",
-    "stopouts": "CLEAR",
-    "dailyLoss": "CLEAR"
-  },
-  "actions": [],
-  "warnings": []
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
