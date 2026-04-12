@@ -1,16 +1,14 @@
 {
-  "generatedAt": "2026-04-11T20:17:58Z",
-  "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
+  "generatedAt": "2026-04-12T02:01:17Z",
+  "regime": "BASELINE",
+  "equity": 0.0,
+  "peakEquity": 0.0,
+  "drawdownPct": 0,
   "dailyPnl": 0,
   "dailyCloses": 0,
   "dailyWinRate": 0,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
+  "alerts": [],
   "deadWeight": [],
   "guardrails": {
     "dailyLossLimitPct": 10,
