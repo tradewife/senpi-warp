@@ -1,32 +1,57 @@
 {
-  "generatedAt": "2026-04-12T02:01:17Z",
-  "regime": "BASELINE",
-  "equity": 0.0,
-  "peakEquity": 0.0,
-  "drawdownPct": 0,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [],
-  "deadWeight": [],
+  "generatedAt": "2026-04-12T02:03:32Z",
+  "type": "JIDO_PORTFOLIO_REVIEW",
+  "strategy": {
+    "name": "WOLF-Primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "budget": 100.0
+  },
+  "regime": {
+    "riskMode": "RISK_OFF",
+    "previousRegime": "BASELINE",
+    "changedBy": "jido-emergency",
+    "reason": "Catastrophic drawdown 51.11% (equity $48.89 vs budget $100)"
+  },
+  "equity": {
+    "current": 48.89,
+    "peak": 100.0,
+    "drawdownPct": 51.11,
+    "withdrawable": 48.89
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0,
+    "details": []
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "catastrophicDrawdownPct": 20.0,
+    "actualDrawdownPct": 51.11,
+    "breached": true,
+    "dailyLossPct": 0.0,
+    "dailyLossLimitPct": 10.0,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
+  },
+  "actions": [
+    {
+      "action": "REGIME_OVERRIDE",
+      "from": "BASELINE",
+      "to": "RISK_OFF",
+      "reason": "waifu-regime set BASELINE at 02:00:46Z ignoring 51.11% drawdown. Overriding per catastrophicDrawdownPct guardrail."
+    },
+    {
+      "action": "ARBITER_PEAK_INIT",
+      "from": 0,
+      "to": 100.0,
+      "reason": "peakEquity was 0 (post-conflict --theirs). Reinitialized from wolf-strategies budget."
+    }
+  ],
+  "warnings": [
+    "Account at 48.89% of initial budget. Significant capital loss.",
+    "Regime-classifier race condition: waifu-regime overwrote to BASELINE ignoring drawdown state (recurring issue)"
+  ]
 }
