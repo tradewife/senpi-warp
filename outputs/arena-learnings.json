@@ -1,81 +1,24 @@
 {
-  "timestamp": "2026-04-12T10:05:02Z",
-  "type": "ARENA_LEARNINGS",
-  "weekNumber": 3,
-  "weekEndsAt": "2026-04-16T00:00:00Z",
-  "ourState": {
-    "userId": "M179642",
-    "name": "trade_wife",
-    "rank": 11,
-    "roePct": 0.0,
-    "totalPnl": 0,
-    "currentBalance": 48.89,
-    "tradeCount": 0,
-    "notionalVolume": 0,
-    "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "openPositions": 0,
-    "withdrawable": 48.89
+  "generatedAt": "2026-04-12T22:01:19Z",
+  "ourStats": {
+    "closes": 1,
+    "winRate": 0.0,
+    "totalPnl": -51.11
   },
-  "poolInfo": {
-    "currentWeekPool": 6470.78,
-    "nextWeekPool": 5358.05,
-    "prizes": {
-      "rank1": 2588.31,
-      "rank2": 1617.70,
-      "rank3": 970.62,
-      "rank4": 776.49,
-      "rank5": 517.66
-    }
-  },
-  "topPerformers": [
-    {"rank": 1, "name": "opencodeJaime", "roe": 30.70, "pnl": 146.66, "trades": 30},
-    {"rank": 2, "name": "ysr", "roe": 25.86, "pnl": 37.32, "trades": 117},
-    {"rank": 3, "name": "pr0br000", "roe": 25.65, "pnl": 468.00, "trades": 13},
-    {"rank": 5, "name": "Magi300a", "roe": 7.50, "pnl": 229.26, "trades": 44}
-  ],
+  "arenaTop5AvgWinRate": 99.5,
   "recommendations": [
     {
-      "scanner": "SELF_DIAGNOSIS",
-      "action": "CRITICAL_ALERT",
-      "confidence": "CRITICAL",
-      "reason": "trade_wife (M179642) has 0 trades, 0 volume, $48.89 balance. Week 3 ends Apr 16. Engine is completely idle. Jido regime likely RISK_OFF or BASELINE with no execution."
+      "action": "study_top_strategies",
+      "confidence": "medium",
+      "reason": "Arena top 5 avg WR (100%) exceeds ours (0%). Study their patterns.",
+      "risk": "neutral"
     },
     {
-      "scanner": "BALANCE_ANALYSIS",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "HIGH",
-      "reason": "Our balance ($48.89) is the smallest among active agents. Top performers average $902. Minimum competitive balance should be $200+. Need strategy_top_up to be viable."
-    },
-    {
-      "scanner": "TOP_PERFORMER_PATTERN",
-      "action": "INCREASE_WEIGHT",
-      "confidence": "HIGH",
-      "reason": "#1 opencodeJaime (30.7% ROE, 30 trades) and #3 pr0br000 (25.25% ROE, 13 trades) show LOW trade count + HIGH conviction = winning formula. Overtrading loses (rank 38 KK256: 540 trades, -38.9% ROE)."
-    },
-    {
-      "scanner": "VOLUME_EFFICIENCY",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "Top 3 ROE leaders have volume ranging 24K-76K. Not highest volume but highest efficiency. #1's ROE/volume ratio = 0.0004 vs median agent ~-0.0001. Quality > quantity."
-    },
-    {
-      "scanner": "BETASHOP_SYNDICATE",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "LOW",
-      "reason": "betashop runs 15+ agents. Most at 0% or negative. Strategy diversification not working for them. Focus > spread."
-    },
-    {
-      "scanner": "SKILL_USAGE",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "LOW",
-      "reason": "Top 3 use 6-19 tools. #3 pr0br000 uses only 6 tools (simple stack). Skills don't correlate with wins. Execution matters more."
-    },
-    {
-      "scanner": "RISK_MANAGEMENT",
-      "action": "MAINTAIN_WEIGHT",
-      "confidence": "MEDIUM",
-      "reason": "Reminder: Max leverage 10x cap. Bottom performers (ranks 36-39) show -26% to -54% ROE suggesting excessive leverage. Top performers are selective, not aggressive."
+      "action": "reminder_max_leverage",
+      "confidence": "absolute",
+      "reason": "Max leverage is 10x. Never increase. Proven across 22 agents.",
+      "risk": "rule"
     }
   ],
-  "note": "Generated from analysis of 81 arena agents at 2026-04-12 10:05 UTC. Week 3. CRITICAL: trade_wife engine is idle - 0 trades this week."
+  "appliedChanges": []
 }
