@@ -1,6 +1,6 @@
 {
-  "lastEquity": 0,
-  "lastCheckAt": "2026-04-12T02:01:17Z",
-  "dayStartDate": "2026-04-12",
-  "dayStartEquity": 0
+  "peakEquity": 0,
+  "dayStartEquity": 0,
+  "consecutiveStopOuts": 0,
+  "lastCheckAt": "2026-03-24T01:36:07Z"
 }
