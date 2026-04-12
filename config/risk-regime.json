@@ -1,8 +1,8 @@
 {
-  "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-11T23:01:39Z",
-  "updatedBy": "waifu-regime (arbiter-override)",
-  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "riskMode": "BASELINE",
+  "updatedAt": "2026-04-12T00:00:38Z",
+  "updatedBy": "waifu-regime",
+  "reason": "Mixed signals (slope=0.3%, ATR=0.8%)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
