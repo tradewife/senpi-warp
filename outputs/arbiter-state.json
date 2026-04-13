@@ -1,9 +1,9 @@
 {
   "peakEquity": 100.0,
   "dayStartEquity": 48.89,
-  "lastEquity": 48.89,
+  "lastEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-13T08:02:02Z",
+  "lastCheckAt": "2026-04-13T10:03:00Z",
   "alerts": [
     {
       "type": "JIDO_CHECK",
