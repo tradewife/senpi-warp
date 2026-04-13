@@ -1,34 +1,35 @@
 {
-  "generatedAt": "2026-04-13T14:02:40Z",
+  "timestamp": "2026-04-14T04:45:00Z",
+  "source": "jido-hermes-cron",
   "regime": "RISK_OFF",
-  "equity": 48.89,
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "accountValue": 48.89,
   "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "budget": 100.0,
+  "drawdownPct": 51.1,
+  "dailyPnlPct": 0.0,
+  "positions": [],
+  "openOrders": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "catastrophicDD": "BREACHED (51.1% > 20%)",
+    "consecutiveStopOuts": "OK (0 < 4)",
+    "dailyLoss": "OK (0.0% < 10%)"
+  },
+  "stateSync": {
+    "riskRegimeJson": "RISK_OFF",
+    "autonomousBrainRiskMode": "RISK_OFF",
+    "brainBlockNewEntries": true,
+    "brainAllowAutoEntry": false,
+    "brainMaxSlotsCap": 0,
+    "synced": true
+  },
+  "vpsStatus": "OFFLINE - all scanners stale since 2026-03-24 (21+ days)",
+  "actions": [
+    "No positions to manage. Monitoring only."
+  ],
+  "warnings": [
+    "VPS/Railway deployment down. Only Hermes cron active."
+  ]
 }

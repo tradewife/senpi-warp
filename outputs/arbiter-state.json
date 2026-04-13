@@ -3,8 +3,13 @@
   "dayStartEquity": 48.89,
   "lastEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-13T14:02:40Z",
+  "lastCheckAt": "2026-04-14T04:45:00Z",
   "alerts": [
+    {
+      "type": "JIDO_CHECK",
+      "timestamp": "2026-04-14T04:45:00Z",
+      "message": "Flat account, no positions. Equity $48.89 vs budget $100. Drawdown 51.1% exceeds 20% catastrophic threshold. Regime RISK_OFF confirmed. VPS scanners offline 21+ days."
+    },
     {
       "type": "JIDO_CHECK",
       "timestamp": "2026-04-12T02:03:32Z",
@@ -16,5 +21,5 @@
       "message": "waifu-regime set BASELINE at 02:00:46Z ignoring 51.11% drawdown. Overriding to RISK_OFF per catastrophicDrawdownPct guardrail."
     }
   ],
-  "dayStartDate": "2026-04-13"
+  "dayStartDate": "2026-04-14"
 }
