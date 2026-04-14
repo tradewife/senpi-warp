@@ -3,8 +3,13 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-14T08:02:04Z",
+  "lastCheckAt": "2026-04-14T09:17:11Z",
   "alerts": [
+    {
+      "type": "JIDO_CHECK",
+      "timestamp": "2026-04-14T09:17:11Z",
+      "message": "Equity $48.89, DD 51.11% from peak ($100.00). RISK_OFF active (catastrophic DD 51.11% > 20% limit). No open positions. 0 daily closes. Account flat."
+    },
     {
       "type": "JIDO_CHECK",
       "timestamp": "2026-04-14T16:03:34Z",
@@ -23,6 +28,6 @@
   ],
   "dayStartDate": "2026-04-14",
   "currentDrawdownPct": 51.11,
-  "lastJidoCheck": "2026-04-14T09:03:37.093114Z",
+  "lastJidoCheck": "2026-04-14T09:17:11Z",
   "riskMode": "RISK_OFF"
 }

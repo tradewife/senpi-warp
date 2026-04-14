@@ -1,25 +1,42 @@
 {
-  "timestamp": "2026-04-14T09:03:37.093114Z",
+  "timestamp": "2026-04-14T09:17:11Z",
   "regime": "RISK_OFF",
   "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "positions": [],
+  "guardrails": {
+    "catastrophicDD": {
+      "limit": 20.0,
+      "actual": 51.11,
+      "breached": true
+    },
+    "dailyLoss": {
+      "limit": 10.0,
+      "actual": 0.0,
+      "breached": false
+    },
+    "consecutiveStopOuts": {
+      "limit": 4,
+      "actual": 0,
+      "breached": false
+    }
+  },
+  "positions": {
+    "main": 0,
+    "xyz": 0,
+    "total": 0
+  },
   "openOrders": 0,
   "withdrawable": 48.887581,
-  "guardrails": {
-    "catastrophicDrawdownBreached": true,
-    "maxConsecutiveStopOutsBreached": false,
-    "dailyLossLimitBreached": false
+  "marketPrices": {
+    "BTC": 74771.5,
+    "ETH": 2392.45,
+    "SOL": 86.2085
   },
-  "actionsTaken": [
-    "None \u2014 RISK_OFF maintained, no positions to manage"
+  "actions": [
+    "No action needed \u2014 account flat, RISK_OFF maintained, all guardrails checked"
   ],
-  "marketSnapshot": {
-    "BTC": 74733.5,
-    "ETH": 2387.05,
-    "SOL": 86.1225,
-    "HYPE": 44.9825
-  },
-  "brainSync": "ALIGNED (risk-regime + autonomous-brain both RISK_OFF)"
+  "alerts": [
+    "DD 51.11% still catastrophic (>20% limit)"
+  ]
 }
