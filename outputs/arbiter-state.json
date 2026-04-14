@@ -1,6 +1,15 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100.0,
+  "dayStartEquity": 48.89,
+  "lastEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-24T01:30:07Z"
+  "lastCheckAt": "2026-04-14T22:47:37.393545Z",
+  "alerts": [
+    {
+      "type": "JIDO_CHECK",
+      "severity": "CRITICAL",
+      "message": "DD 51.1% (limit 20.0%), equity $48.89, regime RISK_OFF correct. 0 open positions. VPS scanners offline since 2026-03-24.",
+      "timestamp": "2026-04-14T22:47:37.393545Z"
+    }
+  ]
 }
