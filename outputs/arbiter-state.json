@@ -3,7 +3,7 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-14T09:17:11Z",
+  "lastCheckAt": "2026-04-14T09:47:09Z",
   "alerts": [
     {
       "type": "JIDO_CHECK",
@@ -24,10 +24,15 @@
       "time": "2026-04-14T09:03:37.093114Z",
       "type": "JIDO_CHECK",
       "message": "JIDO patrol: 0 open positions, DD 51.1%, RISK_OFF maintained. No action needed."
+    },
+    {
+      "time": "2026-04-14T09:47:09Z",
+      "type": "JIDO_CHECK",
+      "message": "JIDO patrol: 0 open positions, DD 51.11%, RISK_OFF maintained. No action needed."
     }
   ],
   "dayStartDate": "2026-04-14",
   "currentDrawdownPct": 51.11,
-  "lastJidoCheck": "2026-04-14T09:17:11Z",
+  "lastJidoCheck": "2026-04-14T09:47:09Z",
   "riskMode": "RISK_OFF"
 }
