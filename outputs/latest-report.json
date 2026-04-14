@@ -1,36 +1,34 @@
 {
-  "generatedAt": "2026-04-14T16:03:34Z",
-  "generatedBy": "jido-cron",
+  "generatedAt": "2026-04-14T08:02:04Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "equity": 48.887581,
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.887581,
-  "positions": {
-    "main": [],
-    "xyz": []
-  },
-  "openOrders": [],
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
+  ],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDD": {"limit": 20.0, "actual": 51.11, "breached": true},
-    "dailyLoss": {"limit": 10.0, "actual": 0.0, "breached": false},
-    "consecutiveStopOuts": {"limit": 4, "actual": 0, "breached": false}
-  },
-  "brainSync": {
-    "brainRiskMode": "RISK_OFF",
-    "regimeRiskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "synced": true
-  },
-  "vpsScanners": {
-    "status": "OFFLINE",
-    "lastHeartbeat": "2026-03-24T01:36:06Z",
-    "age": "21+ days",
-    "scanners": ["komodo","condor","orca","shark","rhino","dsl-runner","sm-flip","watchdog","brain","sentinel","arena","barracuda"]
-  },
-  "actions": [],
-  "summary": "RISK_OFF intact. Equity $48.89 (-51.1% from $100 peak). 0 positions, 0 orders. VPS scanners offline 21+ days. No new action needed."
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
