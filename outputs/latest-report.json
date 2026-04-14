@@ -1,34 +1,54 @@
 {
-  "generatedAt": "2026-04-14T20:01:37Z",
+  "timestamp": "2026-04-14T22:16:24Z",
   "regime": "RISK_OFF",
   "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "dailyPnlPct": -0.0049,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "openOrders": 0,
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
+    "catastrophicDD": {
+      "limit": 20.0,
+      "actual": 51.11,
+      "breached": true
+    },
+    "dailyLoss": {
+      "limit": 10.0,
+      "actual": 0.0049,
+      "breached": false
+    },
+    "consecutiveStops": {
+      "limit": 4,
+      "actual": 0,
+      "breached": false
+    }
+  },
+  "regimeCorrect": true,
+  "actionsTaken": [],
+  "marketPrices": {
+    "BTC": 74189.0,
+    "ETH": 2323.65,
+    "SOL": 83.6365
+  },
+  "strategies": {
+    "wolf-primary": {
+      "id": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+      "status": "ACTIVE",
+      "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+      "funded": 100,
+      "equity": 48.89,
+      "withdrawable": 48.89,
+      "pnl": -51.11,
+      "pnlPct": -51.11,
+      "positions": 0,
+      "orders": 0
+    }
+  },
+  "vpsScanners": {
+    "status": "OFFLINE",
+    "lastHeartbeat": "2026-03-24T01:36:06Z",
+    "daysSinceHeartbeat": 22,
+    "note": "All VPS scanner heartbeats stale (22+ days). Railway/VPS deployment likely down."
   }
 }
