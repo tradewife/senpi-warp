@@ -1,42 +1,41 @@
 {
-  "timestamp": "2026-04-14T09:17:11Z",
+  "timestamp": "2026-04-14T15:33:14.978845Z",
   "regime": "RISK_OFF",
-  "equity": 48.887581,
+  "equity": 48.89,
   "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "guardrails": {
-    "catastrophicDD": {
-      "limit": 20.0,
-      "actual": 51.11,
-      "breached": true
-    },
-    "dailyLoss": {
-      "limit": 10.0,
-      "actual": 0.0,
-      "breached": false
-    },
-    "consecutiveStopOuts": {
-      "limit": 4,
-      "actual": 0,
-      "breached": false
-    }
-  },
-  "positions": {
-    "main": 0,
-    "xyz": 0,
-    "total": 0
-  },
+  "drawdownPct": 51.1,
+  "withdrawable": 48.89,
+  "positions": [],
   "openOrders": 0,
-  "withdrawable": 48.887581,
   "marketPrices": {
-    "BTC": 74771.5,
-    "ETH": 2392.45,
-    "SOL": 86.2085
+    "BTC": 74897.5,
+    "ETH": 2344.65,
+    "SOL": 85.5425
   },
-  "actions": [
-    "No action needed \u2014 account flat, RISK_OFF maintained, all guardrails checked"
-  ],
-  "alerts": [
-    "DD 51.11% still catastrophic (>20% limit)"
+  "guardrails": {
+    "catastrophicDrawdownBreached": true,
+    "consecutiveStopOuts": 0,
+    "riskOffActive": true
+  },
+  "brainSync": {
+    "riskModeMatch": true,
+    "blockNewEntries": true,
+    "allowAutoEntry": false
+  },
+  "vpsScannersOnline": false,
+  "vpsLastHeartbeat": "2026-03-24T01:36:06Z",
+  "leaderboard4h": {
+    "topTrader": "0xd4758770... ($1.94M PnL, +28.8%)",
+    "hotMarkets": [
+      "ETH",
+      "HYPE",
+      "xyz:SP500",
+      "xyz:CL",
+      "xyz:BRENTOIL"
+    ],
+    "note": "Energy/commodities (CL, BRENTOIL) dominate top-5 alongside ETH/HYPE"
+  },
+  "actionsTaken": [
+    "JIDO heartbeat \u2014 no positions, no changes needed"
   ]
 }
