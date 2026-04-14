@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-14T17:02:26.323175+00:00",
+  "generatedAt": "2026-04-14T17:47:11.910929+00:00",
   "regime": "RISK_OFF",
   "equity": 48.89,
   "peakEquity": 100.0,
@@ -8,25 +8,18 @@
   "positions": [],
   "openOrders": 0,
   "guardrails": {
-    "catastrophicDrawdownBreached": true,
-    "dailyLossLimitBreached": false,
-    "consecutiveStopOutsBreached": false
+    "catastrophicDrawdownPct": 20,
+    "currentDrawdownPct": 51.1,
+    "breached": true,
+    "breachType": "catastrophic_drawdown"
   },
-  "marketSnapshot": {
-    "BTC": 74601.5,
-    "ETH": 2330.05,
-    "SOL": 84.9235
+  "market": {
+    "BTC": 74501.5,
+    "ETH": 2330.35,
+    "SOL": 85.0825
   },
-  "vpsScanners": "ALL OFFLINE (last heartbeat 2026-03-24, 22+ days stale)",
   "actions": [
-    "No new actions \u2014 RISK_OFF maintained, no positions"
+    "RISK_OFF enforced \u2014 no entries, no positions, capital preserved"
   ],
-  "brainSync": {
-    "brainRiskMode": "RISK_OFF",
-    "regimeRiskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "synced": true
-  }
+  "assessment": "Portfolio at $48.89 (51.1% DD from $100 peak). RISK_OFF locked since DD exceeds 20% catastrophic threshold. Zero open positions. Capital sitting idle awaiting regime recovery or manual capital injection."
 }
