@@ -1,39 +1,34 @@
 {
-  "timestamp": "2026-04-14T18:02:30.346892+00:00",
-  "type": "jido",
+  "generatedAt": "2026-04-14T20:01:37Z",
   "regime": "RISK_OFF",
   "equity": 48.89,
   "peakEquity": 100.0,
-  "drawdownPct": 51.1,
-  "withdrawable": 48.887581,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
   "openPositions": 0,
-  "openOrders": 0,
-  "guardrails": {
-    "catastrophicDD": {
-      "limit": 20.0,
-      "actual": 51.1,
-      "breached": true
-    },
-    "consecutiveStopOuts": {
-      "limit": 4,
-      "actual": 0,
-      "breached": false
-    },
-    "dailyLossLimit": {
-      "limit": 10.0,
-      "actual": 0.0,
-      "breached": false
-    }
-  },
-  "brainSynced": true,
-  "marketSnapshot": {
-    "BTC": 74715.5,
-    "ETH": 2339.25,
-    "SOL": 85.2405
-  },
-  "actions": [],
-  "warnings": [
-    "VPS scanners offline since 2026-03-24 (22+ days)"
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "assessment": "RISK_OFF active. DD 51.1% catastrophic, no improvement. Zero positions, zero open orders. Strategy flat. VPS deployment appears down \u2014 only Hermes crons running."
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
