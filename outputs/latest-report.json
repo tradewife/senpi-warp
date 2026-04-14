@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-13T20:01:19Z",
-  "regime": "RISK_OFF",
+  "generatedAt": "2026-04-14T02:02:56Z",
+  "regime": "BASELINE",
   "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
