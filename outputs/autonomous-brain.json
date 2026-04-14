@@ -17,7 +17,7 @@
     },
     "reasons": [],
     "risk": {
-      "drawdownPctFromPeak": 51.1,
+      "drawdownPctFromPeak": 51.11,
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [
