@@ -1,26 +1,43 @@
 {
-  "timestamp": "2026-04-15T20:03:41.420761Z",
+  "generatedAt": "2026-04-15T20:32:00Z",
+  "reportType": "jido-portfolio-monitor",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "withdrawable": 48.89,
-  "peakEquity": 98.98,
-  "drawdownPct": 50.6,
-  "openPositions": 0,
-  "openOrders": 0,
-  "dailyPnl": 0.0,
-  "cumulativePnl": -50.08,
-  "vpsScannersOnline": false,
-  "lastVpsHeartbeat": "2026-03-24T01:30:06Z",
-  "vpsOfflineDays": 22,
-  "actions": [
-    "Resolved git merge conflict (arbiter-state.json took theirs)",
-    "Re-initialized peakEquity from 0 \u2192 98.98 (was wiped by conflict resolution)",
-    "RISK_OFF confirmed: DD 50.6% >> 20% catastrophic threshold",
-    "No positions, no orders \u2014 capital preservation mode"
-  ],
+  "regimeConsistency": {
+    "riskRegimeJson": "RISK_OFF",
+    "arbiterState": "RISK_OFF",
+    "autonomousBrain": "RISK_OFF",
+    "allConsistent": true
+  },
+  "portfolio": {
+    "equity": 48.89,
+    "peakEquity": 98.98,
+    "withdrawable": 48.89,
+    "drawdownPct": 50.61,
+    "openPositions": 0,
+    "openOrders": 0
+  },
   "guardrails": {
-    "catastrophicDrawdownBreached": true,
-    "consecutiveStopOutsBreached": false,
-    "dailyLossLimitBreached": false
-  }
+    "catastrophicDD": {"threshold": 20.0, "actual": 50.61, "breached": true},
+    "dailyLossPct": {"threshold": 10.0, "actual": 0.0, "breached": false},
+    "consecutiveStopOuts": {"threshold": 4, "actual": 0, "breached": false}
+  },
+  "market": {
+    "BTC": 74861.5,
+    "ETH": 2363.95,
+    "SOL": 84.9345,
+    "HYPE": 44.582
+  },
+  "pnl": {
+    "allTime": {"value": -50.08, "pct": -50.6},
+    "weekly": {"value": 0.0, "pct": 0.0},
+    "daily": {"value": 0.0, "pct": 0.0}
+  },
+  "systemHealth": {
+    "vpsScanners": "OFFLINE",
+    "staleScannerCount": 8,
+    "lastVpsHeartbeat": "2026-03-24T01:30:06Z",
+    "hermesCronsActive": true
+  },
+  "actions": [],
+  "assessment": "COLD STORAGE — no positions, no activity, no risk. Account flat at $48.89 for 7+ days. RISK_OFF holding correctly. No emergency actions needed. VPS deployment offline — only Hermes crons running."
 }
