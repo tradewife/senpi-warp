@@ -1,43 +1,72 @@
 {
-  "generatedAt": "2026-04-15T20:32:00Z",
-  "reportType": "jido-portfolio-monitor",
-  "regime": "RISK_OFF",
-  "regimeConsistency": {
-    "riskRegimeJson": "RISK_OFF",
-    "arbiterState": "RISK_OFF",
-    "autonomousBrain": "RISK_OFF",
-    "allConsistent": true
+  "generatedAt": "2026-04-16T07:15:00Z",
+  "type": "jido-portfolio-review",
+  "regime": {
+    "mode": "RISK_OFF",
+    "source": "risk-regime.json",
+    "consistent": true,
+    "sources": {
+      "risk-regime.json": "RISK_OFF",
+      "autonomous-brain.json": "RISK_OFF",
+      "arbiter-state.json": "RISK_OFF"
+    }
   },
   "portfolio": {
     "equity": 48.89,
     "peakEquity": 98.98,
-    "withdrawable": 48.89,
     "drawdownPct": 50.61,
+    "withdrawable": 48.89,
     "openPositions": 0,
-    "openOrders": 0
+    "openOrders": 0,
+    "dailyPnl": 0.0,
+    "dailyCloses": 0
+  },
+  "strategies": [
+    {
+      "name": "wolf-primary",
+      "id": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+      "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+      "status": "ACTIVE",
+      "type": "CUSTOM",
+      "budget": 100,
+      "totalFunded": 100,
+      "accountValue": 48.89,
+      "roi": -51.11
+    },
+    {
+      "name": "arena (closed)",
+      "id": "48c83cfa-d51c-4875-9740-72bed9894d29",
+      "wallet": "0xdf0edb2516c71095a7250592062796d71bbf12aa",
+      "status": "CLOSED",
+      "type": "CUSTOM"
+    }
+  ],
+  "market": {
+    "BTC": 74629.5,
+    "ETH": 2351.05,
+    "SOL": 84.26
   },
   "guardrails": {
-    "catastrophicDD": {"threshold": 20.0, "actual": 50.61, "breached": true},
-    "dailyLossPct": {"threshold": 10.0, "actual": 0.0, "breached": false},
-    "consecutiveStopOuts": {"threshold": 4, "actual": 0, "breached": false}
+    "catastrophicDrawdownPct": 20,
+    "currentDrawdownPct": 50.61,
+    "breached": true,
+    "breachType": "catastrophic_drawdown",
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4,
+    "dailyLossPct": 0.0,
+    "dailyLossLimitPct": 10
   },
-  "market": {
-    "BTC": 74861.5,
-    "ETH": 2363.95,
-    "SOL": 84.9345,
-    "HYPE": 44.582
-  },
-  "pnl": {
-    "allTime": {"value": -50.08, "pct": -50.6},
-    "weekly": {"value": 0.0, "pct": 0.0},
-    "daily": {"value": 0.0, "pct": 0.0}
-  },
-  "systemHealth": {
-    "vpsScanners": "OFFLINE",
-    "staleScannerCount": 8,
-    "lastVpsHeartbeat": "2026-03-24T01:30:06Z",
+  "infrastructure": {
+    "vpsScannersOnline": false,
+    "vpsLastHeartbeat": "2026-03-24",
+    "vpsStaleDays": 23,
+    "staleCrons": [
+      "condor",
+      "sentinel",
+      "brain"
+    ],
     "hermesCronsActive": true
   },
   "actions": [],
-  "assessment": "COLD STORAGE — no positions, no activity, no risk. Account flat at $48.89 for 7+ days. RISK_OFF holding correctly. No emergency actions needed. VPS deployment offline — only Hermes crons running."
+  "assessment": "Cold storage. No positions, no orders, equity flat at $48.89 for 23+ days. DD 50.6% far exceeds 20% catastrophic limit. RISK_OFF correctly enforced across all 3 regime sources. VPS scanners offline for 23 days \u2014 only Hermes-managed cron jobs are running. No action needed \u2014 wait for manual reset signal."
 }
