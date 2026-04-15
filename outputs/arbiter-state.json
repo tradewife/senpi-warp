@@ -3,21 +3,15 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T10:47:26Z",
+  "lastCheckAt": "2026-04-15T18:46:56Z",
   "alerts": [
     {
       "type": "JIDO_CHECK",
       "severity": "INFO",
-      "message": "No open positions. RISK_OFF maintained. DD 51.11%. Withdrawable $48.89. Brain/regime synced. VPS scanners offline (22d stale).",
-      "ts": "2026-04-15T10:16:44Z"
-    },
-    {
-      "type": "JIDO_CHECK",
-      "severity": "INFO",
-      "message": "JIDO hourly check. No open positions. DD 51.11% (limit 20%). RISK_OFF active. No emergency actions needed.",
-      "ts": "2026-04-15T10:47:26Z"
+      "message": "JIDO check. No open positions. DD 51.11% (limit 20%). RISK_OFF active. Withdrawable $48.89. Brain/regime synced. VPS scanners offline (22d stale). BTC $74249, ETH $2351, SOL $84.88.",
+      "ts": "2026-04-15T18:46:56Z"
     }
   ],
   "dayStartDate": "2026-04-15",
-  "drawdownPctFromPeak": 51.112419
+  "drawdownPctFromPeak": 51.1124
 }
