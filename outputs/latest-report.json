@@ -1,35 +1,34 @@
 {
-  "generatedAt": "2026-04-15T07:47:52Z",
-  "source": "hermes-jido-cron",
+  "generatedAt": "2026-04-15T08:02:32Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%) \u2014 arbiter override active since 2026-04-15T07:01:08Z",
-  "accountValue": 48.887581,
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.887581,
-  "positions": [],
-  "openOrders": 0,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
+  ],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "dailyLossLimitPct": 10.0,
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
     "maxConsecutiveStopOuts": 4,
-    "breached": true,
-    "breachType": "catastrophicDrawdown"
-  },
-  "brainSync": {
-    "riskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "drawdownPctFromPeak": 51.11,
-    "synced": true
-  },
-  "vpsScanners": "ALL OFFLINE \u2014 last heartbeats 2026-03-24 (22+ days stale)",
-  "actions": "No actions needed. No open positions. RISK_OFF correctly enforced.",
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-    "originalBudget": 100.0
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
   }
 }
