@@ -1,34 +1,26 @@
 {
-  "generatedAt": "2026-04-15T20:01:29Z",
+  "timestamp": "2026-04-15T20:03:41.420761Z",
   "regime": "RISK_OFF",
   "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "withdrawable": 48.89,
+  "peakEquity": 98.98,
+  "drawdownPct": 50.6,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
+  "openOrders": 0,
+  "dailyPnl": 0.0,
+  "cumulativePnl": -50.08,
+  "vpsScannersOnline": false,
+  "lastVpsHeartbeat": "2026-03-24T01:30:06Z",
+  "vpsOfflineDays": 22,
+  "actions": [
+    "Resolved git merge conflict (arbiter-state.json took theirs)",
+    "Re-initialized peakEquity from 0 \u2192 98.98 (was wiped by conflict resolution)",
+    "RISK_OFF confirmed: DD 50.6% >> 20% catastrophic threshold",
+    "No positions, no orders \u2014 capital preservation mode"
   ],
-  "deadWeight": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
+    "catastrophicDrawdownBreached": true,
+    "consecutiveStopOutsBreached": false,
+    "dailyLossLimitBreached": false
   }
 }

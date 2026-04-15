@@ -1,6 +1,12 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 98.98,
+  "lastEquity": 48.89,
+  "dayStartEquity": 48.89,
+  "drawdownPct": 50.6,
+  "currentRegime": "RISK_OFF",
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-24T01:30:07Z"
+  "lastCheckAt": "2026-04-15T20:03:23.893099Z",
+  "alerts": [
+    "jido-init: re-initialized peakEquity from 0 to 98.98 (PnL history peak). DD 50.6% > 20% threshold \u2192 RISK_OFF confirmed."
+  ]
 }
