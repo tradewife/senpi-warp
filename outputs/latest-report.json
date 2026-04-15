@@ -1,21 +1,34 @@
 {
-  "generatedAt": "2026-04-15T19:16:27Z",
+  "generatedAt": "2026-04-15T20:01:29Z",
   "regime": "RISK_OFF",
-  "equity": 48.887581,
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.887581,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
   "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
+  ],
+  "deadWeight": [],
   "guardrails": {
+    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "breached": true,
-    "breachReason": "DD 51.11% > 20% limit"
-  },
-  "marketSnapshot": {
-    "BTC": 74532.5,
-    "ETH": 2361.25,
-    "SOL": 84.9685
-  },
-  "actions": [],
-  "notes": "No open positions. RISK_OFF correctly enforced. No emergency actions needed. VPS scanners offline (22d+ stale). Only Hermes crons active."
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
