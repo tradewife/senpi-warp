@@ -1,43 +1,45 @@
 {
-  "generatedAt": "2026-04-15T18:05:00Z",
+  "generatedAt": "2026-04-15T08:49:00Z",
+  "generatedBy": "jido-hermes-cron",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.11% (limit 20.0%)",
-  "accountValue": 48.887581,
+  "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.89,
-  "openPositions": 0,
-  "openOrders": 0,
-  "consecutiveStopOuts": 0,
+  "withdrawable": 48.887581,
+  "positions": {
+    "main": [],
+    "xyz": []
+  },
+  "openOrders": [],
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
     "dailyLossLimitPct": 10.0,
     "maxConsecutiveStopOuts": 4,
-    "breached": true,
-    "breachType": "catastrophicDrawdown"
+    "breached": [
+      "catastrophicDrawdownPct"
+    ],
+    "status": "RISK_OFF active since 2026-04-15T08:01:55Z"
   },
   "marketSnapshot": {
-    "BTC": 73721.5,
-    "ETH": 2316.45,
-    "SOL": 82.8795
+    "BTC": "74000.5",
+    "ETH": "2322.25",
+    "SOL": "83.0435"
   },
-  "vpsStatus": {
-    "online": false,
-    "lastHeartbeat": "2026-03-24T01:30:06Z",
-    "staleDays": 22,
-    "note": "All VPS scanners offline. Only Hermes-managed crons active."
+  "vpsHealth": {
+    "status": "OFFLINE",
+    "allScannersStale": true,
+    "lastHeartbeats": "2026-03-24",
+    "daysStale": 22
+  },
+  "syncStatus": {
+    "riskRegime": "RISK_OFF",
+    "autonomousBrain": "RISK_OFF",
+    "arbiterState": "RISK_OFF",
+    "drawdownPct": 51.11,
+    "allConsistent": true
   },
   "actionsTaken": [
-    "No emergency actions needed — 0 positions, 0 orders",
-    "Regime confirmed RISK_OFF across risk-regime.json + autonomous-brain.json",
-    "State files updated with current clearinghouse data"
+    "No actions needed \u2014 no open positions, regime correct and synced."
   ],
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-    "budget": 100.0,
-    "currentValue": 48.887581,
-    "pnl": -51.112419
-  }
+  "assessment": "Account dormant in RISK_OFF. 0 positions, 0 orders. DD 51.11% from $100 peak. VPS deployment offline 22 days. Only Hermes crons keeping watch. No recovery path until manual reset or fresh capital."
 }
