@@ -1,44 +1,28 @@
 {
-  "timestamp": "2026-04-15T03:32:26.404044+00:00",
+  "timestamp": "2026-04-15T04:48:08.864620+00:00",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% exceeds 20% limit",
-  "equity": 48.89,
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "accountValue": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
   "withdrawable": 48.89,
-  "positions": [],
+  "openPositions": 0,
   "openOrders": 0,
+  "consecutiveStopOuts": 0,
   "guardrails": {
-    "catastrophicDD": {
-      "limit": 20.0,
-      "current": 51.11,
-      "breached": true
-    },
-    "consecutiveStopOuts": {
-      "limit": 4,
-      "current": 0,
-      "breached": false
-    },
-    "dailyLoss": {
-      "breached": false
-    }
+    "catastrophicDD": "BREACHED",
+    "consecutiveStopouts": "OK",
+    "dailyLossLimit": "OK"
   },
-  "actions": [
-    "No action needed \u2014 RISK_OFF holding, no positions."
-  ],
-  "marketSnapshot": {
-    "BTC": 74230.5,
-    "ETH": 2326.05,
-    "SOL": 83.36,
-    "HYPE": 43.98
+  "brainSync": "OK",
+  "vpsScanners": "OFFLINE since 2026-03-24",
+  "markets": {
+    "BTC": 74250.5,
+    "ETH": 2328.15,
+    "SOL": 83.44
   },
-  "arenaWeek3": {
-    "pool": 6785.02,
-    "participants": 86,
-    "topAgent": "pr0br000",
-    "topROE": "67.08%"
-  },
+  "actionsTaken": "None \u2014 no positions, regime correct, brain synced",
   "warnings": [
-    "VPS scanners offline since 2026-03-24"
+    "VPS scanners offline for 22 days \u2014 Railway deployment likely down"
   ]
 }
