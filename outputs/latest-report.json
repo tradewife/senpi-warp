@@ -1,42 +1,44 @@
 {
-  "generatedAt": "2026-04-15T06:34:44Z",
+  "generatedAt": "2026-04-15T19:31:00Z",
   "regime": "RISK_OFF",
-  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-  "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "strategyStatus": "ACTIVE",
-  "initialBudget": 100,
-  "accountValue": 48.89,
-  "withdrawable": 48.89,
+  "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
+  "withdrawable": 48.887581,
   "openPositions": 0,
-  "openOrders": 0,
+  "dailyPnl": 0.0,
+  "consecutiveStopOuts": 0,
   "guardrails": {
     "catastrophicDD": {
-      "limit": 20,
+      "limit": 20.0,
       "actual": 51.11,
       "breached": true
     },
-    "dailyLoss": {
-      "limit": 10,
+    "dailyLossLimit": {
+      "limit": 10.0,
+      "actual": 0.0,
       "breached": false
     },
-    "consecutiveStopOuts": {
+    "maxConsecutiveStopOuts": {
       "limit": 4,
       "actual": 0,
       "breached": false
     }
   },
-  "actionsTaken": [
-    "None \u2014 0 positions, regime correctly RISK_OFF"
+  "actions": [
+    "RISK_OFF maintained \u2014 DD 51.1% exceeds 20% catastrophic threshold"
   ],
-  "warnings": [
-    "VPS scanners OFFLINE \u2014 all heartbeats stale since 2026-03-24 (22+ days)",
-    "peakEquity was 0 due to merge conflict resolution \u2014 re-initialized to $100"
-  ],
-  "marketSnapshot": {
-    "BTC": 73881.5,
-    "ETH": 2316.55,
-    "SOL": 82.9735
-  }
+  "market": {
+    "BTC": 73642.5,
+    "ETH": 2311.95,
+    "SOL": 82.7465
+  },
+  "strategyStatus": {
+    "wolf-primary": {
+      "status": "ACTIVE",
+      "accountValue": 48.89,
+      "positions": 0
+    }
+  },
+  "vpsScanners": "OFFLINE \u2014 last heartbeats 2026-03-24 (>22 days stale)"
 }
