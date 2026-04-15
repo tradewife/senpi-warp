@@ -1,28 +1,42 @@
 {
-  "timestamp": "2026-04-15T04:48:08.864620+00:00",
+  "generatedAt": "2026-04-15T06:34:44Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "strategyWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "strategyStatus": "ACTIVE",
+  "initialBudget": 100,
   "accountValue": 48.89,
+  "withdrawable": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.89,
   "openPositions": 0,
   "openOrders": 0,
-  "consecutiveStopOuts": 0,
   "guardrails": {
-    "catastrophicDD": "BREACHED",
-    "consecutiveStopouts": "OK",
-    "dailyLossLimit": "OK"
+    "catastrophicDD": {
+      "limit": 20,
+      "actual": 51.11,
+      "breached": true
+    },
+    "dailyLoss": {
+      "limit": 10,
+      "breached": false
+    },
+    "consecutiveStopOuts": {
+      "limit": 4,
+      "actual": 0,
+      "breached": false
+    }
   },
-  "brainSync": "OK",
-  "vpsScanners": "OFFLINE since 2026-03-24",
-  "markets": {
-    "BTC": 74250.5,
-    "ETH": 2328.15,
-    "SOL": 83.44
-  },
-  "actionsTaken": "None \u2014 no positions, regime correct, brain synced",
+  "actionsTaken": [
+    "None \u2014 0 positions, regime correctly RISK_OFF"
+  ],
   "warnings": [
-    "VPS scanners offline for 22 days \u2014 Railway deployment likely down"
-  ]
+    "VPS scanners OFFLINE \u2014 all heartbeats stale since 2026-03-24 (22+ days)",
+    "peakEquity was 0 due to merge conflict resolution \u2014 re-initialized to $100"
+  ],
+  "marketSnapshot": {
+    "BTC": 73881.5,
+    "ETH": 2316.55,
+    "SOL": 82.9735
+  }
 }
