@@ -1,17 +1,6 @@
 {
-  "peakEquity": 100.0,
-  "lastEquity": 48.887581,
-  "dayStartEquity": 48.887581,
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T20:01:29Z",
-  "alerts": [
-    {
-      "type": "JIDO_CHECK",
-      "severity": "INFO",
-      "message": "JIDO check. No open positions. DD 51.11% (limit 20%). RISK_OFF active. Withdrawable $48.89. Brain/regime synced. BTC $74532, ETH $2361, SOL $84.97.",
-      "ts": "2026-04-15T19:16:27Z"
-    }
-  ],
-  "dayStartDate": "2026-04-15",
-  "drawdownPctFromPeak": 51.1124
+  "lastCheckAt": "2026-03-24T01:30:07Z"
 }
