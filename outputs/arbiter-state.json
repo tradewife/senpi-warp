@@ -3,13 +3,13 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T19:31:00Z",
+  "lastCheckAt": "2026-04-15T07:47:52Z",
   "alerts": [
     {
       "type": "JIDO_CHECK",
       "severity": "INFO",
-      "message": "No open positions. RISK_OFF maintained. DD 51.1%. Withdrawable $48.89.",
-      "ts": "2026-04-15T19:31:00Z"
+      "message": "No open positions. RISK_OFF maintained. DD 51.11%. Withdrawable $48.89. Brain/regime synced.",
+      "ts": "2026-04-15T07:47:52Z"
     }
   ]
 }
