@@ -1,28 +1,21 @@
 {
-  "timestamp": "2026-04-15T10:31:00Z",
+  "generatedAt": "2026-04-15T19:16:27Z",
   "regime": "RISK_OFF",
   "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
   "withdrawable": 48.887581,
   "openPositions": 0,
-  "openOrders": 0,
-  "dailyPnl": 0.0,
-  "allTimePnl": -50.082419,
-  "lifetimeVolume": 951.52,
-  "vpsScannersOnline": false,
-  "vpsLastHeartbeat": "2026-03-24T01:30:06Z",
-  "alerts": [
-    "RISK_OFF active \u2014 DD 51.11% exceeds 20% catastrophic threshold",
-    "VPS scanners offline for 22+ days (since Mar 24)",
-    "Portfolio flat at $48.89 for 7+ days, no active trades"
-  ],
-  "actionsTaken": [
-    "Verified regime/brain sync \u2014 RISK_OFF consistent"
-  ],
   "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "currentDrawdownPct": 51.11,
-    "breached": true
-  }
+    "catastrophicDrawdownPct": 20,
+    "breached": true,
+    "breachReason": "DD 51.11% > 20% limit"
+  },
+  "marketSnapshot": {
+    "BTC": 74532.5,
+    "ETH": 2361.25,
+    "SOL": 84.9685
+  },
+  "actions": [],
+  "notes": "No open positions. RISK_OFF correctly enforced. No emergency actions needed. VPS scanners offline (22d+ stale). Only Hermes crons active."
 }
