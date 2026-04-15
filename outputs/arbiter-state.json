@@ -3,13 +3,13 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T08:48:32Z",
+  "lastCheckAt": "2026-04-15T10:16:44Z",
   "alerts": [
     {
       "type": "JIDO_CHECK",
       "severity": "INFO",
-      "message": "No open positions. RISK_OFF maintained. DD 51.11%. Withdrawable $48.89. Brain/regime synced. VPS scanners offline (22d stale).",
-      "ts": "2026-04-15T08:48:32Z"
+      "message": "No open positions. RISK_OFF maintained. DD 51.11%. Withdrawable $48.89. Brain/regime synced. VPS scanners offline (22d stale). HL open-orders endpoint 502 (transient).",
+      "ts": "2026-04-15T10:16:44Z"
     }
   ],
   "dayStartDate": "2026-04-15"
