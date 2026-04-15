@@ -1,28 +1,34 @@
 {
-  "timestamp": "2026-04-14T23:16:45Z",
+  "generatedAt": "2026-04-15T02:01:24Z",
   "regime": "RISK_OFF",
-  "accountValue": 48.89,
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "withdrawable": 48.89,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
   "openPositions": 0,
-  "openOrders": 0,
-  "guardrails": {
-    "catastrophicDD": 20,
-    "currentDD": 51.11,
-    "breached": true,
-    "breachType": "catastrophic_drawdown"
-  },
-  "prices": {
-    "BTC": 74079.5,
-    "ETH": 2317.65,
-    "SOL": 83.57,
-    "HYPE": 43.44
-  },
-  "actions": [
-    "No positions to manage",
-    "RISK_OFF enforced correctly",
-    "Brain drawdown synced to 51.11%"
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "alerts": []
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
