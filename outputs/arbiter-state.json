@@ -1,14 +1,6 @@
 {
-  "peakEquity": 98.98,
-  "lastEquity": 48.89,
-  "dayStartEquity": 48.89,
-  "drawdownPct": 50.61,
-  "currentRegime": "RISK_OFF",
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T21:16:08.000000Z",
-  "alerts": [
-    "jido-init: re-initialized peakEquity from 0 to 98.98 (PnL history peak). DD 50.6% > 20% threshold \u2192 RISK_OFF confirmed.",
-    "jido-2026-04-15T20:32Z: Cold storage confirmed. 0 positions, 0 orders, equity flat at $48.89 for 7+ days. RISK_OFF holding. All 3 regime sources consistent. VPS scanners offline (22d stale).",
-    "jido-2026-04-15T21:16:08.000000Z: Cold storage confirmed. 0 positions, 0 orders. Equity $48.89 flat. DD 50.6% > 20% limit. RISK_OFF holding. All 3 regime sources consistent. VPS scanners offline (23d stale)."
-  ]
+  "lastCheckAt": "2026-03-24T01:14:37Z"
 }
