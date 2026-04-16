@@ -6,8 +6,8 @@
       "status": "HOLD",
       "watchCount": 0,
       "createdAt": "2026-03-29T14:04:23Z",
-      "lastCheckedAt": "2026-04-02T14:01:56Z",
-      "lastRank": 12,
+      "lastCheckedAt": "2026-04-16T15:48:37Z",
+      "lastRank": 10,
       "score": 67.4,
       "winRate": 100,
       "totalPnl": 0
@@ -15,8 +15,8 @@
     {
       "traderAddress": "0xfdbaa5eee7cdf45eec3a71a672065a67191fda7a",
       "traderLabel": "ELITE",
-      "status": "HOLD",
-      "watchCount": 0,
+      "status": "WATCH",
+      "watchCount": 1,
       "createdAt": "2026-03-29T14:04:23Z",
       "lastCheckedAt": "2026-04-02T14:01:56Z",
       "lastRank": 27,
@@ -33,5 +33,5 @@
     }
   ],
   "lastUpdated": "2026-03-24T14:03:18.336307Z",
-  "updatedAt": "2026-04-02T14:01:54Z"
+  "updatedAt": "2026-04-16T15:48:35Z"
 }
