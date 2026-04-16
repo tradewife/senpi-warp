@@ -3,7 +3,7 @@
   "lastEquity": 48.89,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-15T21:47:32Z",
+  "lastCheckAt": "2026-04-16T02:03:59Z",
   "alerts": [
     {
       "type": "RISK_OFF_ACTIVE",
@@ -23,5 +23,6 @@
       "severity": "info",
       "detectedAt": "2026-04-15T21:47:32Z"
     }
-  ]
+  ],
+  "dayStartDate": "2026-04-16"
 }
