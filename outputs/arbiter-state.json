@@ -3,8 +3,14 @@
   "lastEquity": 48.89,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-22T19:36:22Z",
+  "lastCheckAt": "2026-04-23T05:30:00Z",
   "alerts": [
+    {
+      "type": "JIDO_RUN",
+      "message": "JIDO check 2026-04-23T05:30:00Z. Regime=RISK_OFF, DD=51.1%, equity=$48.89, 0 positions, 0 open orders. No action needed.",
+      "severity": "info",
+      "detectedAt": "2026-04-23T05:30:00Z"
+    },
     {
       "type": "RISK_OFF_ACTIVE",
       "message": "DD 51.1% > catastrophic 20%. RISK_OFF enforced. 0 positions, $48.89 withdrawable.",
@@ -13,7 +19,7 @@
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
-      "message": "All VPS scanner heartbeats stale since 2026-03-24 (23+ days). Railway/VPS deployment likely down.",
+      "message": "All VPS scanner heartbeats stale since 2026-03-24 (29+ days). Railway/VPS deployment likely down.",
       "severity": "warning",
       "detectedAt": "2026-04-15T21:47:32Z"
     },
@@ -24,5 +30,5 @@
       "detectedAt": "2026-04-15T21:47:32Z"
     }
   ],
-  "dayStartDate": "2026-04-22"
+  "dayStartDate": "2026-04-23"
 }
