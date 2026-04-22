@@ -3,7 +3,7 @@
   "lastEquity": 48.89,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-23T05:30:00Z",
+  "lastCheckAt": "2026-04-22T20:02:45Z",
   "alerts": [
     {
       "type": "JIDO_RUN",
@@ -30,5 +30,5 @@
       "detectedAt": "2026-04-15T21:47:32Z"
     }
   ],
-  "dayStartDate": "2026-04-23"
+  "dayStartDate": "2026-04-22"
 }
