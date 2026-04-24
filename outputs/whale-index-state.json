@@ -30,8 +30,9 @@
     {
       "timestamp": "2026-03-24T14:03:18.336312Z",
       "note": "Whale index update executed - real implementation would analyze top traders"
-    }
+    },
+    "2026-04-24T15:00:34Z: No discovery data available"
   ],
   "lastUpdated": "2026-03-24T14:03:18.336307Z",
-  "updatedAt": "2026-04-16T15:48:35Z"
+  "updatedAt": "2026-04-24T15:00:28Z"
 }
