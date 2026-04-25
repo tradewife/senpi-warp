@@ -1,34 +1,24 @@
 {
-  "generatedAt": "2026-04-25T20:01:01Z",
+  "generatedAt": "2026-04-25T20:01:52Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
+  "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "dailyPnl": 0.0,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "openOrders": 0,
+  "withdrawable": 48.887581,
+  "consecutiveStopOuts": 0,
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
-  }
+    "catastrophicDD": "BREACHED",
+    "dailyLossLimit": "OK",
+    "maxConsecutiveStopOuts": "OK"
+  },
+  "actions": [],
+  "regimeSync": {
+    "riskRegimeJson": "RISK_OFF",
+    "autonomousBrainJson": "RISK_OFF",
+    "inSync": true
+  },
+  "vpsStatus": "OFFLINE - all heartbeats stale since 2026-03-24 (32+ days)"
 }
