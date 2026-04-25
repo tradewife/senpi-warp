@@ -1,24 +1,39 @@
 {
-  "generatedAt": "2026-04-25T20:01:52Z",
+  "generatedAt": "2026-04-25T23:47:16Z",
   "regime": "RISK_OFF",
-  "equity": 48.887581,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0.0,
-  "openPositions": 0,
-  "openOrders": 0,
-  "withdrawable": 48.887581,
-  "consecutiveStopOuts": 0,
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "dayStart": 48.887581,
+    "withdrawable": 48.887581
+  },
+  "drawdown": {
+    "fromPeakPct": 51.11,
+    "catastrophicLimitPct": 20.0,
+    "breached": true
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0
+  },
   "guardrails": {
-    "catastrophicDD": "BREACHED",
-    "dailyLossLimit": "OK",
-    "maxConsecutiveStopOuts": "OK"
+    "drawdownBreached": true,
+    "stopOutsBreached": false,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
+  },
+  "market": {
+    "BTC": 77571.5,
+    "ETH": 2317.55,
+    "SOL": 86.0885
   },
   "actions": [],
-  "regimeSync": {
-    "riskRegimeJson": "RISK_OFF",
-    "autonomousBrainJson": "RISK_OFF",
-    "inSync": true
-  },
-  "vpsStatus": "OFFLINE - all heartbeats stale since 2026-03-24 (32+ days)"
+  "warnings": [
+    "VPS scanners offline 33+ days",
+    "DD 51.11% \u2014 RISK_OFF until equity recovers above 20% DD threshold"
+  ]
 }
