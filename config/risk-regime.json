@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-04-26T13:01:00Z",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC slope +2.04%, ATR 0.23%; ETH slope -0.23%, ATR 0.25%; Funding normal. BTC strong but ETH not aligned for RISK_ON.",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-04-26T03:47:10Z",
+  "updatedBy": "jido-emergency",
+  "reason": "REGIME_OVERRIDE by JIDO: drawdown 51.1% exceeds catastrophic threshold 20%. Synced with autonomous-brain.json which was already RISK_OFF.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
@@ -13,8 +13,7 @@
       "autoEntryEnabled": true,
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
-      "cooldownAfterLossSec": 0,
-      "_note": "XYZ leverage set to 0 \u2014 XYZ equities banned per ORCA hardened rules"
+      "cooldownAfterLossSec": 0
     },
     "BASELINE": {
       "maxSlots": 2,
@@ -25,8 +24,7 @@
       "autoEntryEnabled": false,
       "dslPreset": "high_water",
       "cooldownAfterProfitSec": 0,
-      "cooldownAfterLossSec": 60,
-      "_note": "Default. Leverage capped at 10x (was 15x \u2014 Dire Wolf 25x blowup lesson)."
+      "cooldownAfterLossSec": 60
     },
     "RISK_OFF": {
       "maxSlots": 0,
@@ -48,11 +46,6 @@
     "perTradeRiskPct": 1.0,
     "minLeverage": 7,
     "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "_lessons": [
-      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
-      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
-      "3 positions max \u2014 concentration beats diversification across all agents"
-    ]
+    "maxPositionsTotal": 3
   }
 }

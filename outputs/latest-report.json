@@ -1,54 +1,85 @@
 {
-  "generatedAt": "2026-04-26T02:33:03Z",
-  "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "regimeUpdatedAt": "2026-04-26T01:00:30Z",
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+  "generatedAt": "2026-04-26T03:47:53Z",
+  "generatedBy": "jido-cron",
+  "regime": {
+    "riskMode": "RISK_OFF",
+    "source": "jido-emergency",
+    "reason": "Drawdown 51.1% exceeds 20% catastrophic threshold. Regime synced across all state files."
+  },
+  "portfolio": {
+    "accountValue": 48.89,
+    "withdrawable": 48.89,
     "budget": 100.0,
-    "currentEquity": 48.887581,
-    "withdrawable": 48.887581,
-    "drawdownPct": 51.11
+    "drawdownPct": 51.11,
+    "openPositions": 0,
+    "openOrders": 0,
+    "marginUsed": 0.0
   },
-  "positions": {
-    "main": [],
-    "xyz": [],
-    "totalCount": 0
-  },
-  "orders": {
-    "open": [],
-    "totalCount": 0
+  "market": {
+    "BTC": 77332.5,
+    "ETH": 2307.25,
+    "SOL": 85.82,
+    "HYPE": 41.28
   },
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
+    "catastrophicDrawdownPct": 20.0,
     "actualDrawdownPct": 51.11,
     "breached": true,
-    "dailyLossLimitPct": 10,
+    "dailyLossPct": 0.0,
     "consecutiveStopOuts": 0,
     "maxConsecutiveStopOuts": 4
   },
-  "marketSnapshot": {
-    "BTC": 77516.5,
-    "ETH": 2316.35,
-    "SOL": 86.23
-  },
-  "systemHealth": {
-    "vpsScannersOffline": true,
-    "lastHeartbeatDate": "2026-03-24",
-    "staleCrons": [
-      "condor",
-      "sentinel",
-      "brain"
-    ],
-    "note": "All VPS scanner heartbeats >33 days stale. Railway/VPS deployment likely down."
-  },
-  "actionsTaken": [
-    "peakEquity re-initialized to $100.0 (was 0)",
-    "RISK_OFF regime verified and maintained",
-    "autonomous-brain.json already in sync (verified)",
-    "No open positions \u2014 no emergency SL needed"
+  "alerts": [
+    {
+      "type": "REGIME_OVERRIDE",
+      "severity": "CRITICAL",
+      "message": "risk-regime.json was BASELINE (set by hermes-regime cron at 13:01Z) but autonomous-brain was RISK_OFF with 51.1% DD. Overridden to RISK_OFF.",
+      "timestamp": "2026-04-26T03:47:53Z"
+    },
+    {
+      "type": "VPS_SCANNERS_OFFLINE",
+      "severity": "WARNING",
+      "message": "All VPS scanners (komodo, condor, orca, shark, rhino, sentinel, dsl-runner, sm-flip) last heartbeat 2026-03-24 \u2014 33 days stale. Railway deployment likely down.",
+      "timestamp": "2026-04-26T03:47:53Z"
+    },
+    {
+      "type": "PEAK_EQUITY_REINITIALIZED",
+      "severity": "INFO",
+      "message": "arbiter-state.json had peakEquity=0 after merge conflict resolution. Re-initialized to budget $100.",
+      "timestamp": "2026-04-26T03:47:53Z"
+    }
   ],
-  "assessment": "Account flat at $48.89 (51.11% DD from $100.0 budget). RISK_OFF correctly enforced. No open positions, no open orders. VPS scanners offline since 2026-03-24 \u2014 only Hermes cron jobs operational. Peak equity was zeroed (conflict resolution artifact) and re-initialized from strategy budget."
+  "actions": [
+    "Resolved git merge conflict in arbiter-state.json (took theirs)",
+    "Re-initialized arbiter-state.json peakEquity to $100",
+    "Overrode risk-regime.json BASELINE -> RISK_OFF (regime-classifier race condition)",
+    "Synced autonomous-brain.json execution policy with RISK_OFF regime",
+    "Updated drawdownPctFromPeak from stale 0.0 to actual 51.11%"
+  ],
+  "strategy": {
+    "wolf-primary": {
+      "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+      "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+      "accountValue": 48.89,
+      "withdrawable": 48.89,
+      "positions": [],
+      "orders": []
+    }
+  },
+  "vpsStatus": {
+    "deployment": "OFFLINE",
+    "lastKnownHeartbeat": "2026-03-24T01:14:36Z",
+    "staleDays": 33,
+    "affectedScanners": [
+      "komodo",
+      "condor",
+      "orca",
+      "shark",
+      "rhino",
+      "sentinel",
+      "dsl-runner",
+      "sm-flip",
+      "risk-arbiter"
+    ]
+  }
 }
