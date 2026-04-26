@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-26T23:02:40Z",
+  "generatedAt": "2026-04-26T23:48:49.230117+00:00",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "regimeReason": "Catastrophic DD 51.11% (limit 20.0%)",
   "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
@@ -17,9 +17,9 @@
   },
   "positions": [],
   "marketSnapshot": {
-    "BTC": "$78,287.50",
-    "ETH": "$2,360.35",
-    "SOL": "$86.67"
+    "BTC": "$78,598.50",
+    "ETH": "$2,371.55",
+    "SOL": "$86.95"
   },
   "actions": [
     "No actions \u2014 RISK_OFF with no open positions"
