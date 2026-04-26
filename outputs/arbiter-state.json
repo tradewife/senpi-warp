@@ -1,19 +1,6 @@
 {
-  "peakEquity": 100.0,
-  "dayStartEquity": 48.887581,
-  "lastEquity": 48.887581,
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-26T02:33:03Z",
-  "alerts": [
-    {
-      "type": "REGIME_MAINTAINED",
-      "message": "RISK_OFF maintained \u2014 DD 51.11% (limit 20%)",
-      "timestamp": "2026-04-26T02:33:03Z"
-    },
-    {
-      "type": "PEAK_INITIALIZED",
-      "message": "peakEquity re-initialized from budget $100.0 (was 0 due to conflict resolution)",
-      "timestamp": "2026-04-26T02:33:03Z"
-    }
-  ]
+  "lastCheckAt": "2026-03-24T01:14:37Z"
 }
