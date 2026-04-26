@@ -1,78 +1,58 @@
 {
-  "generatedAt": "2026-04-26T06:31:48.531710+00:00",
-  "generatedBy": "jido-cron",
-  "regime": {
-    "riskMode": "RISK_OFF",
-    "source": "jido-emergency",
-    "reason": "Drawdown 51.11% exceeds 20% catastrophic threshold. No open positions. RISK_OFF holding since 2026-04-26T03:47Z."
-  },
-  "portfolio": {
-    "accountValue": 48.89,
-    "withdrawable": 48.89,
-    "budget": 100.0,
+  "generatedAt": "2026-04-26T07:17:00Z",
+  "regime": "RISK_OFF",
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "regimeUpdatedBy": "waifu-regime (arbiter-override)",
+  "equity": {
+    "current": 48.89,
+    "peak": 100.0,
     "drawdownPct": 51.11,
-    "openPositions": 0,
-    "openOrders": 0,
-    "marginUsed": 0.0
+    "withdrawable": 48.89,
+    "dayStart": 48.89
   },
-  "market": {
-    "BTC": 77916.5,
-    "ETH": 2328.25,
-    "SOL": 86.3775,
-    "HYPE": 41.2565
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
-    "actualDrawdownPct": 51.11,
-    "breached": true,
-    "dailyLossPct": 0.0,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
+    "dailyLossLimitPct": 10.0,
+    "maxConsecutiveStopOuts": 4,
+    "breached": ["CATASTROPHIC_DD"],
+    "clear": []
+  },
+  "marketSnapshot": {
+    "BTC": 77988.5,
+    "ETH": 2328.85,
+    "SOL": 86.49
+  },
+  "brainSync": {
+    "riskMode": "RISK_OFF",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0,
+    "drawdownPctFromPeak": 51.11,
+    "consistent": true
   },
   "alerts": [
     {
       "type": "CATASTROPHIC_DD_HOLD",
       "severity": "CRITICAL",
-      "message": "Drawdown 51.11% exceeds 20% catastrophic threshold. RISK_OFF holding. No open positions. Equity $48.89 from peak $100.00.",
-      "timestamp": "2026-04-26T06:31:48.531710+00:00"
+      "message": "Drawdown 51.11% exceeds 20% threshold. RISK_OFF enforced. No open positions. Equity $48.89 / Peak $100.00."
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
       "severity": "WARNING",
-      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active.",
-      "timestamp": "2026-04-26T06:31:48.531710+00:00"
+      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active."
     }
   ],
-  "actions": [
-    "Verified clearinghouse state: 0 positions, 0 orders, $48.89 withdrawable",
-    "Confirmed RISK_OFF regime consistency across risk-regime.json, autonomous-brain.json, arbiter-state.json",
-    "No naked positions requiring emergency SL",
-    "SERR031 on strategy_list \u2014 clearinghouse state used as fallback (working correctly)"
-  ],
-  "strategy": {
-    "wolf-primary": {
-      "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-      "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-      "accountValue": 48.89,
-      "withdrawable": 48.89,
-      "positions": [],
-      "orders": []
-    }
-  },
-  "vpsStatus": {
-    "deployment": "OFFLINE",
-    "lastKnownHeartbeat": "2026-03-24T01:14:36Z",
-    "staleDays": 33,
-    "affectedScanners": [
-      "komodo",
-      "condor",
-      "orca",
-      "shark",
-      "rhino",
-      "sentinel",
-      "dsl-runner",
-      "sm-flip",
-      "risk-arbiter"
-    ]
-  }
+  "actionsTaken": [
+    "Verified RISK_OFF regime consistent across risk-regime.json and autonomous-brain.json",
+    "Confirmed zero open positions and zero open orders",
+    "Verified drawdownPctFromPeak=51.11% matches actual calculation",
+    "Updated arbiter-state.json with latest equity snapshot"
+  ]
 }
