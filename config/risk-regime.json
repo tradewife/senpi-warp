@@ -1,8 +1,8 @@
 {
   "riskMode": "RISK_OFF",
-  "updatedAt": "2026-04-26T03:47:10Z",
-  "updatedBy": "jido-emergency",
-  "reason": "REGIME_OVERRIDE by JIDO: drawdown 51.1% exceeds catastrophic threshold 20%. Synced with autonomous-brain.json which was already RISK_OFF.",
+  "updatedAt": "2026-04-26T05:00:38Z",
+  "updatedBy": "waifu-regime (arbiter-override)",
+  "reason": "Catastrophic DD 51.1% (limit 20.0%)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
