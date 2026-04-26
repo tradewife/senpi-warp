@@ -1,39 +1,34 @@
 {
-  "generatedAt": "2026-04-25T23:47:16Z",
+  "generatedAt": "2026-04-26T02:00:41Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "dayStart": 48.887581,
-    "withdrawable": 48.887581
-  },
-  "drawdown": {
-    "fromPeakPct": 51.11,
-    "catastrophicLimitPct": 20.0,
-    "breached": true
-  },
-  "positions": {
-    "open": 0,
-    "details": []
-  },
-  "orders": {
-    "open": 0
-  },
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
+  ],
+  "deadWeight": [],
   "guardrails": {
-    "drawdownBreached": true,
-    "stopOutsBreached": false,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
-  },
-  "market": {
-    "BTC": 77571.5,
-    "ETH": 2317.55,
-    "SOL": 86.0885
-  },
-  "actions": [],
-  "warnings": [
-    "VPS scanners offline 33+ days",
-    "DD 51.11% \u2014 RISK_OFF until equity recovers above 20% DD threshold"
-  ]
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0,
+    "_lessons": [
+      "Fox's 10% daily loss > Vixen's 25% \u2014 tighter limit bled 2.5x less",
+      "7-10x leverage band \u2014 sub-7x can't overcome fees, >10x blows up",
+      "3 positions max \u2014 concentration beats diversification across all agents"
+    ]
+  }
 }
