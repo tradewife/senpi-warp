@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-04-26T03:47:53Z",
+  "generatedAt": "2026-04-26T06:31:48.531710+00:00",
   "generatedBy": "jido-cron",
   "regime": {
     "riskMode": "RISK_OFF",
     "source": "jido-emergency",
-    "reason": "Drawdown 51.1% exceeds 20% catastrophic threshold. Regime synced across all state files."
+    "reason": "Drawdown 51.11% exceeds 20% catastrophic threshold. No open positions. RISK_OFF holding since 2026-04-26T03:47Z."
   },
   "portfolio": {
     "accountValue": 48.89,
@@ -16,10 +16,10 @@
     "marginUsed": 0.0
   },
   "market": {
-    "BTC": 77332.5,
-    "ETH": 2307.25,
-    "SOL": 85.82,
-    "HYPE": 41.28
+    "BTC": 77916.5,
+    "ETH": 2328.25,
+    "SOL": 86.3775,
+    "HYPE": 41.2565
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
@@ -31,30 +31,23 @@
   },
   "alerts": [
     {
-      "type": "REGIME_OVERRIDE",
+      "type": "CATASTROPHIC_DD_HOLD",
       "severity": "CRITICAL",
-      "message": "risk-regime.json was BASELINE (set by hermes-regime cron at 13:01Z) but autonomous-brain was RISK_OFF with 51.1% DD. Overridden to RISK_OFF.",
-      "timestamp": "2026-04-26T03:47:53Z"
+      "message": "Drawdown 51.11% exceeds 20% catastrophic threshold. RISK_OFF holding. No open positions. Equity $48.89 from peak $100.00.",
+      "timestamp": "2026-04-26T06:31:48.531710+00:00"
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
       "severity": "WARNING",
-      "message": "All VPS scanners (komodo, condor, orca, shark, rhino, sentinel, dsl-runner, sm-flip) last heartbeat 2026-03-24 \u2014 33 days stale. Railway deployment likely down.",
-      "timestamp": "2026-04-26T03:47:53Z"
-    },
-    {
-      "type": "PEAK_EQUITY_REINITIALIZED",
-      "severity": "INFO",
-      "message": "arbiter-state.json had peakEquity=0 after merge conflict resolution. Re-initialized to budget $100.",
-      "timestamp": "2026-04-26T03:47:53Z"
+      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active.",
+      "timestamp": "2026-04-26T06:31:48.531710+00:00"
     }
   ],
   "actions": [
-    "Resolved git merge conflict in arbiter-state.json (took theirs)",
-    "Re-initialized arbiter-state.json peakEquity to $100",
-    "Overrode risk-regime.json BASELINE -> RISK_OFF (regime-classifier race condition)",
-    "Synced autonomous-brain.json execution policy with RISK_OFF regime",
-    "Updated drawdownPctFromPeak from stale 0.0 to actual 51.11%"
+    "Verified clearinghouse state: 0 positions, 0 orders, $48.89 withdrawable",
+    "Confirmed RISK_OFF regime consistency across risk-regime.json, autonomous-brain.json, arbiter-state.json",
+    "No naked positions requiring emergency SL",
+    "SERR031 on strategy_list \u2014 clearinghouse state used as fallback (working correctly)"
   ],
   "strategy": {
     "wolf-primary": {
