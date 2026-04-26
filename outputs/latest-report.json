@@ -1,29 +1,32 @@
 {
-  "generatedAt": "2026-04-26T08:01:25Z",
+  "generatedAt": "2026-04-26T22:33:24Z",
   "regime": "RISK_OFF",
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
   "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "dailyPnl": 0.0,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "openOrders": 0,
+  "withdrawable": 48.89,
+  "consecutiveStopOuts": 0,
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "catastrophicDD": "BREACHED (51.11% > 20.0%)",
+    "dailyLossLimit": "CLEAR",
+    "consecutiveStopOuts": "CLEAR (0 < 4)"
+  },
+  "positions": [],
+  "marketSnapshot": {
+    "BTC": "$78,419.50",
+    "ETH": "$2,364.05",
+    "SOL": "$86.71"
+  },
+  "actions": [
+    "No actions \u2014 RISK_OFF with no open positions"
+  ],
+  "warnings": [
+    "VPS scanners offline since 2026-03-24 (34 days)",
+    "Catastrophic drawdown 51.11% \u2014 RISK_OFF must be maintained"
+  ],
+  "brainRegimeSync": "SYNCHRONIZED"
 }

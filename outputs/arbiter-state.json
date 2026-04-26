@@ -3,19 +3,19 @@
   "lastEquity": 48.89,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-26T08:01:25Z",
+  "lastCheckAt": "2026-04-26T22:33:24Z",
   "alerts": [
     {
       "type": "CATASTROPHIC_DD_HOLD",
       "severity": "CRITICAL",
       "message": "Drawdown 51.11% exceeds 20% catastrophic threshold. RISK_OFF holding. No open positions. Equity $48.89 from peak $100.00.",
-      "timestamp": "2026-04-26T07:48:02.915674+00:00"
+      "timestamp": "2026-04-26T22:33:24.689522+00:00"
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
       "severity": "WARNING",
-      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active.",
-      "timestamp": "2026-04-26T07:48:02.915674+00:00"
+      "message": "All VPS scanners offline since 2026-03-24 (34 days). Only Hermes cron jobs active.",
+      "timestamp": "2026-04-26T22:33:24.689532+00:00"
     }
   ],
   "dayStartDate": "2026-04-26"
