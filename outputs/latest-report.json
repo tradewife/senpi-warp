@@ -1,58 +1,55 @@
 {
-  "generatedAt": "2026-04-26T07:17:00Z",
-  "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "regimeUpdatedBy": "waifu-regime (arbiter-override)",
+  "generatedAt": "2026-04-26T07:48:22.386592+00:00",
+  "generatedBy": "jido-cron",
+  "regime": {
+    "riskMode": "RISK_OFF",
+    "reason": "Catastrophic DD 51.1% (limit 20.0%)",
+    "updatedAt": "2026-04-26T07:00:30Z",
+    "updatedBy": "waifu-regime (arbiter-override)"
+  },
   "equity": {
     "current": 48.89,
     "peak": 100.0,
     "drawdownPct": 51.11,
-    "withdrawable": 48.89,
-    "dayStart": 48.89
+    "withdrawable": 48.89
   },
   "positions": {
-    "open": 0,
-    "details": []
+    "main": [],
+    "xyz": [],
+    "totalOpen": 0
   },
   "orders": {
     "open": 0
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
-    "dailyLossLimitPct": 10.0,
+    "actualDrawdownPct": 51.11,
+    "breached": true,
+    "consecutiveStopOuts": 0,
     "maxConsecutiveStopOuts": 4,
-    "breached": ["CATASTROPHIC_DD"],
-    "clear": []
-  },
-  "marketSnapshot": {
-    "BTC": 77988.5,
-    "ETH": 2328.85,
-    "SOL": 86.49
-  },
-  "brainSync": {
-    "riskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "drawdownPctFromPeak": 51.11,
-    "consistent": true
+    "dailyLossLimitPct": 10
   },
   "alerts": [
     {
       "type": "CATASTROPHIC_DD_HOLD",
       "severity": "CRITICAL",
-      "message": "Drawdown 51.11% exceeds 20% threshold. RISK_OFF enforced. No open positions. Equity $48.89 / Peak $100.00."
+      "message": "Drawdown 51.11% exceeds 20% catastrophic threshold. RISK_OFF holding. No open positions. Equity $48.89 from peak $100.00.",
+      "timestamp": "2026-04-26T07:48:22.386592+00:00"
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
       "severity": "WARNING",
-      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active."
+      "message": "All VPS scanners offline since 2026-03-24 (33 days). Only Hermes cron jobs active.",
+      "timestamp": "2026-04-26T07:48:22.386592+00:00"
     }
   ],
-  "actionsTaken": [
-    "Verified RISK_OFF regime consistent across risk-regime.json and autonomous-brain.json",
-    "Confirmed zero open positions and zero open orders",
-    "Verified drawdownPctFromPeak=51.11% matches actual calculation",
-    "Updated arbiter-state.json with latest equity snapshot"
-  ]
+  "actions": [],
+  "brainSync": {
+    "riskRegimeMatches": true,
+    "blockNewEntriesCorrect": true,
+    "allowAutoEntryCorrect": true,
+    "maxSlotsCapCorrect": true,
+    "drawdownPctMatches": true
+  },
+  "pendingSignals": 0
 }
