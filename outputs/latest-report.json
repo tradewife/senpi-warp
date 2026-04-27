@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T17:46:48.037387+00:00",
+  "generatedAt": "2026-04-28T04:31:00Z",
   "regime": "RISK_OFF",
   "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
   "strategy": "wolf-primary",
@@ -13,9 +13,9 @@
     "openOrders": 0
   },
   "market": {
-    "BTC": 76810.5,
-    "ETH": 2288.95,
-    "SOL": 84.4925
+    "BTC": 76673.5,
+    "ETH": 2285.55,
+    "SOL": 84.4385
   },
   "guardrails": {
     "catastrophicDD": {
@@ -37,8 +37,17 @@
   "vpsScanners": {
     "status": "OFFLINE",
     "lastHeartbeat": "2026-03-24T01:14:36Z",
-    "daysOffline": 35
+    "daysOffline": 36
+  },
+  "brainSync": {
+    "topLevelRiskMode": "RISK_OFF",
+    "epRiskMode": "RISK_OFF",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0,
+    "drawdownPctFromPeak": 51.11,
+    "syncOk": true
   },
   "actions": [],
-  "assessment": "RISK_OFF mode holding. No open positions, no orders. Account value $48.89 (drawdown 51.11% from $100.00 peak). VPS deployment offline for 35+ days \u2014 all scanners stale since 2026-03-24. Only Hermes-managed cron jobs (regime, JIDO) remain active. Strategy list API returns SERR031 but clearinghouse reads work fine."
+  "assessment": "RISK_OFF holding correctly. No positions, no orders. Account $48.89 (DD 51.11% from $100 peak). All 3 state files (risk-regime, autonomous-brain, arbiter-state) are consistent. VPS offline 36 days. No action needed."
 }

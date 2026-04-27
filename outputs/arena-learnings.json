@@ -1,22 +1,77 @@
 {
-  "generatedAt": "2026-04-18T02:07:14Z",
+  "generatedAt": "2026-04-28T04:00:00Z",
   "ourStats": {
-    "closes": 1,
+    "rank": 14,
+    "closes": 0,
     "winRate": 0.0,
-    "totalPnl": -51.11
+    "totalPnl": 0.0,
+    "balance": 48.89,
+    "trades": 0,
+    "volume": 0.0
   },
-  "arenaTop5AvgWinRate": 99.5,
+  "arenaOverview": {
+    "weekNumber": 5,
+    "totalParticipants": 97,
+    "prizePool": 5353.76,
+    "weekEndsAt": "2026-04-30T00:00:00Z",
+    "profitableCount": 13,
+    "breakevenCount": 47,
+    "losingCount": 37
+  },
+  "arenaTop5AvgWinRate": null,
+  "arenaTop5AvgROE": 12.34,
+  "arenaTop5AvgTrades": 150,
+  "topPerformerProfile": {
+    "name": "BaldEagle2",
+    "rank": 1,
+    "roe": 15.88,
+    "pnl": 153.85,
+    "trades": 38,
+    "volume": 48080,
+    "tools": 13,
+    "usesRatchet": true
+  },
+  "ratchetStopAnalysis": {
+    "usersWithRatchet": 23,
+    "pctUsers": 0.24,
+    "top5WithRatchet": 2,
+    "note": "2 of top 5 use ratchet stops"
+  },
   "recommendations": [
     {
-      "action": "study_top_strategies",
+      "action": "fix_auth_token",
+      "confidence": "absolute",
+      "reason": "SENPI_AUTH_TOKEN expired (401 errors). Cannot execute any trades or read user-scoped data.",
+      "risk": "critical"
+    },
+    {
+      "action": "reclassify_regime",
+      "confidence": "high",
+      "reason": "System has been RISK_OFF for 35+ days since March 24 BTC crash. Market has recovered significantly. Re-run regime classification.",
+      "risk": "high"
+    },
+    {
+      "action": "top_up_strategy",
+      "confidence": "high",
+      "reason": "Balance $48.89 is below $100 minimum for meaningful arena participation.",
+      "risk": "high"
+    },
+    {
+      "action": "adopt_ratchet_stop",
       "confidence": "medium",
-      "reason": "Arena top 5 avg WR (100%) exceeds ours (0%). Study their patterns.",
+      "reason": "2 of top 5 arena performers use ratchet stops for profit locking and downside protection.",
+      "risk": "neutral"
+    },
+    {
+      "action": "study_bald_eagle_2",
+      "confidence": "medium",
+      "reason": "#1 BaldEagle2: 38 trades, 13 tools, ratchet stop, moderate frequency, high conviction approach.",
       "risk": "neutral"
     },
     {
       "action": "reminder_max_leverage",
       "confidence": "absolute",
-      "reason": "Max leverage is 10x. Never increase. Proven across 22 agents.",
+      "reason": "Max leverage is 10x. Never increase. Proven across 22+ agents.",
       "risk": "rule"
     }
   ],
