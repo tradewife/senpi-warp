@@ -1,35 +1,37 @@
 {
-  "generatedAt": "2026-04-28T04:00:00Z",
+  "generatedAt": "2026-04-27T22:03:16Z",
   "ourStats": {
-    "rank": 14,
+    "rank": 6,
+    "roe": 5.22,
     "closes": 0,
     "winRate": 0.0,
-    "totalPnl": 0.0,
-    "balance": 48.89,
+    "totalPnl": 7.46,
+    "balance": 150.53,
     "trades": 0,
     "volume": 0.0
   },
   "arenaOverview": {
     "weekNumber": 5,
     "totalParticipants": 97,
-    "prizePool": 5353.76,
+    "prizePool": 5365.93,
     "weekEndsAt": "2026-04-30T00:00:00Z",
-    "profitableCount": 13,
+    "profitableCount": 14,
     "breakevenCount": 47,
-    "losingCount": 37
+    "losingCount": 36,
+    "daysRemaining": 2
   },
-  "arenaTop5AvgWinRate": null,
-  "arenaTop5AvgROE": 12.34,
-  "arenaTop5AvgTrades": 150,
+  "arenaTop5AvgROE": 11.94,
+  "arenaTop5AvgTrades": 154,
   "topPerformerProfile": {
-    "name": "BaldEagle2",
+    "name": "Apex",
     "rank": 1,
-    "roe": 15.88,
-    "pnl": 153.85,
-    "trades": 38,
-    "volume": 48080,
-    "tools": 13,
-    "usesRatchet": true
+    "roe": 14.71,
+    "pnl": 26.93,
+    "trades": 54,
+    "volume": 7423,
+    "tools": 4,
+    "usesRatchet": false,
+    "notes": "Lean toolset, high trade frequency, small balance high ROE"
   },
   "ratchetStopAnalysis": {
     "usersWithRatchet": 23,
@@ -37,35 +39,43 @@
     "top5WithRatchet": 2,
     "note": "2 of top 5 use ratchet stops"
   },
+  "prizeBreakdown": {
+    "rank1": 2146.37,
+    "rank2": 1341.48,
+    "rank3": 804.89,
+    "rank4": 643.91,
+    "rank5": 429.27,
+    "gapToRank5": 3.64
+  },
   "recommendations": [
     {
       "action": "fix_auth_token",
       "confidence": "absolute",
-      "reason": "SENPI_AUTH_TOKEN expired (401 errors). Cannot execute any trades or read user-scoped data.",
+      "reason": "SENPI_AUTH_TOKEN expired (401 errors on strategy_list, user_get_me, and waifu_cli arena). Cannot execute trades or read user-scoped data. CRITICAL BLOCKER.",
       "risk": "critical"
     },
     {
       "action": "reclassify_regime",
       "confidence": "high",
-      "reason": "System has been RISK_OFF for 35+ days since March 24 BTC crash. Market has recovered significantly. Re-run regime classification.",
+      "reason": "System has been RISK_OFF for 35+ days since March 24 BTC crash. We have $150.53 balance (up from $48.89) but 0 trades. Market has recovered. Re-run regime classification.",
       "risk": "high"
     },
     {
-      "action": "top_up_strategy",
+      "action": "close_gap_to_rank5",
       "confidence": "high",
-      "reason": "Balance $48.89 is below $100 minimum for meaningful arena participation.",
+      "reason": "We need 3.64% more ROE to reach #5 (rpine.eth at 8.86%). With 2 days left, need ~2 aggressive high-conviction trades to close this gap and claim $429 prize.",
       "risk": "high"
+    },
+    {
+      "action": "study_apex_strategy",
+      "confidence": "medium",
+      "reason": "New #1 Apex uses only 4 tools but 54 trades - minimal toolset, maximum execution. High frequency scalping approach with $210 balance. Lean and efficient.",
+      "risk": "neutral"
     },
     {
       "action": "adopt_ratchet_stop",
       "confidence": "medium",
-      "reason": "2 of top 5 arena performers use ratchet stops for profit locking and downside protection.",
-      "risk": "neutral"
-    },
-    {
-      "action": "study_bald_eagle_2",
-      "confidence": "medium",
-      "reason": "#1 BaldEagle2: 38 trades, 13 tools, ratchet stop, moderate frequency, high conviction approach.",
+      "reason": "2 of top 5 (BaldEagle2, Pangolin) use ratchet stops. Critical for profit locking in volatile conditions.",
       "risk": "neutral"
     },
     {
