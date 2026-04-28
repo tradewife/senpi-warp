@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-04-27T20:47:31.426930+00:00",
+  "generatedAt": "2026-04-28T01:48:27.401029+00:00",
   "generatedBy": "jido-cron",
   "regime": {
     "riskMode": "RISK_OFF",
     "reason": "Catastrophic DD 51.1% (limit 20.0%)",
-    "updatedAt": "2026-04-27T20:00:31Z",
+    "updatedAt": "2026-04-28T00:00:47Z",
     "updatedBy": "waifu-regime (arbiter-override)"
   },
   "equity": {
@@ -19,9 +19,9 @@
     "list": []
   },
   "market": {
-    "BTC": 76905.5,
-    "ETH": 2290.25,
-    "SOL": 84.2095
+    "BTC": 77009.5,
+    "ETH": 2296.65,
+    "SOL": 84.3675
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
@@ -34,12 +34,13 @@
   "actionsTaken": [
     "No open positions to protect",
     "RISK_OFF correctly enforced \u2014 no new entries possible",
-    "arbiter-state.json peakEquity initialized to budget ($100)",
-    "No emergency SL needed (no positions)"
+    "arbiter-state.json refreshed with latest equity",
+    "No emergency SL needed (no positions)",
+    "Brain \u2194 regime sync verified: all fields consistent"
   ],
   "warnings": [
     "SERR031 on strategy_list \u2014 using clearinghouse state fallback",
-    "VPS scanners offline (heartbeats >34 days stale)",
+    "VPS scanners offline (heartbeats >35 days stale)",
     "Strategy equity at $48.89 vs $100 budget \u2014 51.1% loss"
   ],
   "brainSync": {
