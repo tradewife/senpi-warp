@@ -1,29 +1,47 @@
 {
-  "generatedAt": "2026-04-28T23:30:56Z",
+  "generatedAt": "2026-04-29T09:30:47Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
+  "equity": 48.887581,
   "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "drawdownPct": 51.1,
+  "dailyPnl": 0.0,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "dailyCloses": 0,
+  "dailyWinRate": 0.0,
+  "withdrawable": 48.887581,
+  "positions": [],
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "catastrophicDD": "BREACHED (51.1% > 20.0%)",
+    "consecutiveStopOuts": "CLEAR (0/4)",
+    "dailyLoss": "CLEAR (0%/10%)"
+  },
+  "regimeSync": {
+    "riskRegimeJson": "RISK_OFF",
+    "autonomousBrainRiskMode": "RISK_OFF",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0,
+    "drawdownPctFromPeak": 51.11
+  },
+  "vpsStatus": "ALL SCANNERS OFFLINE (orca, risk-arbiter >35 days stale)",
+  "marketSnapshot": {
+    "BTC": 76259.5,
+    "ETH": 2285.65,
+    "SOL": 83.7885
+  },
+  "actions": [
+    "No actions needed \u2014 RISK_OFF stable, 0 positions, regime files synced"
+  ],
+  "alerts": [
+    {
+      "type": "RISK_OFF_ACTIVE",
+      "severity": "CRITICAL",
+      "message": "DD 51.1% exceeds 20% limit"
+    },
+    {
+      "type": "STALE_VPS_SCANNERS",
+      "severity": "WARNING",
+      "message": "All VPS scanners offline >35 days"
+    }
+  ]
 }
