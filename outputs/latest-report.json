@@ -1,29 +1,50 @@
 {
-  "generatedAt": "2026-04-28T02:01:01Z",
+  "generatedAt": "2026-04-28T02:04:11Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "dayStart": 48.887581,
+    "budget": 100.0,
+    "withdrawable": 48.887581
+  },
+  "drawdown": {
+    "fromPeakPct": 51.11,
+    "limitPct": 20.0,
+    "breached": true
+  },
+  "positions": {
+    "open": 0,
+    "orders": 0,
+    "nakedLosers": 0
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "catastrophicDD": {
+      "value": 51.11,
+      "limit": 20.0,
+      "status": "BREACHED"
+    },
+    "consecutiveStopOuts": {
+      "value": 0,
+      "limit": 4,
+      "status": "CLEAR"
+    },
+    "dailyLoss": {
+      "pct": 0.0,
+      "limit": 10.0,
+      "status": "CLEAR"
+    }
+  },
+  "consistency": {
+    "regimeMatch": true,
+    "brainRegime": "RISK_OFF",
+    "brainBlockEntries": true,
+    "brainDDAccurate": true
+  },
+  "vpsScanners": "OFFLINE (last heartbeat 2026-03-24)",
+  "actions": [
+    "No actions needed \u2014 RISK_OFF correctly enforced, no open positions or orders"
+  ],
+  "summary": "Portfolio hibernating under RISK_OFF. 51.1% drawdown from $100 budget. $48.89 withdrawable. No positions, no orders. All entry-generating crons blocked. Only Hermes monitoring crons active."
 }
