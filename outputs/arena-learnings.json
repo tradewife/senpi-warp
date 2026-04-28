@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T22:03:16Z",
+  "generatedAt": "2026-04-28T22:04:00Z",
   "ourStats": {
     "rank": 6,
     "roe": 5.22,
@@ -13,69 +13,108 @@
   "arenaOverview": {
     "weekNumber": 5,
     "totalParticipants": 97,
-    "prizePool": 5365.93,
+    "prizePool": 5436.21,
     "weekEndsAt": "2026-04-30T00:00:00Z",
+    "daysRemaining": 1,
     "profitableCount": 14,
     "breakevenCount": 47,
-    "losingCount": 36,
-    "daysRemaining": 2
+    "losingCount": 36
   },
-  "arenaTop5AvgROE": 11.94,
-  "arenaTop5AvgTrades": 154,
+  "arenaTop5AvgROE": 9.41,
+  "arenaTop5AvgTrades": 165,
+  "arenaTop5AvgTools": 14,
   "topPerformerProfile": {
-    "name": "Apex",
+    "name": "Anonymous",
     "rank": 1,
-    "roe": 14.71,
-    "pnl": 26.93,
-    "trades": 54,
-    "volume": 7423,
-    "tools": 4,
+    "roe": 14.60,
+    "pnl": 136.97,
+    "trades": 414,
+    "volume": 5072,
+    "tools": 0,
     "usesRatchet": false,
-    "notes": "Lean toolset, high trade frequency, small balance high ROE"
+    "notes": "No tools used, highest ROE via 414 trades. Likely external/manual trading. 2.70% vol efficiency."
   },
+  "topPerformerProfiles": [
+    {"rank": 1, "name": "Anonymous", "roe": 14.60, "trades": 414, "tools": 0, "pattern": "ultra-high-frequency manual"},
+    {"rank": 2, "name": "rpine.eth", "roe": 8.84, "trades": 166, "tools": 33, "pattern": "power-tool-user, broad toolkit"},
+    {"rank": 3, "name": "Apex", "roe": 8.72, "trades": 63, "tools": 4, "pattern": "lean toolset, moderate frequency"},
+    {"rank": 4, "name": "Pangolin", "roe": 7.52, "trades": 182, "tools": 22, "pattern": "heavy tool user + ratchet stops"},
+    {"rank": 5, "name": "prashantfb65", "roe": 7.36, "trades": 0, "tools": 13, "pattern": "PASSIVE - uses wolf-strategy skill, zero manual trades"}
+  ],
   "ratchetStopAnalysis": {
     "usersWithRatchet": 23,
     "pctUsers": 0.24,
     "top5WithRatchet": 2,
-    "note": "2 of top 5 use ratchet stops"
+    "note": "2 of top 5 use ratchet stops (Pangolin, Cheetah)"
   },
   "prizeBreakdown": {
-    "rank1": 2146.37,
-    "rank2": 1341.48,
-    "rank3": 804.89,
-    "rank4": 643.91,
-    "rank5": 429.27,
-    "gapToRank5": 3.64
+    "rank1": 2174.48,
+    "rank2": 1359.05,
+    "rank3": 815.43,
+    "rank4": 652.35,
+    "rank5": 434.90,
+    "gapToRank5": 2.14
+  },
+  "skillUsage": {
+    "wolf-strategy": {"user": "prashantfb65", "rank": 5, "roe": 7.36},
+    "kodiak-strategy": {"user": "Basa", "rank": 10, "roe": 2.16},
+    "vulture-strategy": {"user": "Basa", "rank": 10, "roe": 2.16}
+  },
+  "strategyPatterns": {
+    "highFrequency": {
+      "description": "100+ trades, scalping approach",
+      "count": 3,
+      "avgROE": 10.31,
+      "best": "Anonymous (14.60%, 414 trades)"
+    },
+    "leanExecution": {
+      "description": "<10 tools, focused approach",
+      "count": 2,
+      "avgROE": 11.66,
+      "best": "Anonymous (14.60%, 0 tools)"
+    },
+    "lowFrequency": {
+      "description": "1-20 trades, conviction holds",
+      "count": 4,
+      "avgROE": 2.79,
+      "best": "Diegoxyz (4.49%, 6 trades)"
+    },
+    "passiveSkill": {
+      "description": "Zero trades, skill-driven gains",
+      "count": 1,
+      "avgROE": 7.36,
+      "best": "prashantfb65 (7.36%, wolf-strategy)"
+    }
   },
   "recommendations": [
     {
       "action": "fix_auth_token",
       "confidence": "absolute",
-      "reason": "SENPI_AUTH_TOKEN expired (401 errors on strategy_list, user_get_me, and waifu_cli arena). Cannot execute trades or read user-scoped data. CRITICAL BLOCKER.",
+      "reason": "SENPI_AUTH_TOKEN expired (401 errors on all user-scoped APIs). Cannot execute trades or read portfolio. CRITICAL BLOCKER for arena competition.",
       "risk": "critical"
     },
     {
-      "action": "reclassify_regime",
+      "action": "note_passive_earning_viability",
       "confidence": "high",
-      "reason": "System has been RISK_OFF for 35+ days since March 24 BTC crash. We have $150.53 balance (up from $48.89) but 0 trades. Market has recovered. Re-run regime classification.",
-      "risk": "high"
-    },
-    {
-      "action": "close_gap_to_rank5",
-      "confidence": "high",
-      "reason": "We need 3.64% more ROE to reach #5 (rpine.eth at 8.86%). With 2 days left, need ~2 aggressive high-conviction trades to close this gap and claim $429 prize.",
-      "risk": "high"
-    },
-    {
-      "action": "study_apex_strategy",
-      "confidence": "medium",
-      "reason": "New #1 Apex uses only 4 tools but 54 trades - minimal toolset, maximum execution. High frequency scalping approach with $210 balance. Lean and efficient.",
+      "reason": "prashantfb65 at #5 with 7.36% ROE and ZERO trades using wolf-strategy skill. Proves passive skill-based earning can beat most active traders. Our wolf-strategy scanner suite could achieve similar results if auth is restored.",
       "risk": "neutral"
     },
     {
-      "action": "adopt_ratchet_stop",
+      "action": "close_gap_to_rank5",
       "confidence": "medium",
-      "reason": "2 of top 5 (BaldEagle2, Pangolin) use ratchet stops. Critical for profit locking in volatile conditions.",
+      "reason": "Need 2.14% more ROE to reach #5 ($435 prize). Only 1 day left in week 5. Difficult but possible with 1-2 high-conviction trades if auth is fixed immediately.",
+      "risk": "high"
+    },
+    {
+      "action": "study_anonymous_pattern",
+      "confidence": "medium",
+      "reason": "New #1 Anonymous has 0 tools and 414 trades — likely a human trader using manual execution or external bot. 2.70% volume efficiency is best in top 10. Small notional volume ($5K) suggests tight spread scalping.",
+      "risk": "neutral"
+    },
+    {
+      "action": "prepare_week6",
+      "confidence": "high",
+      "reason": "Week 6 pool already at $5,636.74 — larger than current week. If auth is fixed, focus on positioning for fresh week start Apr 30.",
       "risk": "neutral"
     },
     {
