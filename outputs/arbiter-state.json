@@ -16,7 +16,15 @@
       "severity": "WARNING",
       "message": "VPS scanners offline. orca (2026-03-24) and risk-arbiter (2026-03-24) heartbeats >35 days stale. Railway deployment likely down.",
       "timestamp": "2026-04-29T09:30:47Z"
+    },
+    {
+      "timestamp": "2026-04-28T23:47:32.280930+00:00",
+      "type": "JIDO_CHECK",
+      "message": "Portfolio scan: $48.89 equity, 51.1% DD from $100.00 peak, 0 positions, RISK_OFF active, all guardrails aligned",
+      "severity": "INFO"
     }
   ],
-  "dayStartDate": "2026-04-29"
+  "dayStartDate": "2026-04-29",
+  "lastChecked": "2026-04-28T23:47:32.280894+00:00",
+  "currentDrawdownPct": 51.11
 }
