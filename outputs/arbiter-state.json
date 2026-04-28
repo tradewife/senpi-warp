@@ -2,7 +2,7 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-28T01:47:59.187762+00:00",
+  "lastCheckAt": "2026-04-28T02:01:01Z",
   "lastEquity": 48.887581,
   "alerts": [
     {
@@ -17,5 +17,6 @@
       "message": "VPS scanners offline. Only orca (2026-03-24) and risk-arbiter (2026-03-24) have heartbeats. All >35 days stale.",
       "timestamp": "2026-04-28T01:47:59.187762+00:00"
     }
-  ]
+  ],
+  "dayStartDate": "2026-04-28"
 }

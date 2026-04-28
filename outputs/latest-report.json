@@ -1,55 +1,29 @@
 {
-  "generatedAt": "2026-04-28T01:48:27.401029+00:00",
-  "generatedBy": "jido-cron",
-  "regime": {
-    "riskMode": "RISK_OFF",
-    "reason": "Catastrophic DD 51.1% (limit 20.0%)",
-    "updatedAt": "2026-04-28T00:00:47Z",
-    "updatedBy": "waifu-regime (arbiter-override)"
-  },
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "budget": 100.0,
-    "withdrawable": 48.887581,
-    "drawdownPct": 51.11
-  },
-  "positions": {
-    "open": 0,
-    "list": []
-  },
-  "market": {
-    "BTC": 77009.5,
-    "ETH": 2296.65,
-    "SOL": 84.3675
-  },
+  "generatedAt": "2026-04-28T02:01:01Z",
+  "regime": "RISK_OFF",
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
+  ],
+  "deadWeight": [],
   "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "actualDrawdownPct": 51.11,
-    "breached": true,
-    "dailyLossLimitPct": 10.0,
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
     "maxConsecutiveStopOuts": 4,
-    "consecutiveStopOuts": 0
-  },
-  "actionsTaken": [
-    "No open positions to protect",
-    "RISK_OFF correctly enforced \u2014 no new entries possible",
-    "arbiter-state.json refreshed with latest equity",
-    "No emergency SL needed (no positions)",
-    "Brain \u2194 regime sync verified: all fields consistent"
-  ],
-  "warnings": [
-    "SERR031 on strategy_list \u2014 using clearinghouse state fallback",
-    "VPS scanners offline (heartbeats >35 days stale)",
-    "Strategy equity at $48.89 vs $100 budget \u2014 51.1% loss"
-  ],
-  "brainSync": {
-    "brainRiskMode": "RISK_OFF",
-    "regimeRiskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "drawdownPctFromPeak": 51.11,
-    "synced": true
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
   }
 }
