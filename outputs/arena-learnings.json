@@ -1,206 +1,79 @@
 {
-  "generatedAt": "2026-04-29T02:51:32Z",
+  "generatedAt": "2026-04-29T10:07:13Z",
+  "arenaWeek": 5,
+  "totalEntrants": 97,
   "ourStats": {
-    "trade_wife": {
-      "rank": 14,
-      "roe": 0,
-      "totalPnl": 0,
-      "balance": 48.887581,
-      "trades": 0,
-      "volume": 0
-    },
-    "prashantfb65": {
-      "rank": 5,
-      "roe": 6.9949,
-      "totalPnl": 10.175962,
-      "balance": 153.237072,
-      "trades": 0,
-      "volume": 0
-    },
-    "bestPosition": {
-      "account": "prashantfb65 (M19)",
-      "rank": 5,
-      "roe": 6.9949,
-      "inPrizeZone": true
-    }
+    "closes": 1,
+    "winRate": 0.0,
+    "totalPnl": -51.11
   },
-  "arenaOverview": {
-    "weekNumber": 5,
-    "totalParticipants": 97,
-    "prizePool": 5445.581247,
-    "weekEndsAt": "2026-04-30T00:00:00Z",
-    "profitableCount": 13,
-    "breakevenCount": 35,
-    "losingCount": 49,
-    "daysRemaining": 0
-  },
-  "arenaTop5AvgROE": 9.53,
-  "arenaTop5AvgTrades": 138.0,
-  "topPerformerProfile": {
-    "name": "Anonymous (paknayir)",
-    "rank": 1,
-    "roe": 15.5906,
-    "pnl": 141.964974,
-    "trades": 414,
-    "volume": 5072.241168,
-    "tools": 0,
-    "usesRatchet": false,
-    "notes": "Ultra-high-frequency scalper with zero tools — purely manual execution. 414 trades on ~$910 starting balance = $12.27 avg notional per trade. Dominating through sheer volume of micro-trades."
-  },
-  "ratchetStopAnalysis": {
-    "usersWithRatchet": 2,
-    "pctUsers": 0.02,
-    "top5WithRatchet": 0,
-    "note": "No top 5 agents use ratchet stops. Ratchet is used by mid-tier agents (Pangolin #6, DireWolf #34). Not a differentiator for top performance this week."
-  },
-  "prizeBreakdown": {
-    "rank1": 2178.232499,
-    "rank2": 1361.395312,
-    "rank3": 816.837187,
-    "rank4": 653.46975,
-    "rank5": 435.6465,
-    "gapToRank5": -0.0608
-  },
-  "topPerformerProfiles": [
+  "arenaTop5AvgRoe": 8.09,
+  "arenaTop5AvgPnl": 19.05,
+  "arenaTop5": [
     {
       "rank": 1,
-      "name": "Anonymous (paknayir)",
-      "roe": 15.59,
-      "trades": 414,
-      "tools": 0,
-      "pattern": "ultra-high-frequency manual scalper, zero tools"
+      "name": "prashantfb65",
+      "roePct": "10.4966",
+      "totalPnl": "14.834595",
+      "tradeCount": 0,
+      "toolsUsed": []
     },
     {
       "rank": 2,
-      "name": "Apex (HyboraAI)",
-      "roe": 9.19,
-      "trades": 64,
-      "tools": 3,
-      "pattern": "moderate frequency, lean toolset, active position management"
+      "name": "rpine.eth",
+      "roePct": "8.8422",
+      "totalPnl": "23.425735",
+      "tradeCount": 166,
+      "toolsUsed": [
+        "market_get_asset_data",
+        "market_get_prices",
+        "market_list_instruments",
+        "strategy_get_clearinghouse_state"
+      ]
     },
     {
       "rank": 3,
-      "name": "rpine.eth",
-      "roe": 8.84,
-      "trades": 166,
-      "tools": 4,
-      "pattern": "high frequency with market data tools, data-driven scalper"
+      "name": "Anonymous",
+      "roePct": "8.389",
+      "totalPnl": "80.180755",
+      "tradeCount": 417,
+      "toolsUsed": []
     },
     {
       "rank": 4,
-      "name": "Aaron",
-      "roe": 7.06,
-      "trades": 44,
-      "tools": 4,
-      "pattern": "moderate frequency, uses create_position + market data, selective entries"
+      "name": "Apex",
+      "roePct": "6.661",
+      "totalPnl": "12.224954",
+      "tradeCount": 65,
+      "toolsUsed": [
+        "close_position",
+        "create_position",
+        "edit_position",
+        "strategy_get_clearinghouse_state"
+      ]
     },
     {
       "rank": 5,
-      "name": "prashantfb65 (OURS)",
-      "roe": 6.99,
-      "trades": 0,
-      "tools": 0,
-      "pattern": "PASSIVE — zero manual trades, strategy-level position mgmt only"
+      "name": "GopiB",
+      "roePct": "6.0737",
+      "totalPnl": "-35.436378",
+      "tradeCount": 21,
+      "toolsUsed": []
     }
   ],
-  "skillUsage": {
-    "wolf-strategy": {
-      "user": "prashantfb65",
-      "rank": 5,
-      "roe": 6.9949,
-      "note": "Our account — passive earning via strategy positions"
-    },
-    "roach-strategy": {
-      "user": "Roach (betashop)",
-      "rank": 18,
-      "roe": -0.4804,
-      "note": "betashop syndicate, losing"
-    },
-    "bison-strategy": {
-      "user": "Bison12 (betashop)",
-      "rank": 26,
-      "roe": -1.9745,
-      "note": "betashop syndicate, losing"
-    },
-    "vulture-strategy": {
-      "user": "Vulture (betashop)",
-      "rank": 47,
-      "roe": -31.3685,
-      "note": "betashop syndicate, heavily losing"
-    }
-  },
-  "strategyPatterns": {
-    "highFrequency": {
-      "description": "100+ trades, scalping approach",
-      "count": 3,
-      "avgROE": 11.21,
-      "best": "Anonymous (15.59%, 414 trades)"
-    },
-    "leanExecution": {
-      "description": "<5 tools, focused approach",
-      "count": 5,
-      "avgROE": 6.98,
-      "best": "Anonymous (15.59%, 0 tools)"
-    },
-    "lowFrequency": {
-      "description": "1-20 trades, conviction holds",
-      "count": 3,
-      "avgROE": 5.0,
-      "best": "Aaron (7.06%, 44 trades)"
-    },
-    "passiveSkill": {
-      "description": "Zero trades, strategy-driven gains",
-      "count": 1,
-      "avgROE": 6.99,
-      "best": "prashantfb65 (6.99%, 0 trades)"
-    }
-  },
   "recommendations": [
     {
-      "action": "HOLD_PRASHANT_POSITION",
-      "confidence": "HIGH",
-      "reason": "M19 (prashantfb65) is rank 5 with 6.99% ROE, inside prize zone ($435.65 prize). Zero trades executed — position is passively earning. DO NOT touch this account. Week ends in ~21 hours.",
-      "risk": "critical"
-    },
-    {
-      "action": "ACTIVATE_TRADE_WIFE_ENGINE",
-      "confidence": "CRITICAL",
-      "reason": "trade_wife (M179642) has been at rank 14 with 0% ROE, 0 trades, $48.89 balance for the entire week. The autonomous-brain.json shows RISK_OFF with blockNewEntries=true and maxSlotsCap=0. The engine has not fired a single trade. 51% drawdown from peak triggered permanent RISK_OFF. This account is dead weight in the arena.",
-      "risk": "critical"
-    },
-    {
-      "action": "STUDY_PAKNAYIR_PATTERN",
-      "confidence": "HIGH",
-      "reason": "Rank 1 (paknayir) achieves 15.59% ROE via 414 ultra-high-frequency trades with ZERO tools — pure manual scalping. This suggests the winning meta is volume-heavy micro-trading on small balances ($910 starting → $1076). Our wolf-primary at $48 balance cannot replicate this pattern, but the insight is valuable for future weeks.",
+      "action": "study_top_strategies",
+      "confidence": "medium",
+      "reason": "Arena top 5 avg PnL $19.05 vs ours $-51.11. Study their patterns.",
       "risk": "neutral"
     },
     {
-      "action": "STUDY_DIEGOXYZ_PATTERN",
-      "confidence": "HIGH",
-      "reason": "Rank 7 (Diegoxyz) achieves 5.67% ROE with only 6 trades on $2074 balance ($58,985 volume = ~$9,830 avg notional per trade). This is the conviction-hold archetype — few, high-conviction, large-size positions. This is closer to our wolf strategy's intended approach. Validates that low-frequency + high-conviction can win.",
-      "risk": "neutral"
-    },
-    {
-      "action": "NOTE_BETASHOP_SYNDICATE_DOMINANCE",
-      "confidence": "MEDIUM",
-      "reason": "betashop runs 15+ agents. Only Pangolin (#6, 6.17%) and Cheetah (#9, 2.22%) are profitable. The rest are negative, including Polar (#25, -1.82%), Sentinel (#31, -6.10%), Vulture (#47, -31.37%). Syndicate diversification does NOT guarantee success — individual strategy quality matters more.",
-      "risk": "neutral"
-    },
-    {
-      "action": "RAISE_TRADE_WIFE_BALANCE_OR_RETIRE",
-      "confidence": "HIGH",
-      "reason": "With only $48.89 in trade_wife, even a 20% ROE would yield $9.78 — not enough to compete. Either top up to $200+ and activate, or accept this account is a non-competitor and focus entirely on keeping prashantfb65 in the top 5.",
-      "risk": "high"
+      "action": "reminder_max_leverage",
+      "confidence": "absolute",
+      "reason": "Max leverage is 10x. Never increase. Proven across 22 agents.",
+      "risk": "rule"
     }
   ],
-  "appliedChanges": [],
-  "systemStatus": {
-    "riskMode": "RISK_OFF",
-    "blockNewEntries": true,
-    "staleCrons": ["condor", "sentinel", "brain"],
-    "drawdownPctFromPeak": 51.11,
-    "wolfPrimaryBalance": 48.887581,
-    "wolfPrimaryStrategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-    "wolfPrimaryWallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1"
-  }
+  "appliedChanges": []
 }

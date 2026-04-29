@@ -34,8 +34,8 @@ def _run(dry_run: bool):
     click.echo(f"[arena] {sc.now_iso()} starting{' (dry-run)' if dry_run else ''}")
     sync_before()
 
-    # Fetch leaderboard
-    leaderboard = sc.mcporter_call("discovery_get_top_traders", {"limit": 50, "time_frame": "MONTHLY"})
+    # Fetch arena leaderboard
+    leaderboard = sc.mcporter_call("arena_leaderboard", {"limit": 50})
 
     # Check for API errors
     if not leaderboard.get("success", False):
@@ -51,8 +51,11 @@ def _run(dry_run: bool):
 
     click.echo(f"  Our stats: {len(our_closes)} closes, {our_wr:.1f}% WR, ${our_pnl:,.2f} PnL")
 
-    # Analyze leaderboard
-    top_traders = leaderboard.get("data", {}).get("traders", [])
+    # Analyze leaderboard — arena_leaderboard uses data.leaderboard.entries
+    top_traders = leaderboard.get("data", {}).get("leaderboard", {}).get("entries", [])
+    week_info = leaderboard.get("data", {}).get("leaderboard", {})
+    week_number = week_info.get("weekNumber", "?")
+    total_entrants = week_info.get("totalCount", 0)
     recommendations = []
 
     if not top_traders:
@@ -66,13 +69,17 @@ def _run(dry_run: bool):
             sc.save_json(sc.OUTPUTS_DIR / "arena-learnings.json", learnings)
         return
 
-    # Top 5 stats
-    top5 = top_traders[:5]
-    avg_top5_wr = sum(float(t.get("winRate", 0)) for t in top5) / len(top5) if top5 else 0
+    click.echo(f"  Arena Week {week_number}: {total_entrants} entrants")
 
-    click.echo(f"  Top 5 avg WR: {avg_top5_wr:.1f}%")
+    # Top 5 stats — arena entries have roePct, totalPnl, tradeCount
+    top5 = top_traders[:5]
+    avg_top5_roe = sum(float(t.get("roePct", 0)) for t in top5) / len(top5) if top5 else 0
+    avg_top5_pnl = sum(float(t.get("totalPnl", 0)) for t in top5) / len(top5) if top5 else 0
+
+    click.echo(f"  Top 5 avg ROE: {avg_top5_roe:.2f}% | avg PnL: ${avg_top5_pnl:.2f}")
     for t in top5[:3]:
-        click.echo(f"    {str(t.get('user', t.get('address', '?')))[:16]}... WR={t.get('winRate', 0)}%")
+        name = t.get("senpiUserName", t.get("senpiUserId", "?"))
+        click.echo(f"    #{t.get('rank', '?')} {name[:16]} ROE={t.get('roePct', '0')}% PnL=${t.get('totalPnl', '0')}")
 
     # Generate recommendations
     if our_wr < 40 and len(our_closes) >= 10:
@@ -91,11 +98,12 @@ def _run(dry_run: bool):
             "risk": "increasing",
         })
 
-    if avg_top5_wr > our_wr + 15:
+    # Compare our PnL vs arena leaders
+    if avg_top5_pnl > 0 and our_pnl < avg_top5_pnl:
         recommendations.append({
             "action": "study_top_strategies",
             "confidence": "medium",
-            "reason": f"Arena top 5 avg WR ({avg_top5_wr:.0f}%) exceeds ours ({our_wr:.0f}%). Study their patterns.",
+            "reason": f"Arena top 5 avg PnL ${avg_top5_pnl:.2f} vs ours ${our_pnl:.2f}. Study their patterns.",
             "risk": "neutral",
         })
 
@@ -117,12 +125,26 @@ def _run(dry_run: bool):
     # Save learnings
     learnings = {
         "generatedAt": sc.now_iso(),
+        "arenaWeek": week_number,
+        "totalEntrants": total_entrants,
         "ourStats": {
             "closes": len(our_closes),
             "winRate": round(our_wr, 1),
             "totalPnl": round(our_pnl, 2),
         },
-        "arenaTop5AvgWinRate": round(avg_top5_wr, 1),
+        "arenaTop5AvgRoe": round(avg_top5_roe, 2),
+        "arenaTop5AvgPnl": round(avg_top5_pnl, 2),
+        "arenaTop5": [
+            {
+                "rank": t.get("rank"),
+                "name": t.get("senpiUserName", t.get("senpiUserId", "")),
+                "roePct": t.get("roePct"),
+                "totalPnl": t.get("totalPnl"),
+                "tradeCount": t.get("tradeCount"),
+                "toolsUsed": t.get("toolsUsed", []),
+            }
+            for t in top5
+        ],
         "recommendations": recommendations,
         "appliedChanges": [],
     }
