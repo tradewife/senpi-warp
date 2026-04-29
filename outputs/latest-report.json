@@ -1,44 +1,31 @@
 {
-  "generatedAt": "2026-04-29T11:47:39.171600+00:00",
-  "generatedBy": "jido-hermes-cron",
+  "generatedAt": "2026-04-29T12:02:32.472631+00:00",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic drawdown 51.1% exceeds 20% limit",
+  "regimeReason": "Catastrophic DD 51.1% exceeds 20% limit",
   "equity": {
-    "current": 48.89,
+    "current": 48.887581,
     "peak": 100.0,
-    "dayStart": 48.89,
-    "withdrawable": 48.89,
-    "drawdownPct": 51.1
+    "drawdownPct": 51.1,
+    "withdrawable": 48.887581
   },
   "positions": {
     "open": 0,
-    "details": []
-  },
-  "orders": {
-    "open": 0,
+    "openOrders": 0,
     "details": []
   },
   "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "actualDrawdownPct": 51.1,
+    "catastrophicDrawdownPct": 20,
+    "currentDrawdownPct": 51.1,
     "breached": true,
-    "breachType": "CATASTROPHIC_DRAWDOWN"
+    "breachType": "CATASTROPHIC_DD"
   },
-  "actions": [
-    "REGIME_OVERRIDE: regime-classifier set BASELINE but DD 51.1% > 20% limit. Re-enforced RISK_OFF.",
-    "Synced autonomous-brain.json execution policy to RISK_OFF",
-    "Updated drawdownPctFromPeak to 51.1% in brain"
+  "actionsTaken": [
+    "RISK_OFF enforced \u2014 all entries blocked",
+    "Brain synced to match risk-regime.json",
+    "No open positions to protect"
   ],
   "warnings": [
-    "VPS scanners offline since 2026-03-23 (37 days stale) \u2014 Railway deployment likely down",
-    "Regime-classifier race condition: overwrote RISK_OFF -> BASELINE again",
-    "Account at ~49% of original budget with no active trades"
-  ],
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-    "budget": 100,
-    "currentValue": 48.89
-  }
+    "VPS scanners offline since 2026-03-23 (37 days)",
+    "Account at 48.89 from initial 100.0 budget"
+  ]
 }

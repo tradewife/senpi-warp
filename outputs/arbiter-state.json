@@ -3,22 +3,22 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-29T11:46:59.008383+00:00",
+  "lastCheckAt": "2026-04-29T12:02:32.472631+00:00",
   "alerts": [
     {
-      "type": "REGIME_OVERRIDE",
-      "message": "REGIME_OVERRIDE #1: regime-classifier set BASELINE but DD 51.1% > 20% limit. Re-enforced RISK_OFF.",
-      "timestamp": "2026-04-29T11:46:59.008383+00:00"
+      "type": "CATASTROPHIC_DD",
+      "message": "DD 51.1% exceeds 20% catastrophic limit. RISK_OFF enforced. Flat (no positions).",
+      "timestamp": "2026-04-29T12:02:32.472631+00:00"
     },
     {
       "type": "PEAK_EQUITY_INITIALIZED",
       "message": "peakEquity maintained at $100.0 (budget). Current equity: $48.89",
-      "timestamp": "2026-04-29T11:46:59.008383+00:00"
+      "timestamp": "2026-04-29T12:02:32.472631+00:00"
     },
     {
       "type": "VPS_SCANNERS_OFFLINE",
       "message": "All VPS scanner heartbeats stale (last: 2026-03-23, 37 days ago). Railway/VPS deployment likely down.",
-      "timestamp": "2026-04-29T11:46:59.008383+00:00"
+      "timestamp": "2026-04-29T12:02:32.472631+00:00"
     }
   ]
 }
