@@ -1,65 +1,29 @@
 {
-  "generatedAt": "2026-04-29T04:33:41Z",
+  "generatedAt": "2026-04-29T05:46:35Z",
   "regime": "RISK_OFF",
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "dayStart": 48.887581,
-    "withdrawable": 48.887581
-  },
-  "drawdown": {
-    "pct": 51.11,
-    "limit": 20.0,
-    "breached": true
-  },
-  "positions": {
-    "count": 0,
-    "list": [],
-    "nakedLosers": []
-  },
-  "orders": {
-    "count": 0,
-    "list": []
-  },
-  "guardrails": {
-    "catastrophicDD": {
-      "value": 51.11,
-      "limit": 20.0,
-      "breached": true
-    },
-    "dailyLoss": {
-      "value": 0.0,
-      "limit": 10.0,
-      "breached": false
-    },
-    "consecutiveSOs": {
-      "value": 0,
-      "limit": 4,
-      "breached": false
-    }
-  },
-  "regimeSync": {
-    "riskRegimeJson": "RISK_OFF",
-    "autonomousBrainJson": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
-    "inSync": true
-  },
-  "marketPrices": {
-    "BTC": "77022.5",
-    "ETH": "2314.75",
-    "SOL": "84.6145"
-  },
-  "warnings": [
-    "VPS scanners offline since 2026-03-24 (36 days stale)",
-    "SERR031 auth on strategy_list/account_get_portfolio \u2014 using clearinghouse state",
-    "Dormant equity $48.89 for 3+ weeks \u2014 needs human decision"
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "actionsTaken": [
-    "Verified clearinghouse state: 0 positions, 0 orders",
-    "Confirmed regime files in sync",
-    "No naked positions to protect",
-    "No guardrail changes needed"
-  ]
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
+  }
 }
