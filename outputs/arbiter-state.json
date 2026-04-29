@@ -2,9 +2,15 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-29T04:33:41Z",
+  "lastCheckAt": "2026-04-29T05:31:54Z",
   "lastEquity": 48.887581,
   "alerts": [
+    {
+      "timestamp": "2026-04-29T05:31:54Z",
+      "type": "JIDO_CHECK",
+      "message": "Portfolio scan: $48.89 equity, 51.1% DD from $100.00 peak, 0 positions, RISK_OFF active, all guardrails aligned",
+      "severity": "INFO"
+    },
     {
       "timestamp": "2026-04-29T04:33:41Z",
       "type": "JIDO_CHECK",
@@ -31,6 +37,6 @@
     }
   ],
   "dayStartDate": "2026-04-29",
-  "lastChecked": "2026-04-29T04:33:41Z",
+  "lastChecked": "2026-04-29T05:31:54Z",
   "currentDrawdownPct": 51.11
 }
