@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-24T02:38:13Z",
+  "generatedAt": "2026-03-23T23:57:15Z",
   "root": "/home/kt/senpi-waifu",
   "counts": {
     "entrypoints": 3,
@@ -172,7 +172,7 @@
       },
       {
         "path": "config/risk-regime.json",
-        "summary": "\"riskMode\": \"BASELINE\","
+        "summary": "\"riskMode\": \"RISK_ON\","
       },
       {
         "path": "config/scanner-config.json",
