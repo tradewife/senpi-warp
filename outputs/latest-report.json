@@ -1,40 +1,44 @@
 {
-  "generatedAt": "2026-04-29T10:31:54Z",
+  "generatedAt": "2026-04-29T11:47:39.171600+00:00",
+  "generatedBy": "jido-hermes-cron",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "regimeSource": "risk-regime.json + JIDO brain sync",
+  "regimeReason": "Catastrophic drawdown 51.1% exceeds 20% limit",
   "equity": {
     "current": 48.89,
     "peak": 100.0,
-    "drawdownPct": 51.1,
-    "budget": 100.0,
-    "withdrawable": 48.89
+    "dayStart": 48.89,
+    "withdrawable": 48.89,
+    "drawdownPct": 51.1
   },
   "positions": {
     "open": 0,
-    "openOrders": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0,
     "details": []
   },
   "guardrails": {
-    "catastrophicDD": {"limit": 20, "actual": 51.1, "breached": true},
-    "dailyLossLimit": {"limit": 10, "actual": 0, "breached": false},
-    "consecutiveStopOuts": {"limit": 4, "actual": 0, "breached": false}
-  },
-  "marketSnapshot": {
-    "BTC": 77776.5,
-    "ETH": 2343.45,
-    "SOL": 85.45
+    "catastrophicDrawdownPct": 20.0,
+    "actualDrawdownPct": 51.1,
+    "breached": true,
+    "breachType": "CATASTROPHIC_DRAWDOWN"
   },
   "actions": [
-    "RESOLVED: 5 merge conflicts (arbiter-state, autonomous-brain, codebase-index, cron-heartbeats, playbook-state)",
-    "FIXED: peakEquity re-initialized from $100 budget (was 0 after conflict resolution)",
-    "FIXED: autonomous-brain.json synced from RISK_ON → RISK_OFF to match risk-regime.json",
-    "FIXED: brain drawdownPctFromPeak updated from 0.0 → 51.1",
-    "FIXED: brain executionPolicy blockNewEntries=true, allowAutoEntry=false, maxSlotsCap=0"
+    "REGIME_OVERRIDE: regime-classifier set BASELINE but DD 51.1% > 20% limit. Re-enforced RISK_OFF.",
+    "Synced autonomous-brain.json execution policy to RISK_OFF",
+    "Updated drawdownPctFromPeak to 51.1% in brain"
   ],
   "warnings": [
-    "BRAIN_DRIFT: autonomous-brain.json was RISK_ON while risk-regime.json was RISK_OFF — regime-classifier likely overwrote brain without checking drawdown",
-    "STALE_HEARTBEATS: All cron heartbeats from 2026-03-23 (36+ days old) — VPS/Railway deployment likely offline",
-    "STRATEGY_CAPITAL: $48.89 remaining from $100 budget (51.1% loss). Consider topping up or closing strategy."
-  ]
+    "VPS scanners offline since 2026-03-23 (37 days stale) \u2014 Railway deployment likely down",
+    "Regime-classifier race condition: overwrote RISK_OFF -> BASELINE again",
+    "Account at ~49% of original budget with no active trades"
+  ],
+  "strategy": {
+    "name": "wolf-primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "budget": 100,
+    "currentValue": 48.89
+  }
 }

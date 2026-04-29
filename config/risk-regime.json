@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-04-29T11:01:02Z",
-  "updatedBy": "waifu-regime",
-  "reason": "Mixed signals (slope=0.6%, ATR=1.1%)",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-04-29T11:46:59.008383+00:00",
+  "updatedBy": "jido-emergency",
+  "reason": "REGIME_OVERRIDE: regime-classifier set BASELINE but DD 51.1% exceeds 20% catastrophic limit. Re-enforcing RISK_OFF.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,

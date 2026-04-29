@@ -1,18 +1,24 @@
 {
   "peakEquity": 100.0,
+  "lastEquity": 48.887581,
   "dayStartEquity": 48.89,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-29T10:31:54Z",
+  "lastCheckAt": "2026-04-29T11:46:59.008383+00:00",
   "alerts": [
     {
-      "type": "REGIME_ENFORCED",
-      "message": "RISK_OFF maintained — drawdown 51.1% vs 20% limit",
-      "timestamp": "2026-04-29T10:31:54Z"
+      "type": "REGIME_OVERRIDE",
+      "message": "REGIME_OVERRIDE #1: regime-classifier set BASELINE but DD 51.1% > 20% limit. Re-enforced RISK_OFF.",
+      "timestamp": "2026-04-29T11:46:59.008383+00:00"
     },
     {
       "type": "PEAK_EQUITY_INITIALIZED",
-      "message": "peakEquity re-initialized from budget ($100.0) after conflict resolution reset to 0",
-      "timestamp": "2026-04-29T10:31:54Z"
+      "message": "peakEquity maintained at $100.0 (budget). Current equity: $48.89",
+      "timestamp": "2026-04-29T11:46:59.008383+00:00"
+    },
+    {
+      "type": "VPS_SCANNERS_OFFLINE",
+      "message": "All VPS scanner heartbeats stale (last: 2026-03-23, 37 days ago). Railway/VPS deployment likely down.",
+      "timestamp": "2026-04-29T11:46:59.008383+00:00"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "codebaseIndexAt": "2026-03-23T23:57:15Z",
   "riskMode": "RISK_OFF",
   "executionPolicy": {
-    "generatedAt": "2026-04-29T10:31:54Z",
+    "generatedAt": "2026-04-29T11:47:19.904357+00:00",
     "mode": "RISK_OFF",
     "blockNewEntries": true,
     "allowAutoEntry": false,
@@ -15,7 +15,9 @@
         "maxSlotsCap": 0
       }
     },
-    "reasons": ["JIDO_SYNC: Catastrophic DD 51.1% (limit 20.0%) — brain synced to match risk-regime.json"],
+    "reasons": [
+      "JIDO_SYNC: Catastrophic DD 51.1% (limit 20.0%) \u2014 brain synced to match risk-regime.json"
+    ],
     "risk": {
       "drawdownPctFromPeak": 51.1,
       "recentLossStreak": 0,
@@ -435,8 +437,8 @@
   "systemHealth": {
     "health": {},
     "arbiter": {
-      "peakEquity": 0,
-      "dayStartEquity": 0,
+      "peakEquity": 100.0,
+      "dayStartEquity": 48.89,
       "consecutiveStopOuts": 0
     }
   },
