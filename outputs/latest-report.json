@@ -1,35 +1,49 @@
 {
-  "timestamp": "2026-04-28T23:47:32.966083+00:00",
+  "generatedAt": "2026-04-29T00:34:23.535772Z",
+  "generatedBy": "jido-hermes-cron",
   "regime": "RISK_OFF",
+  "regimeReason": "REGIME_OVERRIDE: DD 51.11% exceeds 20% catastrophic threshold. Classifier cron set BASELINE at 00:01Z \u2014 overridden back to RISK_OFF.",
   "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
+  "dayStartEquity": 48.887581,
+  "dailyPnl": 0.0,
   "withdrawable": 48.887581,
-  "openPositions": 0,
-  "positions": [],
-  "guardrails": {
-    "catastrophicDD": {
-      "threshold": 20,
-      "actual": 51.11,
-      "breached": true
-    },
-    "dailyLossLimit": {
-      "threshold": 10,
-      "status": "OK"
-    },
-    "consecutiveStopOuts": {
-      "threshold": 4,
-      "actual": 0,
-      "breached": false
-    }
+  "positions": {
+    "count": 0,
+    "details": []
   },
-  "brainAlignment": "ALIGNED",
-  "actionsTaken": [
-    "JIDO scan completed, RISK_OFF confirmed, drawdown updated"
+  "openOrders": 0,
+  "guardrails": {
+    "catastrophicDrawdownPct": 20.0,
+    "dailyLossLimitPct": 10.0,
+    "maxConsecutiveStopOuts": 4,
+    "currentDD": 51.11,
+    "currentConsecutiveStopOuts": 0,
+    "breached": true,
+    "breachType": "CATASTROPHIC_DRAWDOWN"
+  },
+  "marketSnapshot": {
+    "BTC": 76333.5,
+    "ETH": 2287.05,
+    "SOL": 83.8995
+  },
+  "vpsHealth": {
+    "status": "OFFLINE",
+    "staleScanners": [
+      "orca (2026-03-24)",
+      "risk-arbiter (2026-03-24)"
+    ],
+    "daysStale": 36
+  },
+  "actions": [
+    "REGIME_OVERRIDE: risk-regime.json reset from BASELINE to RISK_OFF",
+    "autonomous-brain.json synced: RISK_OFF, DD=51.11%, entries blocked",
+    "arbiter-state.json updated with latest scan"
   ],
   "warnings": [
-    "VPS scanners offline \u2014 last heartbeat 2026-03-24 (>35 days stale)",
-    "Drawdown at 51.1% \u2014 well above 20% catastrophic threshold",
-    "Account at $48.89 of $100.00 original"
+    "VPS scanners offline for 36+ days \u2014 Railway deployment likely down",
+    "Regime-classifier cron continues to overwrite RISK_OFF \u2192 BASELINE (recurring race condition)",
+    "Portfolio at 51.11% drawdown from $100 peak \u2014 consider manual intervention"
   ]
 }

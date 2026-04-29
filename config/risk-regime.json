@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-04-29T00:01:51.343Z",
-  "updatedBy": "hermes-regime",
-  "reason": "BTC slope -0.75%, ATR 0.37%; ETH slope -0.74%, ATR 0.54%",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-04-29T00:32:45Z",
+  "updatedBy": "jido-emergency",
+  "reason": "REGIME_OVERRIDE by JIDO: DD 51.11% exceeds 20% catastrophic threshold. Regime-classifier cron set BASELINE at 00:01Z but DD condition persists.",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,
