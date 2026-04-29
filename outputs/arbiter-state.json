@@ -2,13 +2,13 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-29T07:48:08Z",
+  "lastCheckAt": "2026-04-29T08:00:50Z",
   "lastEquity": 48.887581,
   "alerts": [
     {
       "type": "RISK_OFF_ACTIVE",
       "severity": "CRITICAL",
-      "message": "RISK_OFF enforced — DD 51.11% (limit 20.0%). No open positions. Equity $48.89. All regime files in sync.",
+      "message": "RISK_OFF enforced \u2014 DD 51.11% (limit 20.0%). No open positions. Equity $48.89. All regime files in sync.",
       "timestamp": "2026-04-29T07:48:08Z"
     },
     {
