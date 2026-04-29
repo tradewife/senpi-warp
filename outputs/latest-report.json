@@ -1,49 +1,29 @@
 {
-  "generatedAt": "2026-04-29T00:34:23.535772Z",
-  "generatedBy": "jido-hermes-cron",
+  "generatedAt": "2026-04-29T02:46:27Z",
   "regime": "RISK_OFF",
-  "regimeReason": "REGIME_OVERRIDE: DD 51.11% exceeds 20% catastrophic threshold. Classifier cron set BASELINE at 00:01Z \u2014 overridden back to RISK_OFF.",
-  "equity": 48.887581,
+  "equity": 48.89,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dayStartEquity": 48.887581,
-  "dailyPnl": 0.0,
-  "withdrawable": 48.887581,
-  "positions": {
-    "count": 0,
-    "details": []
-  },
-  "openOrders": 0,
-  "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "dailyLossLimitPct": 10.0,
-    "maxConsecutiveStopOuts": 4,
-    "currentDD": 51.11,
-    "currentConsecutiveStopOuts": 0,
-    "breached": true,
-    "breachType": "CATASTROPHIC_DRAWDOWN"
-  },
-  "marketSnapshot": {
-    "BTC": 76333.5,
-    "ETH": 2287.05,
-    "SOL": 83.8995
-  },
-  "vpsHealth": {
-    "status": "OFFLINE",
-    "staleScanners": [
-      "orca (2026-03-24)",
-      "risk-arbiter (2026-03-24)"
-    ],
-    "daysStale": 36
-  },
-  "actions": [
-    "REGIME_OVERRIDE: risk-regime.json reset from BASELINE to RISK_OFF",
-    "autonomous-brain.json synced: RISK_OFF, DD=51.11%, entries blocked",
-    "arbiter-state.json updated with latest scan"
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "warnings": [
-    "VPS scanners offline for 36+ days \u2014 Railway deployment likely down",
-    "Regime-classifier cron continues to overwrite RISK_OFF \u2192 BASELINE (recurring race condition)",
-    "Portfolio at 51.11% drawdown from $100 peak \u2014 consider manual intervention"
-  ]
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
+  }
 }
