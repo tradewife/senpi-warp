@@ -1,31 +1,65 @@
 {
-  "timestamp": "2026-04-29T03:34:06Z",
+  "generatedAt": "2026-04-29T04:33:41Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "equity": 48.887581,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0.0,
-  "dailyPnlPct": 0.0,
-  "openPositions": 0,
-  "openOrders": 0,
-  "consecutiveStopOuts": 0,
-  "withdrawable": 48.887581,
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "dayStart": 48.887581,
+    "withdrawable": 48.887581
+  },
+  "drawdown": {
+    "pct": 51.11,
+    "limit": 20.0,
+    "breached": true
+  },
+  "positions": {
+    "count": 0,
+    "list": [],
+    "nakedLosers": []
+  },
+  "orders": {
+    "count": 0,
+    "list": []
+  },
   "guardrails": {
-    "catastrophicDD": "BREACHED",
-    "dailyLoss": "CLEAR",
-    "consecStops": "CLEAR",
-    "entries": "BLOCKED"
+    "catastrophicDD": {
+      "value": 51.11,
+      "limit": 20.0,
+      "breached": true
+    },
+    "dailyLoss": {
+      "value": 0.0,
+      "limit": 10.0,
+      "breached": false
+    },
+    "consecutiveSOs": {
+      "value": 0,
+      "limit": 4,
+      "breached": false
+    }
   },
-  "regimeSync": "ALL_ALIGNED",
-  "vpsScanners": "OFFLINE",
-  "market": {
-    "BTC": 76799.5,
-    "ETH": 2297.95,
-    "SOL": 84.4405
+  "regimeSync": {
+    "riskRegimeJson": "RISK_OFF",
+    "autonomousBrainJson": "RISK_OFF",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0,
+    "inSync": true
   },
-  "actions": [
-    "No open positions. RISK_OFF enforced. VPS offline. No active risk."
+  "marketPrices": {
+    "BTC": "77022.5",
+    "ETH": "2314.75",
+    "SOL": "84.6145"
+  },
+  "warnings": [
+    "VPS scanners offline since 2026-03-24 (36 days stale)",
+    "SERR031 auth on strategy_list/account_get_portfolio \u2014 using clearinghouse state",
+    "Dormant equity $48.89 for 3+ weeks \u2014 needs human decision"
   ],
-  "jidoVersion": "1.0"
+  "actionsTaken": [
+    "Verified clearinghouse state: 0 positions, 0 orders",
+    "Confirmed regime files in sync",
+    "No naked positions to protect",
+    "No guardrail changes needed"
+  ]
 }

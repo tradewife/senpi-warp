@@ -2,19 +2,19 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-04-29T03:34:06Z",
+  "lastCheckAt": "2026-04-29T04:33:41Z",
   "lastEquity": 48.887581,
   "alerts": [
     {
-      "timestamp": "2026-04-29T03:34:06Z",
+      "timestamp": "2026-04-29T04:33:41Z",
       "type": "JIDO_CHECK",
       "message": "Portfolio scan: $48.89 equity, 51.1% DD from $100.00 peak, 0 positions, RISK_OFF active, all guardrails aligned",
       "severity": "INFO"
     },
     {
-      "timestamp": "2026-04-29T00:33:37.115546Z",
+      "timestamp": "2026-04-29T03:34:06Z",
       "type": "JIDO_CHECK",
-      "message": "Portfolio scan: $48.89 equity, 51.11% DD from $100.00 peak, 0 positions, RISK_OFF active (regime override from BASELINE), all guardrails aligned",
+      "message": "Portfolio scan: $48.89 equity, 51.1% DD from $100.00 peak, 0 positions, RISK_OFF active, all guardrails aligned",
       "severity": "INFO"
     },
     {
@@ -28,15 +28,9 @@
       "severity": "WARNING",
       "message": "VPS scanners offline. orca (2026-03-24) and risk-arbiter (2026-03-24) heartbeats >35 days stale. Railway deployment likely down.",
       "timestamp": "2026-04-29T09:30:47Z"
-    },
-    {
-      "timestamp": "2026-04-28T23:47:32.280930+00:00",
-      "type": "JIDO_CHECK",
-      "message": "Portfolio scan: $48.89 equity, 51.1% DD from $100.00 peak, 0 positions, RISK_OFF active, all guardrails aligned",
-      "severity": "INFO"
     }
   ],
   "dayStartDate": "2026-04-29",
-  "lastChecked": "2026-04-29T03:34:06Z",
+  "lastChecked": "2026-04-29T04:33:41Z",
   "currentDrawdownPct": 51.11
 }
