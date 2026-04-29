@@ -1,29 +1,31 @@
 {
-  "generatedAt": "2026-04-29T02:46:27Z",
+  "timestamp": "2026-04-29T03:34:06Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": 48.887581,
   "peakEquity": 100.0,
   "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
+  "dailyPnl": 0.0,
+  "dailyPnlPct": 0.0,
   "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "openOrders": 0,
+  "consecutiveStopOuts": 0,
+  "withdrawable": 48.887581,
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "catastrophicDD": "BREACHED",
+    "dailyLoss": "CLEAR",
+    "consecStops": "CLEAR",
+    "entries": "BLOCKED"
+  },
+  "regimeSync": "ALL_ALIGNED",
+  "vpsScanners": "OFFLINE",
+  "market": {
+    "BTC": 76799.5,
+    "ETH": 2297.95,
+    "SOL": 84.4405
+  },
+  "actions": [
+    "No open positions. RISK_OFF enforced. VPS offline. No active risk."
+  ],
+  "jidoVersion": "1.0"
 }
