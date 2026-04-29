@@ -1,29 +1,55 @@
 {
-  "generatedAt": "2026-04-29T05:46:35Z",
-  "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "generatedAt": "2026-04-29T07:48:08Z",
+  "regime": {
+    "riskMode": "RISK_OFF",
+    "reason": "Catastrophic DD 51.1% (limit 20.0%)",
+    "updatedBy": "waifu-regime (arbiter-override)",
+    "updatedAt": "2026-04-29T07:00:39Z"
+  },
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "dayStart": 48.887581,
+    "withdrawable": 48.887581
+  },
+  "drawdown": {
+    "fromPeak": 51.11,
+    "limit": 20.0,
+    "breached": true
+  },
+  "positions": {
+    "main": [],
+    "xyz": [],
+    "total": 0
+  },
+  "orders": {
+    "open": [],
+    "total": 0
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
+    "catastrophicDrawdownPct": 20.0,
+    "drawdownBreached": true,
+    "dailyLossLimitPct": 10.0,
+    "dailyLossBreached": false,
     "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
+    "currentConsecutiveStopOuts": 0
+  },
+  "marketSnapshot": {
+    "BTC": 76974.5,
+    "ETH": 2321.65,
+    "SOL": 84.6845
+  },
+  "actionsTaken": [],
+  "alerts": [
+    "RISK_OFF active: DD 51.11% (limit 20.0%)",
+    "VPS scanners offline since 2026-03-24",
+    "No open positions, no emergency actions needed"
+  ],
+  "strategy": {
+    "name": "wolf-primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "budget": 100.0,
+    "accountValue": 48.887581
   }
 }
