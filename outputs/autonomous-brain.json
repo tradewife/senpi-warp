@@ -1,23 +1,23 @@
 {
   "generatedAt": "2026-03-23T23:57:15Z",
   "codebaseIndexAt": "2026-03-23T23:57:15Z",
-  "riskMode": "RISK_ON",
+  "riskMode": "RISK_OFF",
   "executionPolicy": {
-    "generatedAt": "2026-03-23T23:57:15Z",
-    "mode": "ACTIVE",
-    "blockNewEntries": false,
-    "allowAutoEntry": true,
-    "maxSlotsCap": 3,
-    "maxLeverageCap": 10.0,
-    "allocPctCap": 35.0,
+    "generatedAt": "2026-04-29T10:31:54Z",
+    "mode": "RISK_OFF",
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0,
+    "maxLeverageCap": 0,
+    "allocPctCap": 0,
     "strategyCaps": {
       "wolf-primary": {
-        "maxSlotsCap": 3
+        "maxSlotsCap": 0
       }
     },
-    "reasons": [],
+    "reasons": ["JIDO_SYNC: Catastrophic DD 51.1% (limit 20.0%) — brain synced to match risk-regime.json"],
     "risk": {
-      "drawdownPctFromPeak": 0.0,
+      "drawdownPctFromPeak": 51.1,
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [],
