@@ -1,32 +1,56 @@
 {
-  "generatedAt": "2026-04-29T12:32:42.074943+00:00",
+  "generatedAt": "2026-05-01T19:47:33.764437+00:00",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% exceeds 20% limit. No positions open. Flat until manual reset.",
-  "equity": 48.887581,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.1,
-  "dailyPnl": 0.0,
-  "openPositions": 0,
-  "openOrders": 0,
-  "withdrawable": 48.887581,
-  "consecutiveStopOuts": 0,
-  "positions": [],
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "dayStart": 48.887581,
+    "drawdownPct": 51.1
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0
+  },
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
-    "dailyLossLimitPct": 10,
-    "maxConsecutiveStopOuts": 4,
-    "breached": ["catastrophicDrawdownPct"],
-    "status": "BREACHED - RISK_OFF"
+    "catastrophicDD": {
+      "limit": 20.0,
+      "current": 51.1,
+      "breached": true
+    },
+    "dailyLoss": {
+      "limit": 10.0,
+      "current": 0.0,
+      "breached": false
+    },
+    "consecutiveStopOuts": {
+      "limit": 4,
+      "current": 0,
+      "breached": false
+    }
   },
-  "actions": ["No emergency actions needed — already flat"],
-  "marketSnapshot": {
-    "BTC": "$77,072.50",
-    "ETH": "$2,312.75",
-    "SOL": "$84.02"
-  },
+  "actions": [],
   "warnings": [
-    "VPS scanners offline since 2026-03-23 (37 days). Only Hermes crons running.",
-    "Account value flat at $48.89 for ~2 weeks — no active trading.",
-    "SERR031 on strategy_list (auth issue) — clearinghouse state used as fallback."
-  ]
+    "VPS scanners offline since 2026-03-23 (40+ days)",
+    "Account flat at $48.89 for extended period",
+    "SERR031 on strategy_list/authenticated reads (use clearinghouse state instead)"
+  ],
+  "strategy": {
+    "name": "wolf-primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
+    "withdrawable": 48.887581
+  },
+  "pnl": {
+    "daily": 0.0,
+    "weekly": 0.0,
+    "monthly": 0.0,
+    "allTime": -50.082419
+  },
+  "volume": {
+    "allTime": 951.52
+  }
 }
