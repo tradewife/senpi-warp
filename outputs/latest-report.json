@@ -1,29 +1,47 @@
 {
-  "generatedAt": "2026-05-01T20:00:40Z",
+  "generatedAt": "2026-05-01T20:17:15.529907+00:00",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 97.090414,
+    "dayStart": 48.887581,
+    "drawdownPct": 49.6
+  },
+  "positions": {
+    "open": 0,
+    "totalValue": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "dailyLossLimitPct": 10,
+    "breached": true,
+    "breachType": "catastrophic_drawdown",
+    "breachValue": "49.6%"
+  },
+  "marketSnapshot": {
+    "BTC": 78219.5,
+    "ETH": 2302.65,
+    "SOL": 83.8285
+  },
+  "systemHealth": {
+    "vpsScannersOnline": false,
+    "lastVpsHeartbeat": "2026-03-23",
+    "vpsOfflineDays": 39,
+    "hermesCronActive": true
+  },
+  "actions": [
+    "Synced autonomous-brain.json riskMode to RISK_OFF",
+    "Set drawdownPctFromPeak to 49.6%",
+    "Initialized peakEquity from all-time PnL history ($97.09)"
+  ],
+  "warnings": [
+    "VPS scanners offline for 39 days (last heartbeat 2026-03-23)",
+    "SERR031 on strategy_list (reads blocked, mutations OK)",
+    "Strategy account at 48.9% of initial budget \u2014 capital mostly lost"
+  ]
 }
