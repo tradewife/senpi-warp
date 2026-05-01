@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T23:03:09.472551+00:00",
+  "generatedAt": "2026-05-02T09:31:00.000000+00:00",
   "strategy": "wolf-primary",
   "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
   "regime": "RISK_OFF",
@@ -9,7 +9,7 @@
     "peak": 97.090414,
     "withdrawable": 48.887581,
     "drawdownPct": 49.6,
-    "alltimePnl": -50.082419,
+    "alltimePnl": -48.202833,
     "dailyPnl": 0.0
   },
   "positions": [],
@@ -20,14 +20,14 @@
     "dailyLossBreached": false
   },
   "marketPrices": {
-    "BTC": 78057.5,
-    "ETH": 2290.25,
-    "SOL": 83.6425
+    "BTC": 78010.5,
+    "ETH": 2289.35,
+    "SOL": 83.5785
   },
   "vpsScannersOnline": false,
   "lastVpsHeartbeat": "2026-03-23",
   "actions": [
-    "RISK_OFF maintained \u2014 no new entries until DD recovers"
+    "RISK_OFF maintained — no new entries until DD recovers"
   ],
   "brainSynced": true
 }
