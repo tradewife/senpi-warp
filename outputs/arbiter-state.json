@@ -9,6 +9,11 @@
       "type": "JIDO_CHECK",
       "timestamp": "2026-05-01T20:17:15.529907+00:00",
       "message": "RISK_OFF maintained. No positions. Equity $48.89, DD 49.6% from peak $97.09. Brain synced."
+    },
+    {
+      "type": "JIDO_CHECK",
+      "timestamp": "2026-05-01T21:33:13.068042+00:00",
+      "message": "RISK_OFF maintained. No positions. Equity $48.89, DD 49.6% from peak $97.09. Brain synced."
     }
   ]
 }
