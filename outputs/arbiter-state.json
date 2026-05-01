@@ -3,7 +3,7 @@
   "lastEquity": 48.887581,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-05-01T19:47:33.764437+00:00",
+  "lastCheckAt": "2026-05-01T20:00:40Z",
   "alerts": [
     {
       "type": "CATASTROPHIC_DD",
@@ -25,5 +25,6 @@
       "message": "Flat, no positions, no orders. Account $48.89. DD 51.1%. RISK_OFF correctly enforced. No action needed.",
       "timestamp": "2026-05-01T19:47:33.764437+00:00"
     }
-  ]
+  ],
+  "dayStartDate": "2026-05-01"
 }

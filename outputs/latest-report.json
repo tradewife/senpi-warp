@@ -1,56 +1,29 @@
 {
-  "generatedAt": "2026-05-01T19:47:33.764437+00:00",
+  "generatedAt": "2026-05-01T20:00:40Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "dayStart": 48.887581,
-    "drawdownPct": 51.1
-  },
-  "positions": {
-    "open": 0,
-    "details": []
-  },
-  "orders": {
-    "open": 0
-  },
-  "guardrails": {
-    "catastrophicDD": {
-      "limit": 20.0,
-      "current": 51.1,
-      "breached": true
-    },
-    "dailyLoss": {
-      "limit": 10.0,
-      "current": 0.0,
-      "breached": false
-    },
-    "consecutiveStopOuts": {
-      "limit": 4,
-      "current": 0,
-      "breached": false
-    }
-  },
-  "actions": [],
-  "warnings": [
-    "VPS scanners offline since 2026-03-23 (40+ days)",
-    "Account flat at $48.89 for extended period",
-    "SERR031 on strategy_list/authenticated reads (use clearinghouse state instead)"
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce",
-    "withdrawable": 48.887581
-  },
-  "pnl": {
-    "daily": 0.0,
-    "weekly": 0.0,
-    "monthly": 0.0,
-    "allTime": -50.082419
-  },
-  "volume": {
-    "allTime": 951.52
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
   }
 }
