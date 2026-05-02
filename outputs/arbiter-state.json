@@ -1,20 +1,6 @@
 {
-  "peakEquity": 97.090414,
-  "dayStartEquity": 48.887581,
-  "lastEquity": 48.887581,
+  "peakEquity": 0,
+  "dayStartEquity": 0,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-05-02T03:16:30Z",
-  "alerts": [
-    {
-      "type": "JIDO_CHECK",
-      "timestamp": "2026-05-02T02:17:11Z",
-      "message": "RISK_OFF maintained. No positions. Equity $48.89, DD 49.7% from peak $97.09. Brain synced. VPS scanners offline since 2026-03-23."
-    },
-    {
-      "type": "JIDO_CHECK",
-      "timestamp": "2026-05-02T03:16:30Z",
-      "message": "RISK_OFF maintained. No positions. Equity $48.89, DD 49.7% from peak $97.09. No open orders. Brain synced. VPS scanners offline since 2026-03-23."
-    }
-  ],
-  "dayStartDate": "2026-05-02"
+  "lastCheckAt": "2026-03-23T23:57:46Z"
 }
