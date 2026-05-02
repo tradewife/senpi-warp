@@ -1,49 +1,62 @@
 {
-  "generatedAt": "2026-05-03T08:30:25.000000+00:00",
-  "generatedBy": "jido-cron",
-  "regime": {
-    "mode": "RISK_OFF",
-    "previousMode": "RISK_OFF",
-    "changedBy": "waifu-regime (arbiter-override)",
-    "reason": "Catastrophic DD 51.1% (limit 20.0%) \u2014 maintained"
-  },
+  "generatedAt": "2026-05-02T22:47:33.309891+00:00",
+  "type": "jido",
+  "regime": "RISK_OFF",
+  "strategy": "wolf-primary",
+  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
   "equity": {
     "current": 48.887581,
     "peak": 100.0,
-    "budget": 100.0,
-    "drawdownPct": 51.11,
-    "withdrawable": 48.887581
+    "drawdownPct": 51.1,
+    "withdrawable": 48.887581,
+    "dailyPnl": 0.0,
+    "allTimePnl": -50.082419
   },
   "positions": {
-    "open": 0,
-    "details": []
+    "main": [],
+    "xyz": [],
+    "openCount": 0
   },
-  "orders": {
-    "open": 0,
-    "details": []
+  "openOrders": {
+    "count": 0
+  },
+  "marketPrices": {
+    "BTC": 78663.5,
+    "ETH": 2322.35,
+    "SOL": 84.2225
   },
   "guardrails": {
-    "catastrophicDrawdownPct": 20,
-    "drawdownActualPct": 51.11,
+    "catastrophicDrawdownPct": 20.0,
+    "currentDrawdownPct": 51.1,
     "breached": true,
-    "breachType": "CATASTROPHIC_DRAWDOWN",
-    "consecutiveStopOuts": 0,
+    "dailyLossLimitPct": 10.0,
+    "dailyLossPct": 0.0,
     "maxConsecutiveStopOuts": 4,
-    "dailyLossLimitPct": 10,
-    "dailyLossActualPct": 0
+    "consecutiveStopOuts": 0
+  },
+  "stateSync": {
+    "riskRegime": "RISK_OFF",
+    "autonomousBrain": "RISK_OFF",
+    "arbiterState": "RISK_OFF",
+    "consistent": true,
+    "blockNewEntries": true,
+    "allowAutoEntry": false,
+    "maxSlotsCap": 0
+  },
+  "vpsScanners": {
+    "status": "OFFLINE",
+    "lastHeartbeats": {
+      "brain": "2026-03-23T23:57:15Z",
+      "arena": "2026-03-23T23:57:05Z",
+      "risk-arbiter": "2026-03-23T23:57:45Z"
+    },
+    "note": "All VPS scanner heartbeats >5 weeks stale. Railway/VPS deployment likely down. Only Hermes-managed crons active."
   },
   "actionsTaken": [
-    "RISK_OFF maintained - catastrophic drawdown 51.1% still exceeds 20%",
-    "Regime files verified consistent (risk-regime.json, autonomous-brain.json both RISK_OFF)",
-    "No open positions, no naked losers, no emergency actions needed"
+    "Verified clearinghouse state \u2014 no open positions, no open orders",
+    "Confirmed RISK_OFF regime consistency across risk-regime.json, autonomous-brain.json, arbiter-state.json",
+    "Updated arbiter-state.json lastCheckAt timestamp",
+    "No emergency SL needed \u2014 zero open positions"
   ],
-  "warnings": [
-    "VPS scanners offline since 2026-03-23 (40+ days) \u2014 Railway deployment likely down",
-    "REGIME_CLASSIFIER_RACE: regime-classifier cron may override RISK_OFF back to BASELINE on next hourly run"
-  ],
-  "strategy": {
-    "name": "wolf-primary",
-    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
-  }
+  "assessment": "Account remains in deep drawdown (51.1% from $100 peak). Capital has been idle at $48.89 for over a month with zero trading activity. RISK_OFF is correctly enforced. No positions to protect. VPS scanners offline since late March \u2014 only Hermes cron jobs running. Strategy is effectively dormant awaiting manual review to either: (a) deposit more capital and reset peak equity for a fresh start, or (b) withdraw remaining $48.89 and close the strategy."
 }
