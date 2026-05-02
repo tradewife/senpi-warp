@@ -1,29 +1,40 @@
 {
-  "generatedAt": "2026-05-02T02:00:59Z",
+  "generatedAt": "2026-05-02T03:16:30Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 97.09,
-  "drawdownPct": 49.65,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 49.6%"
-  ],
-  "deadWeight": [],
+  "regimeReason": "Catastrophic DD 49.7% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 97.090414,
+    "drawdownPct": 49.7,
+    "withdrawable": 48.887581,
+    "budget": 100
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
     "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "actualDrawdownPct": 49.7,
+    "breached": true,
+    "dailyLossLimitPct": 10,
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4
+  },
+  "marketSnapshot": {
+    "BTC": "78206.5",
+    "ETH": "2300.35",
+    "SOL": "83.7125"
+  },
+  "systemHealth": {
+    "vpsScannersOffline": true,
+    "lastVpsHeartbeat": "2026-03-23T23:57:45Z",
+    "hermesCronActive": true,
+    "serr031OnReads": true
+  },
+  "actionsTaken": [],
+  "assessment": "RISK_OFF locked due to catastrophic drawdown (49.7% vs 20% limit). No open positions or orders. Capital sitting idle at $48.89. VPS scanners offline since 2026-03-23 (40+ days). Only Hermes-managed crons are running. Manual intervention needed to either (a) deposit fresh capital and reset peak equity, or (b) accept the loss and wind down."
 }
