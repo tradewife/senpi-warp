@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T22:00:45Z",
+  "generatedAt": "2026-05-02T02:00:56Z",
   "arenaWeek": 6,
   "totalEntrants": 99,
   "ourStats": {
@@ -7,14 +7,14 @@
     "winRate": 0.0,
     "totalPnl": -51.11
   },
-  "arenaTop5AvgRoe": 15.37,
-  "arenaTop5AvgPnl": 119.07,
+  "arenaTop5AvgRoe": 16.72,
+  "arenaTop5AvgPnl": 129.17,
   "arenaTop5": [
     {
       "rank": 1,
       "name": "0xschelling",
-      "roePct": "24.4124",
-      "totalPnl": "156.43151",
+      "roePct": "30.6937",
+      "totalPnl": "194.882982",
       "tradeCount": 13,
       "toolsUsed": [
         "account_get_portfolio",
@@ -54,38 +54,10 @@
     },
     {
       "rank": 3,
-      "name": "Vulture",
-      "roePct": "12.6199",
-      "totalPnl": "90.603602",
-      "tradeCount": 11,
-      "toolsUsed": [
-        "cancel_order",
-        "close_position",
-        "create_position",
-        "edit_position",
-        "execution_get_order_status",
-        "leaderboard_get_markets",
-        "market_get_funding_history",
-        "market_get_funding_regime",
-        "market_get_prices",
-        "market_list_instruments",
-        "ratchet_stop_add",
-        "ratchet_stop_delete",
-        "ratchet_stop_events",
-        "ratchet_stop_list",
-        "strategy_get_asset_trading_limits",
-        "strategy_get_clearinghouse_state",
-        "strategy_get_open_orders",
-        "strategy_list",
-        "user_get_me"
-      ]
-    },
-    {
-      "rank": 4,
       "name": "Pangolin",
-      "roePct": "11.831",
-      "totalPnl": "123.646154",
-      "tradeCount": 41,
+      "roePct": "14.017",
+      "totalPnl": "150.214481",
+      "tradeCount": 45,
       "toolsUsed": [
         "account_get_portfolio",
         "close_position",
@@ -110,19 +82,47 @@
       ]
     },
     {
-      "rank": 5,
+      "rank": 4,
       "name": "vignesh",
-      "roePct": "9.8123",
-      "totalPnl": "18.486458",
+      "roePct": "10.6221",
+      "totalPnl": "19.738124",
       "tradeCount": 0,
       "toolsUsed": []
+    },
+    {
+      "rank": 5,
+      "name": "Vulture",
+      "roePct": "10.1242",
+      "totalPnl": "74.842613",
+      "tradeCount": 11,
+      "toolsUsed": [
+        "cancel_order",
+        "close_position",
+        "create_position",
+        "edit_position",
+        "execution_get_order_status",
+        "leaderboard_get_markets",
+        "market_get_funding_history",
+        "market_get_funding_regime",
+        "market_get_prices",
+        "market_list_instruments",
+        "ratchet_stop_add",
+        "ratchet_stop_delete",
+        "ratchet_stop_events",
+        "ratchet_stop_list",
+        "strategy_get_asset_trading_limits",
+        "strategy_get_clearinghouse_state",
+        "strategy_get_open_orders",
+        "strategy_list",
+        "user_get_me"
+      ]
     }
   ],
   "recommendations": [
     {
       "action": "study_top_strategies",
       "confidence": "medium",
-      "reason": "Arena top 5 avg PnL $119.07 vs ours $-51.11. Study their patterns.",
+      "reason": "Arena top 5 avg PnL $129.17 vs ours $-51.11. Study their patterns.",
       "risk": "neutral"
     },
     {
