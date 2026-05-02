@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-05-02T04:48:15.572655+00:00",
+  "generatedAt": "2026-05-03T08:30:25.000000+00:00",
   "generatedBy": "jido-cron",
   "regime": {
     "mode": "RISK_OFF",
-    "previousMode": "BASELINE",
-    "changedBy": "jido-emergency",
-    "reason": "CATASTROPHIC DRAWDOWN: 51.1% exceeds 20% threshold"
+    "previousMode": "RISK_OFF",
+    "changedBy": "waifu-regime (arbiter-override)",
+    "reason": "Catastrophic DD 51.1% (limit 20.0%) \u2014 maintained"
   },
   "equity": {
-    "current": 48.89,
+    "current": 48.887581,
     "peak": 100.0,
     "budget": 100.0,
     "drawdownPct": 51.11,
-    "withdrawable": 48.89
+    "withdrawable": 48.887581
   },
   "positions": {
     "open": 0,
@@ -33,16 +33,13 @@
     "dailyLossActualPct": 0
   },
   "actionsTaken": [
-    "RISK_OFF activated - catastrophic drawdown 51.1% exceeds 20%",
-    "autonomous-brain.json synced to RISK_OFF (was RISK_ON, drift detected)",
-    "arbiter-state.json initialized with peakEquity=100.0",
-    "drawdownPctFromPeak updated to 51.11% (was stale at 0.0)"
+    "RISK_OFF maintained - catastrophic drawdown 51.1% still exceeds 20%",
+    "Regime files verified consistent (risk-regime.json, autonomous-brain.json both RISK_OFF)",
+    "No open positions, no naked losers, no emergency actions needed"
   ],
   "warnings": [
-    "REGIME_DRIFT: autonomous-brain.json was RISK_ON while risk-regime.json was BASELINE - synced to RISK_OFF",
-    "STALE_STATE: arbiter-state.json had peakEquity=0 (from 2026-03-23) - reinitialized from budget",
-    "REGIME_CLASSIFIER_RACE: regime-classifier cron may override RISK_OFF back to BASELINE on next hourly run",
-    "SERR031: strategy_list failed with auth error (expected), used clearinghouse_state instead"
+    "VPS scanners offline since 2026-03-23 (40+ days) \u2014 Railway deployment likely down",
+    "REGIME_CLASSIFIER_RACE: regime-classifier cron may override RISK_OFF back to BASELINE on next hourly run"
   ],
   "strategy": {
     "name": "wolf-primary",
