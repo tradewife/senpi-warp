@@ -1,6 +1,13 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100.0,
+  "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-23T23:57:46Z"
+  "lastCheckAt": "2026-05-02T03:32:24Z",
+  "alerts": [
+    {
+      "type": "REGIME_OVERRIDE",
+      "message": "JIDO: DD 51.11% exceeds catastrophic 20% limit. RISK_OFF enforced. peakEquity re-initialized from budget (was 0).",
+      "timestamp": "2026-05-02T03:32:24Z"
+    }
+  ]
 }

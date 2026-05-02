@@ -1,13 +1,12 @@
 {
-  "generatedAt": "2026-05-02T03:16:30Z",
+  "generatedAt": "2026-05-02T03:32:24Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 49.7% (limit 20.0%)",
+  "regimeReason": "Catastrophic DD 49.6% (limit 20.0%)",
   "equity": {
-    "current": 48.887581,
-    "peak": 97.090414,
-    "drawdownPct": 49.7,
-    "withdrawable": 48.887581,
-    "budget": 100
+    "current": 48.89,
+    "peak": 100.00,
+    "drawdownPct": 51.11,
+    "dayStart": 48.89
   },
   "positions": {
     "open": 0,
@@ -18,23 +17,58 @@
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20,
-    "actualDrawdownPct": 49.7,
-    "breached": true,
     "dailyLossLimitPct": 10,
-    "consecutiveStopOuts": 0,
-    "maxConsecutiveStopOuts": 4
+    "maxConsecutiveStopOuts": 4,
+    "breached": true,
+    "breachType": "catastrophicDrawdown"
   },
-  "marketSnapshot": {
-    "BTC": "78206.5",
-    "ETH": "2300.35",
-    "SOL": "83.7125"
+  "market": {
+    "BTC": 78336.5,
+    "ETH": 2304.15,
+    "SOL": 83.8125
   },
-  "systemHealth": {
-    "vpsScannersOffline": true,
-    "lastVpsHeartbeat": "2026-03-23T23:57:45Z",
-    "hermesCronActive": true,
-    "serr031OnReads": true
-  },
-  "actionsTaken": [],
-  "assessment": "RISK_OFF locked due to catastrophic drawdown (49.7% vs 20% limit). No open positions or orders. Capital sitting idle at $48.89. VPS scanners offline since 2026-03-23 (40+ days). Only Hermes-managed crons are running. Manual intervention needed to either (a) deposit fresh capital and reset peak equity, or (b) accept the loss and wind down."
+  "alerts": [
+    {
+      "type": "REGIME_OVERRIDE",
+      "severity": "CRITICAL",
+      "message": "DD 51.11% exceeds catastrophic 20% limit. RISK_OFF enforced by JIDO.",
+      "timestamp": "2026-05-02T03:32:24Z"
+    },
+    {
+      "type": "BRAIN_SYNC",
+      "severity": "INFO",
+      "message": "autonomous-brain.json synced to RISK_OFF (was RISK_ON, stale from March 23). blockNewEntries=true, allowAutoEntry=false, maxSlotsCap=0, drawdownPctFromPeak=51.11%.",
+      "timestamp": "2026-05-02T03:32:24Z"
+    },
+    {
+      "type": "PEAK_EQUITY_REINIT",
+      "severity": "WARN",
+      "message": "arbiter-state.json peakEquity was 0 (conflict resolution drift). Re-initialized to budget ($100).",
+      "timestamp": "2026-05-02T03:32:24Z"
+    },
+    {
+      "type": "VPS_OFFLINE",
+      "severity": "WARN",
+      "message": "All VPS scanner heartbeats stale since 2026-03-23 (~40 days ago). Railway deployment likely down.",
+      "timestamp": "2026-05-02T03:32:24Z"
+    },
+    {
+      "type": "AUTH_ISSUE",
+      "severity": "WARN",
+      "message": "SERR031 on strategy_list (read-only operations). Clearinghouse state still works for position data.",
+      "timestamp": "2026-05-02T03:32:24Z"
+    }
+  ],
+  "actionsTaken": [
+    "Resolved git merge conflicts (arbiter-state.json, autonomous-brain.json)",
+    "Re-initialized arbiter-state.json peakEquity from budget",
+    "Synced autonomous-brain.json: RISK_ON -> RISK_OFF",
+    "Updated brain executionPolicy: blockNewEntries=true, allowAutoEntry=false, maxSlotsCap=0",
+    "Updated drawdownPctFromPeak: 0.0 -> 51.11%"
+  ],
+  "nextSteps": [
+    "Account is flat with $48.89 withdrawable. Consider closing strategy and withdrawing to stop further fee drag.",
+    "If restarting, need fresh funding and reset of peakEquity tracking.",
+    "Fix VPS/Railway deployment to restore scanner heartbeats."
+  ]
 }
