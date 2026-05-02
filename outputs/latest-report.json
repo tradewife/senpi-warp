@@ -1,74 +1,52 @@
 {
-  "generatedAt": "2026-05-02T03:32:24Z",
-  "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 49.6% (limit 20.0%)",
+  "generatedAt": "2026-05-02T04:48:15.572655+00:00",
+  "generatedBy": "jido-cron",
+  "regime": {
+    "mode": "RISK_OFF",
+    "previousMode": "BASELINE",
+    "changedBy": "jido-emergency",
+    "reason": "CATASTROPHIC DRAWDOWN: 51.1% exceeds 20% threshold"
+  },
   "equity": {
     "current": 48.89,
-    "peak": 100.00,
+    "peak": 100.0,
+    "budget": 100.0,
     "drawdownPct": 51.11,
-    "dayStart": 48.89
+    "withdrawable": 48.89
   },
   "positions": {
     "open": 0,
     "details": []
   },
   "orders": {
-    "open": 0
+    "open": 0,
+    "details": []
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20,
-    "dailyLossLimitPct": 10,
-    "maxConsecutiveStopOuts": 4,
+    "drawdownActualPct": 51.11,
     "breached": true,
-    "breachType": "catastrophicDrawdown"
+    "breachType": "CATASTROPHIC_DRAWDOWN",
+    "consecutiveStopOuts": 0,
+    "maxConsecutiveStopOuts": 4,
+    "dailyLossLimitPct": 10,
+    "dailyLossActualPct": 0
   },
-  "market": {
-    "BTC": 78336.5,
-    "ETH": 2304.15,
-    "SOL": 83.8125
-  },
-  "alerts": [
-    {
-      "type": "REGIME_OVERRIDE",
-      "severity": "CRITICAL",
-      "message": "DD 51.11% exceeds catastrophic 20% limit. RISK_OFF enforced by JIDO.",
-      "timestamp": "2026-05-02T03:32:24Z"
-    },
-    {
-      "type": "BRAIN_SYNC",
-      "severity": "INFO",
-      "message": "autonomous-brain.json synced to RISK_OFF (was RISK_ON, stale from March 23). blockNewEntries=true, allowAutoEntry=false, maxSlotsCap=0, drawdownPctFromPeak=51.11%.",
-      "timestamp": "2026-05-02T03:32:24Z"
-    },
-    {
-      "type": "PEAK_EQUITY_REINIT",
-      "severity": "WARN",
-      "message": "arbiter-state.json peakEquity was 0 (conflict resolution drift). Re-initialized to budget ($100).",
-      "timestamp": "2026-05-02T03:32:24Z"
-    },
-    {
-      "type": "VPS_OFFLINE",
-      "severity": "WARN",
-      "message": "All VPS scanner heartbeats stale since 2026-03-23 (~40 days ago). Railway deployment likely down.",
-      "timestamp": "2026-05-02T03:32:24Z"
-    },
-    {
-      "type": "AUTH_ISSUE",
-      "severity": "WARN",
-      "message": "SERR031 on strategy_list (read-only operations). Clearinghouse state still works for position data.",
-      "timestamp": "2026-05-02T03:32:24Z"
-    }
-  ],
   "actionsTaken": [
-    "Resolved git merge conflicts (arbiter-state.json, autonomous-brain.json)",
-    "Re-initialized arbiter-state.json peakEquity from budget",
-    "Synced autonomous-brain.json: RISK_ON -> RISK_OFF",
-    "Updated brain executionPolicy: blockNewEntries=true, allowAutoEntry=false, maxSlotsCap=0",
-    "Updated drawdownPctFromPeak: 0.0 -> 51.11%"
+    "RISK_OFF activated - catastrophic drawdown 51.1% exceeds 20%",
+    "autonomous-brain.json synced to RISK_OFF (was RISK_ON, drift detected)",
+    "arbiter-state.json initialized with peakEquity=100.0",
+    "drawdownPctFromPeak updated to 51.11% (was stale at 0.0)"
   ],
-  "nextSteps": [
-    "Account is flat with $48.89 withdrawable. Consider closing strategy and withdrawing to stop further fee drag.",
-    "If restarting, need fresh funding and reset of peakEquity tracking.",
-    "Fix VPS/Railway deployment to restore scanner heartbeats."
-  ]
+  "warnings": [
+    "REGIME_DRIFT: autonomous-brain.json was RISK_ON while risk-regime.json was BASELINE - synced to RISK_OFF",
+    "STALE_STATE: arbiter-state.json had peakEquity=0 (from 2026-03-23) - reinitialized from budget",
+    "REGIME_CLASSIFIER_RACE: regime-classifier cron may override RISK_OFF back to BASELINE on next hourly run",
+    "SERR031: strategy_list failed with auth error (expected), used clearinghouse_state instead"
+  ],
+  "strategy": {
+    "name": "wolf-primary",
+    "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+    "strategyId": "c070acba-bea9-457c-977e-b0ddb3dcc9ce"
+  }
 }

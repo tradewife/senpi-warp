@@ -1,8 +1,8 @@
 {
-  "riskMode": "BASELINE",
-  "updatedAt": "2026-05-02T04:02:39.526477+00:00",
-  "updatedBy": "hermes-regime",
-  "reason": "Mixed signals: BTC slope=-0.51%, ATR=0.42%; ETH slope=-1.43%, ATR=0.46%",
+  "riskMode": "RISK_OFF",
+  "updatedAt": "2026-05-02T04:47:27.501790+00:00",
+  "updatedBy": "jido-emergency",
+  "reason": "CATASTROPHIC DRAWDOWN: 51.1% exceeds 20% threshold (equity=$48.89, peak=$100.00)",
   "regimes": {
     "RISK_ON": {
       "maxSlots": 3,

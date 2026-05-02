@@ -1,6 +1,21 @@
 {
-  "peakEquity": 0,
-  "dayStartEquity": 0,
+  "peakEquity": 100.0,
+  "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-03-23T23:57:46Z"
+  "lastCheckAt": "2026-05-02T04:47:27.501790+00:00",
+  "lastEquity": 48.887581,
+  "alerts": [
+    {
+      "type": "CATASTROPHIC_DRAWDOWN",
+      "severity": "CRITICAL",
+      "message": "Drawdown 51.1% exceeds catastrophic 20% threshold. RISK_OFF activated by JIDO.",
+      "timestamp": "2026-05-02T04:47:27.501790+00:00"
+    },
+    {
+      "type": "REGIME_OVERRIDE",
+      "severity": "HIGH",
+      "message": "JIDO override #1: regime was BASELINE, forced to RISK_OFF due to 51.1% drawdown",
+      "timestamp": "2026-05-02T04:47:27.501790+00:00"
+    }
+  ]
 }
