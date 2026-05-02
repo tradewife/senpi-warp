@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-05-02T03:32:24Z",
+  "generatedAt": "2026-03-23T23:57:15Z",
   "codebaseIndexAt": "2026-03-23T23:57:15Z",
-  "riskMode": "RISK_OFF",
+  "riskMode": "RISK_ON",
   "executionPolicy": {
-    "generatedAt": "2026-05-02T03:32:24Z",
-    "mode": "RISK_OFF",
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0,
+    "generatedAt": "2026-03-23T23:57:15Z",
+    "mode": "ACTIVE",
+    "blockNewEntries": false,
+    "allowAutoEntry": true,
+    "maxSlotsCap": 3,
     "maxLeverageCap": 10.0,
     "allocPctCap": 35.0,
     "strategyCaps": {
@@ -17,7 +17,7 @@
     },
     "reasons": [],
     "risk": {
-      "drawdownPctFromPeak": 51.11,
+      "drawdownPctFromPeak": 0.0,
       "recentLossStreak": 0,
       "pendingSignals": 0,
       "staleCrons": [],
@@ -546,7 +546,7 @@
     }
   },
   "summary": {
-    "status": "RISK_OFF",
+    "status": "ACTIVE",
     "preferredScanners": [
       "komodo",
       "orca",
