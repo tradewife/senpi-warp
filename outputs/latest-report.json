@@ -1,33 +1,29 @@
 {
-  "generatedAt": "2026-05-02T01:03:05.997850+00:00",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
+  "generatedAt": "2026-05-02T02:00:59Z",
   "regime": "RISK_OFF",
-  "regimeReason": "Catastrophic DD 49.6% (limit 20.0%)",
-  "equity": {
-    "current": 48.887581,
-    "peak": 97.090414,
-    "withdrawable": 48.887581,
-    "drawdownPct": 49.6,
-    "alltimePnl": -48.202833,
-    "dailyPnl": 0.0
-  },
-  "positions": [],
-  "openOrders": 0,
-  "guardrails": {
-    "drawdownBreached": true,
-    "consecutiveStopsBreached": false,
-    "dailyLossBreached": false
-  },
-  "marketPrices": {
-    "BTC": 78273.5,
-    "ETH": 2295.85,
-    "SOL": 83.7495
-  },
-  "vpsScannersOnline": false,
-  "lastVpsHeartbeat": "2026-03-23",
-  "actions": [
-    "RISK_OFF maintained \u2014 no new entries until DD recovers"
+  "equity": 48.89,
+  "peakEquity": 97.09,
+  "drawdownPct": 49.65,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 49.6%"
   ],
-  "brainSynced": true
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
+  }
 }
