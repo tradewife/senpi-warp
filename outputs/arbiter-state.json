@@ -2,7 +2,7 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-05-03T02:17:00Z",
+  "lastCheckAt": "2026-05-03T03:31:44Z",
   "lastEquity": 48.887581,
   "alerts": [
     {
@@ -16,6 +16,12 @@
       "severity": "HIGH",
       "message": "JIDO override #1: regime was BASELINE, forced to RISK_OFF due to 51.1% drawdown",
       "timestamp": "2026-05-02T04:47:27.501790+00:00"
+    },
+    {
+      "type": "VPS_SCANNERS_OFFLINE",
+      "severity": "MEDIUM",
+      "message": "All VPS scanner heartbeats stale (last: 2026-03-23, 40+ days). Railway deployment likely offline.",
+      "timestamp": "2026-05-03T03:31:44.239406+00:00"
     }
   ],
   "dayStartDate": "2026-05-03"

@@ -1,29 +1,36 @@
 {
-  "generatedAt": "2026-05-03T02:17:00Z",
+  "generatedAt": "2026-05-03T03:31:44Z",
   "regime": "RISK_OFF",
-  "equity": 48.89,
-  "peakEquity": 100.0,
-  "drawdownPct": 51.11,
-  "dailyPnl": 0,
-  "dailyCloses": 0,
-  "dailyWinRate": 0,
-  "openPositions": 0,
-  "alerts": [
-    "CATASTROPHIC DRAWDOWN: 51.1%"
-  ],
-  "deadWeight": [],
+  "regimeReason": "Catastrophic DD 51.1% (limit 20.0%)",
+  "equity": {
+    "current": 48.887581,
+    "peak": 100.0,
+    "drawdownPct": 51.11,
+    "dayStart": 48.887581,
+    "budget": 100.0
+  },
+  "positions": {
+    "open": 0,
+    "details": []
+  },
+  "orders": {
+    "open": 0,
+    "details": []
+  },
   "guardrails": {
-    "dailyLossLimitPct": 10,
-    "catastrophicDrawdownPct": 20,
-    "maxConsecutiveStopOuts": 4,
-    "directionalCapPct": 70,
-    "minLeverage": 7,
-    "maxLeverage": 10,
-    "maxPositionsTotal": 3,
-    "perAssetCooldownMinutes": 120,
-    "bannedAssetPrefixes": [
-      "xyz:"
-    ],
-    "perTradeRiskPct": 1.0
-  }
+    "catastrophicDrawdownBreached": true,
+    "dailyLossLimitBreached": false,
+    "consecutiveStopOutsBreached": false,
+    "allClear": false
+  },
+  "actionsTaken": [],
+  "marketSnapshot": {
+    "BTC": 78076.5,
+    "ETH": 2299.65,
+    "SOL": 83.6155
+  },
+  "warnings": [
+    "VPS scanners offline (all heartbeats 40+ days stale)",
+    "Account flat with $48.89 remaining (51.1% drawdown from $100 budget)"
+  ]
 }
