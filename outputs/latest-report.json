@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T22:47:33.309891+00:00",
+  "generatedAt": "2026-05-03T00:32:26.430715+00:00",
   "type": "jido",
   "regime": "RISK_OFF",
   "strategy": "wolf-primary",
@@ -21,9 +21,9 @@
     "count": 0
   },
   "marketPrices": {
-    "BTC": 78663.5,
-    "ETH": 2322.35,
-    "SOL": 84.2225
+    "BTC": 78619.5,
+    "ETH": 2315.75,
+    "SOL": 84.1245
   },
   "guardrails": {
     "catastrophicDrawdownPct": 20.0,
@@ -55,8 +55,8 @@
   "actionsTaken": [
     "Verified clearinghouse state \u2014 no open positions, no open orders",
     "Confirmed RISK_OFF regime consistency across risk-regime.json, autonomous-brain.json, arbiter-state.json",
-    "Updated arbiter-state.json lastCheckAt timestamp",
-    "No emergency SL needed \u2014 zero open positions"
+    "No emergency SL needed \u2014 zero open positions",
+    "JIDO cron check at 2026-05-03T00:32:26.430715+00:00"
   ],
   "assessment": "Account remains in deep drawdown (51.1% from $100 peak). Capital has been idle at $48.89 for over a month with zero trading activity. RISK_OFF is correctly enforced. No positions to protect. VPS scanners offline since late March \u2014 only Hermes cron jobs running. Strategy is effectively dormant awaiting manual review to either: (a) deposit more capital and reset peak equity for a fresh start, or (b) withdraw remaining $48.89 and close the strategy."
 }
