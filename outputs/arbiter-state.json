@@ -2,7 +2,7 @@
   "peakEquity": 100.0,
   "dayStartEquity": 48.887581,
   "consecutiveStopOuts": 0,
-  "lastCheckAt": "2026-05-03T00:32:26.430715+00:00",
+  "lastCheckAt": "2026-05-03T02:00:25Z",
   "lastEquity": 48.887581,
   "alerts": [
     {
@@ -17,5 +17,6 @@
       "message": "JIDO override #1: regime was BASELINE, forced to RISK_OFF due to 51.1% drawdown",
       "timestamp": "2026-05-02T04:47:27.501790+00:00"
     }
-  ]
+  ],
+  "dayStartDate": "2026-05-03"
 }

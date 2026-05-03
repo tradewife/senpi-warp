@@ -1,62 +1,29 @@
 {
-  "generatedAt": "2026-05-03T00:32:26.430715+00:00",
-  "type": "jido",
+  "generatedAt": "2026-05-03T02:00:25Z",
   "regime": "RISK_OFF",
-  "strategy": "wolf-primary",
-  "wallet": "0xb08029bf3d8472cfddbc1c5df4ad18e98ca24db1",
-  "equity": {
-    "current": 48.887581,
-    "peak": 100.0,
-    "drawdownPct": 51.1,
-    "withdrawable": 48.887581,
-    "dailyPnl": 0.0,
-    "allTimePnl": -50.082419
-  },
-  "positions": {
-    "main": [],
-    "xyz": [],
-    "openCount": 0
-  },
-  "openOrders": {
-    "count": 0
-  },
-  "marketPrices": {
-    "BTC": 78619.5,
-    "ETH": 2315.75,
-    "SOL": 84.1245
-  },
-  "guardrails": {
-    "catastrophicDrawdownPct": 20.0,
-    "currentDrawdownPct": 51.1,
-    "breached": true,
-    "dailyLossLimitPct": 10.0,
-    "dailyLossPct": 0.0,
-    "maxConsecutiveStopOuts": 4,
-    "consecutiveStopOuts": 0
-  },
-  "stateSync": {
-    "riskRegime": "RISK_OFF",
-    "autonomousBrain": "RISK_OFF",
-    "arbiterState": "RISK_OFF",
-    "consistent": true,
-    "blockNewEntries": true,
-    "allowAutoEntry": false,
-    "maxSlotsCap": 0
-  },
-  "vpsScanners": {
-    "status": "OFFLINE",
-    "lastHeartbeats": {
-      "brain": "2026-03-23T23:57:15Z",
-      "arena": "2026-03-23T23:57:05Z",
-      "risk-arbiter": "2026-03-23T23:57:45Z"
-    },
-    "note": "All VPS scanner heartbeats >5 weeks stale. Railway/VPS deployment likely down. Only Hermes-managed crons active."
-  },
-  "actionsTaken": [
-    "Verified clearinghouse state \u2014 no open positions, no open orders",
-    "Confirmed RISK_OFF regime consistency across risk-regime.json, autonomous-brain.json, arbiter-state.json",
-    "No emergency SL needed \u2014 zero open positions",
-    "JIDO cron check at 2026-05-03T00:32:26.430715+00:00"
+  "equity": 48.89,
+  "peakEquity": 100.0,
+  "drawdownPct": 51.11,
+  "dailyPnl": 0,
+  "dailyCloses": 0,
+  "dailyWinRate": 0,
+  "openPositions": 0,
+  "alerts": [
+    "CATASTROPHIC DRAWDOWN: 51.1%"
   ],
-  "assessment": "Account remains in deep drawdown (51.1% from $100 peak). Capital has been idle at $48.89 for over a month with zero trading activity. RISK_OFF is correctly enforced. No positions to protect. VPS scanners offline since late March \u2014 only Hermes cron jobs running. Strategy is effectively dormant awaiting manual review to either: (a) deposit more capital and reset peak equity for a fresh start, or (b) withdraw remaining $48.89 and close the strategy."
+  "deadWeight": [],
+  "guardrails": {
+    "dailyLossLimitPct": 10,
+    "catastrophicDrawdownPct": 20,
+    "maxConsecutiveStopOuts": 4,
+    "directionalCapPct": 70,
+    "minLeverage": 7,
+    "maxLeverage": 10,
+    "maxPositionsTotal": 3,
+    "perAssetCooldownMinutes": 120,
+    "bannedAssetPrefixes": [
+      "xyz:"
+    ],
+    "perTradeRiskPct": 1.0
+  }
 }
